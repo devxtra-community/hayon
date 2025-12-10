@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import dashboard_IMG from "@/assets/Dashboard.png"
 import logo_IMG from "@/assets/logo.png"
-import { BookOpen } from "lucide";
+import { BookOpen } from "lucide-react";
 import { Book } from "lucide-react";
 
 
