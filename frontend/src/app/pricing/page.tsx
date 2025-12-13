@@ -40,11 +40,9 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-background">
 
-      {/* --- Back Button --- */}
       <BackButton />
       <section className="p-4 pb-10 relative">
 
-      {/* --- Header / Hero Section --- */}
         <div className="gradient rounded-xl relative py-10 px-4 md:px-8">
 
           <div className="relative z-10 flex flex-col items-center text-center max-w-2xl mx-auto">
@@ -189,7 +187,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* --- Bottom CTA --- */}
       <section className="px-4 pb-10">
         <div className="max-w-3xl mx-auto text-center bg-muted/30 rounded-xl p-6">
           <h2 className="text-xl md:text-2xl font-bold mb-2">

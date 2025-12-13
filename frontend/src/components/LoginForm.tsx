@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,6 @@ export default function LoginForm() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Google Sign In Button */}
         <Button
           variant="outline"
           className="w-full h-12 text-base font-medium"
@@ -83,7 +81,6 @@ export default function LoginForm() {
           </div>
         </div>
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

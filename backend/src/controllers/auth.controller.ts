@@ -1,72 +1,31 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import User from '../models/User';
+import User from '../models/user.model';
 import { generateToken } from '../utils/jwt';
+import { signupService } from "../services/auth.service";
 
-// Helper function to set cookie
+
 const setCookieToken = (res: Response, token: string) => {
   res.cookie('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
-// Signup with Email/Password
+
+
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, confirmPassword, name } = req.body;
+    const { user, token } = await signupService(req.body);
 
-    if (!email || !password || !confirmPassword || !name) {
-      res.status(400).json({
-        success: false,
-        message: 'Email, password, confirmPassword, and name are required',
-      });
-      return;
-    }
 
-    if (password !== confirmPassword) {
-      res.status(400).json({
-        success: false,
-        message: 'Passwords do not match',
-      });
-      return;
-    }
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      res.status(400).json({
-        success: false,
-        message: 'Email already registered',
-      });
-      return;
-    }
-
-    const password_hash = await bcrypt.hash(password, 12);
-
-    const user = await User.create({
-      email: email.toLowerCase(),
-      name,
-      auth: {
-        provider: 'email',
-        password_hash,
-        email_verified: false,
-      },
-      role: 'user',
-    });
-
-    const token = generateToken({
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    });
-
-    // Set cookie instead of returning token
     setCookieToken(res, token);
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully',
+      message: "Account created successfully",
       data: {
         user: {
           id: user._id,
@@ -76,14 +35,14 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         },
       },
     });
-  } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({
+  } catch (err: any) {
+    res.status(400).json({
       success: false,
-      message: 'Server error during signup',
+      message: err.message || "Signup failed",
     });
   }
 };
+
 
 
 // Login with Email/Password
@@ -138,7 +97,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       role: user.role,
     });
     
-    // Set cookie instead of returning token
     setCookieToken(res, token);
     
     res.status(200).json({

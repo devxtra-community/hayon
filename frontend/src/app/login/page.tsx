@@ -6,8 +6,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        
-        {/* Left Side - Branding */}
+
         <div className="hidden lg:flex flex-col justify-center space-y-8 px-12">
           <div>
             <Image src={logo_IMG} alt="Hayon Logo" className="mb-8" />
@@ -21,7 +20,6 @@ export default function LoginPage() {
               Automate your social media with AI-powered content generation
             </p>
           </div>
-
           <div className="gradient rounded-2xl p-8 text-white space-y-4">
             <h3 className="text-2xl font-semibold">Why Hayon?</h3>
             <ul className="space-y-3">
@@ -53,10 +51,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right Side - Login Form */}
         <div className="flex items-center justify-center">
           <div className="w-full max-w-md">
-            {/* Mobile Logo */}
             <div className="lg:hidden mb-8 flex justify-center">
               <Image src={logo_IMG} alt="Hayon Logo" />
             </div>
