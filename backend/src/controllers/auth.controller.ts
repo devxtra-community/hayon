@@ -3,24 +3,63 @@ import bcrypt from 'bcrypt';
 import User from '../models/user.model';
 import { generateToken } from '../utils/jwt';
 import { signupService } from "../services/auth.service";
+import { setCookieToken } from '../utils/setAuthCookies';
+import { requestOtpService } from "../services/auth.service";
+import { verifyOtpService } from "../services/auth.service";
 
+export const requestOtp = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    await requestOtpService(email);
 
-const setCookieToken = (res: Response, token: string) => {
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+    res.status(200).json({
+      success: true,
+      message: "OTP sent successfully",
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      success: false,
+      message: err.message || "Failed to send OTP",
+    });
+  }
 };
+
+
+
+export const verifyOtp = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+
+    const result = await verifyOtpService(email, otp);
+
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      data: result,
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      success: false,
+      message: err.message || "OTP verification failed",
+    });
+  }
+};
+
+
+
+
+
+
+
+
+
+
 
 
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
     const { user, token } = await signupService(req.body);
-
-
     setCookieToken(res, token);
 
     res.status(201).json({
@@ -45,7 +84,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
 
 
-// Login with Email/Password
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -151,7 +189,7 @@ export const getCurrentUser = async (
   }
 };
 
-// Logout endpoint
+
 export const logout = async (req: Request, res: Response): Promise<void> => {
   res.clearCookie('token');
   res.status(200).json({

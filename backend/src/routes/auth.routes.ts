@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from 'passport';
-import { signup, login, getCurrentUser, logout } from '../controllers/auth.controller';
+import { signup, login, getCurrentUser, logout, requestOtp, verifyOtp } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { generateToken } from '../utils/jwt';
 import cookieParser from 'cookie-parser';
@@ -8,10 +8,13 @@ import cookieParser from 'cookie-parser';
 const router = express.Router();
 
 router.use(cookieParser())
+
+
 router.post('/signup', signup);
 router.post('/login', login);
+router.post("/auth/request-otp", requestOtp);
+router.post("/auth/verify-otp", verifyOtp);
 
-// Get current user
 router.get('/me', authenticate, getCurrentUser);
 
 // Logout user

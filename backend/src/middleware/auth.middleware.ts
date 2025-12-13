@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JWTPayload } from '../utils/jwt';
 
-
-// Extend Express Request type
-
 declare global {
   namespace Express {
     interface Request {
@@ -29,7 +26,7 @@ export const authenticate =  (
       return;
     }
     const decoded = verifyToken(token);
-    req.jwtUser = decoded;  
+    req.jwtUser = decoded;
     
     next();
   } catch (error) {

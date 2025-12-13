@@ -1,48 +1,36 @@
-import mongoose, { Document, Schema,Types } from 'mongoose';
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IUser extends Document {
-_id: Types.ObjectId;
+  _id: Types.ObjectId;
+
   email: string;
   name: string;
-  avatar?: string;
+  avatar: string | null;
+  timezone: string;
+
+  role: "user" | "admin";
+  is_disabled: boolean;
+
   auth: {
-    provider: 'google' | 'email';
-    google_id?: string;
-    password_hash?: string;
-    email_verified: boolean;
-    otp_code?: string;
-    otp_expires?: Date;
+    provider: "email" | "google";
+    google_id: string | null;
+    password_hash: string | null;
   };
+
   subscription: {
-    plan: 'free' | 'pro';
-    status: 'active' | 'cancelled' | 'past_due';
-    stripe_customer_id?: string;
-    stripe_subscription_id?: string;
-    current_period_start?: Date;
-    current_period_end?: Date;
+    plan: "free" | "pro";
+    status: "active" | "cancelled" | "past_due";
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+    current_period_start: Date | null;
+    current_period_end: Date | null;
+    cancel_at_period_end: boolean;
   };
-  usage: {
-    posts_this_month: number;
-    posts_limit: number;
-    ai_generations_this_month: number;
-    ai_generations_limit: number;
-    last_reset: Date;
-    lifetime_stats: {
-      total_posts: number;
-      total_ai_generations: number;
-    };
-  };
-  settings: {
-    timezone: string;
-    notifications: {
-      email_on_post_published: boolean;
-      email_on_post_failed: boolean;
-    };
-  };
-  role: 'user' | 'admin';
+
+  last_login: Date | null;
+
   created_at: Date;
   updated_at: Date;
-  last_login?: Date;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -51,112 +39,110 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
       trim: true,
     },
+
     name: {
       type: String,
       required: true,
       trim: true,
     },
-    avatar: String,
+
+    avatar: {
+      type: String,
+      default: null,
+    },
+
+    timezone: {
+      type: String,
+      default: "Asia/Kolkata",
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+
+    is_disabled: {
+      type: Boolean,
+      default: false,
+    },
+
     auth: {
       provider: {
         type: String,
-        enum: ['google', 'email'],
+        enum: ["email", "google"],
         required: true,
+        default: "email",
       },
-      google_id: String,
-      password_hash: String,
-      email_verified: {
-        required: true,
-        type: Boolean,
-        default: false,
+
+      google_id: {
+        type: String,
+        default: null,
       },
-        otp_code: String,
-        otp_expires: Date,
+
+      password_hash: {
+        type: String,
+        default: null,
+      },
     },
+
     subscription: {
       plan: {
         type: String,
-        enum: ['free', 'pro'],
-        default: 'free',
+        enum: ["free", "pro"],
+        default: "free",
       },
+
       status: {
         type: String,
-        enum: ['active', 'cancelled', 'past_due'],
-        default: 'active',
+        enum: ["active", "cancelled", "past_due"],
+        default: "active",
       },
-      stripe_customer_id: String,
-      stripe_subscription_id: String,
-      current_period_start: Date,
-      current_period_end: Date,
-    },
-    
-    usage: {
-      posts_this_month: {
-        type: Number,
-        default: 0,
-      },
-      posts_limit: {
-        type: Number,
-        default: 10, // Free tier limit
-      },
-      ai_generations_this_month: {
-        type: Number,
-        default: 0,
-      },
-      ai_generations_limit: {
-        type: Number,
-        default: 30, // Free tier limit
-      },
-      last_reset: {
-        type: Date,
-        default: Date.now,
-      },
-      lifetime_stats: {
-        total_posts: {
-          type: Number,
-          default: 0,
-        },
-        total_ai_generations: {
-          type: Number,
-          default: 0,
-        },
-      },
-    },
-    
-    settings: {
-      timezone: {
+
+      stripe_customer_id: {
         type: String,
-        default: 'America/New_York',
+        default: null,
       },
-      notifications: {
-        email_on_post_published: {
-          type: Boolean,
-          default: true,
-        },
-        email_on_post_failed: {
-          type: Boolean,
-          default: true,
-        },
+
+      stripe_subscription_id: {
+        type: String,
+        default: null,
+      },
+
+      current_period_start: {
+        type: Date,
+        default: null,
+      },
+
+      current_period_end: {
+        type: Date,
+        default: null,
+      },
+
+      cancel_at_period_end: {
+        type: Boolean,
+        default: false,
       },
     },
-    
-    role: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+
+    last_login: {
+      type: Date,
+      default: null,
     },
-    
-    last_login: Date,
   },
   {
     timestamps: {
-      createdAt: 'created_at',
-      updatedAt: 'updated_at',
+      createdAt: "created_at",
+      updatedAt: "updated_at",
     },
   }
 );
 
+// Indexes
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ "auth.google_id": 1 }, { sparse: true }); // sparse for optional field
 
-export default mongoose.model<IUser>('User', UserSchema);
+export default mongoose.model<IUser>("User", UserSchema);
