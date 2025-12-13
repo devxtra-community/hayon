@@ -34,7 +34,7 @@ export default function LoginForm() {
   };
 
   return (
-    <Card className="border-2 shadow-xl">
+    <Card className="border-2 border-gray-300 shadow-xl">
       <CardHeader className="space-y-1">
         <CardTitle className="text-3xl font-bold text-center">Login</CardTitle>
         <CardDescription className="text-center text-base">

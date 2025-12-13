@@ -4,6 +4,8 @@ import dashboard_IMG from "@/assets/Dashboard.png"
 import logo_IMG from "@/assets/logo.png"
 import { BookOpen } from "lucide-react";
 import { Book } from "lucide-react";
+import Link from "next/link";
+import { CardImage } from "@/components/ui/card";
 
 
 export default function Home() {
@@ -28,8 +30,14 @@ export default function Home() {
 
       {/* buttons */}
       <Button variant={"outline"}>What is hayon</Button>
+
+      <Link href="/pricing">
       <Button variant={"outline"}>Pricing</Button>
+      </Link>
+
+      <Link href="/login">
       <Button variant={"outline"}>Login</Button>
+      </Link>
 
     </div>
 
@@ -75,14 +83,54 @@ export default function Home() {
 
 <section className="min-h-screen">
 
-<div className="flex items-center justify-center mt-7">
+<div className="flex items-center flex-col gap-3 justify-center mt-7">
 
  <h1>
-  <Button variant={"icon_outline"}> <Book></Book> How it works</Button>
+  <Button variant={"icon_outline"} > <BookOpen size={18}/> How it works</Button>
  </h1>
+
+ <h1 className="text-4xl">
+    How hayon works
+ </h1>
+
+ <p>
+hayon help people to reduce time your social account managing
+ </p>
+
+</div>
+
+
+<div className="parent mt-5 h-[70vh] w-full px-18">
+
+  <CardImage className="div1 "/>
+  <CardImage className="div2 "/>
+  <CardImage className="div3 "/>
+  <CardImage className="div4 "/>
+  <CardImage className="div5 "/>
 
 </div>
   
+
+</section>
+
+
+
+
+<section className="min-h-screen">
+<div className="flex items-center flex-col gap-3 justify-center mt-7">
+
+ <h1>
+  <Button variant={"icon_outline"} > <Book size={18}></Book> How it works</Button>
+ </h1>
+
+ <h1 className="text-4xl w-1/3 text-center">
+   Powerful Features 
+to Grow Your Audience
+ </h1>
+
+ 
+
+</div>
 
 </section>
 
