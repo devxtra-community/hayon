@@ -6,6 +6,8 @@ import { signupService } from "../services/auth.service";
 import { setCookieToken } from "../utils/setAuthCookies";
 import { requestOtpService } from "../services/auth.service";
 import { verifyOtpService } from "../services/auth.service";
+import { SuccessResponse,ErrorResponse } from "../utils/responses";
+
 
 export const requestOtp = async (req: Request, res: Response) => {
   try {
@@ -14,6 +16,7 @@ export const requestOtp = async (req: Request, res: Response) => {
     
     // Create a common class or funciton to generate response
     // new SuccessResponse("OTP send successfully", {data, status: 201})
+
     res.status(200).json({
       success: true,
       message: "OTP sent successfully",

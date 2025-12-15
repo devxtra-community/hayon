@@ -33,7 +33,6 @@ export interface IUser extends Document {
   updatedAt: Date;
 }
 
-// TODO: Use camel case, Use proper JS convention.
 
 const UserSchema = new Schema<IUser>(
   {

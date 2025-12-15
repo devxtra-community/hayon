@@ -56,12 +56,14 @@ export default function RegisterForm() {
     }, 1000);
   };
 
+
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 
     // need to todo.
 
   };
 
+  
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     
