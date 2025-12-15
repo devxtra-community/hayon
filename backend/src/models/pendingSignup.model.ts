@@ -4,7 +4,7 @@ export interface IPendingSignup extends Document {
   email: string;
   otp_hash: string;
   otp_attempts: number;
-
+  sendCount: number;
   createdAt: Date;
 }
 
@@ -27,11 +27,12 @@ const PendingSignupSchema = new Schema<IPendingSignup>({
     default: 0,
   },
 
+  sendCount: { type: Number, default: 0 },
+
   createdAt: {
     type: Date,
-    expires: 300, 
+    expires: 300,
   },
-
 });
 
 /// need to delete after some time , so check when, todo:

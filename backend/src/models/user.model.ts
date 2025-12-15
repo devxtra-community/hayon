@@ -29,9 +29,11 @@ export interface IUser extends Document {
 
   last_login: Date | null;
 
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+// TODO: Use camel case, Use proper JS convention.
 
 const UserSchema = new Schema<IUser>(
   {
@@ -134,10 +136,7 @@ const UserSchema = new Schema<IUser>(
     },
   },
   {
-    timestamps: {
-      createdAt: "created_at",
-      updatedAt: "updated_at",
-    },
+    timestamps: true,
   }
 );
 
