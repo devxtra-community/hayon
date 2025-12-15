@@ -28,7 +28,6 @@ export const requestOtpService = async (
   //  Generate 6-digit OTP
   const otp = crypto.randomInt(100000, 999999).toString();
 
-
   const otp_hash = await bcrypt.hash(otp, 10);
 
   await deletePendingByEmail(email);
@@ -37,7 +36,6 @@ export const requestOtpService = async (
   await createPendingSignup({
     email,
     otp_hash,
-    otp_expires: new Date(Date.now() + 5 * 60 * 1000), // 5 min
   });
 
   // SEND OTP EMAIL HERE 
@@ -47,6 +45,7 @@ export const requestOtpService = async (
 
   return true;
 };
+
 
 export const verifyOtpService = async (
   email: string,
@@ -64,9 +63,6 @@ export const verifyOtpService = async (
     throw new Error("OTP not found or expired");
   }
 
-  if (pending.otp_expires < new Date()) {
-    throw new Error("OTP expired");
-  }
 
   if (pending.otp_attempts >= 5) {
     throw new Error("Too many OTP attempts");
@@ -78,8 +74,10 @@ export const verifyOtpService = async (
     await updateOtpAttempts(email);
     throw new Error("Invalid OTP");
   }
+
   //need to delete pending after verification?
   await deletePendingByEmail(email);
+  
   return {
     email: pending.email
   };

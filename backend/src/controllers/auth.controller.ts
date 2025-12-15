@@ -12,6 +12,8 @@ export const requestOtp = async (req: Request, res: Response) => {
     const { email } = req.body;
     await requestOtpService(email);
 
+    
+
     res.status(200).json({
       success: true,
       message: "OTP sent successfully",

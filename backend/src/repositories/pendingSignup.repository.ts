@@ -11,7 +11,6 @@ export const deletePendingByEmail = (email: string) => {
 export const createPendingSignup = (data: {
   email: string;
   otp_hash: string;
-  otp_expires: Date;
 }) => {
   return PendingSignup.create(data);
 };

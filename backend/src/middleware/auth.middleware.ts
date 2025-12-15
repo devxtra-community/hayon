@@ -9,6 +9,7 @@ declare global {
   }
 }
 
+
 export const authenticate =  (
   req: Request,
   res: Response,
