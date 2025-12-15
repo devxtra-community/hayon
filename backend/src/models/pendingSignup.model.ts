@@ -44,7 +44,4 @@ const PendingSignupSchema = new Schema<IPendingSignup>(
 
 /// need to delete after some time , so check when, todo:
 
-export default mongoose.model<IPendingSignup>(
-  "PendingSignup",
-  PendingSignupSchema
-);
+export default mongoose.model<IPendingSignup>("PendingSignup", PendingSignupSchema);
