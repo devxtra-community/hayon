@@ -3,12 +3,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/lib/api";
+import { api, setAccessToken } from "@/lib/axios";
+import { AxiosError } from "axios";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -19,18 +27,28 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-      try {
-      const res = await api.post("/auth/login", { email, password });
-      if(res.data.success){
-        router.push("/dashboard");
-      }
+
+    try {
+      const { data } = await api.post("/auth/login", { email, password });
+
+      // Store access token in memory
+      setAccessToken(data.accessToken);
+
+      router.push("/dashboard");
     } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      alert(axiosError.response?.data?.message || "Login failed. Please try again.");
       console.error("Login error", error);
+    } finally {
+      setIsLoading(false); // Add this to reset loading state
     }
   };
 
   const handleGoogleSignIn = () => {
-    window.location.href = "http://localhost:5000/api/auth/google";
+    // Use environment variable instead of hardcoded URL
+    window.location.href = `${
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+    }/auth/google`;
   };
 
   return (
@@ -75,9 +93,7 @@ export default function LoginForm() {
             <Separator />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or continue with email
-            </span>
+            <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
           </div>
         </div>
 
@@ -98,10 +114,7 @@ export default function LoginForm() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link 
-                href="/forgot-password" 
-                className="text-sm text-[#318D62] hover:underline"
-              >
+              <Link href="/forgot-password" className="text-sm text-[#318D62] hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -130,10 +143,7 @@ export default function LoginForm() {
       <CardFooter className="flex flex-col space-y-4">
         <div className="text-center text-sm text-muted-foreground">
           Dont have an account?{" "}
-          <Link 
-            href="/register" 
-            className="text-[#318D62] font-semibold hover:underline"
-          >
+          <Link href="/register" className="text-[#318D62] font-semibold hover:underline">
             Register now
           </Link>
         </div>

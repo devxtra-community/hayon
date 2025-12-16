@@ -100,7 +100,7 @@ const userSchema = new Schema<IUser>(
     },
     subscription: {
       type: subscriptionSchema,
-      required: true,
+      default: () => ({}),
     },
     lastLogin: {
       type: Date,

@@ -1,11 +1,12 @@
 import express, { Application } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import passport from "passport";
+import dotenv from "dotenv";
+dotenv.config();
 import connectDB from "./config/database";
 import authRoutes from "./routes/auth.routes";
 import paymentRoutes from "./routes/payment.routes";
-import "./config/passport";
+import passport from "./config/passport";
 import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
 import { ENV } from "./config/env";
 

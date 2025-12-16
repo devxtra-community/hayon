@@ -34,7 +34,8 @@ export const ENV = {
    *  AUTH / JWT
    *  ====================== */
   AUTH: {
-    JWT_SECRET: required("JWT_SECRET"),
+    ACCESS_TOKEN_SECRET: required("ACCESS_TOKEN_SECRET"),
+    REFRESH_TOKEN_SECRET: required("REFRESH_TOKEN_SECRET"),
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? "7d",
   },
 

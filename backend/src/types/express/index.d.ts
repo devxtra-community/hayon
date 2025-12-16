@@ -1,13 +1,9 @@
-import { JWTPayload } from "../utils/jwt";
-
-
-// tod:why? 
-
+import { AuthContext } from "../auth";
 
 declare global {
   namespace Express {
     interface Request {
-      jwtUser?: JWTPayload;
+      auth?: AuthContext;
     }
   }
 }
