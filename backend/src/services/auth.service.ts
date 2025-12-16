@@ -20,7 +20,6 @@ export const requestOtpService = async (email: string) => {
 
   
   const sendCount = await findSendCount(email);
-  console.log("send count is " , sendCount)
   if((sendCount ?? 0 ) >= 2){
     throw new Error("Too many Requests")
   }
@@ -73,13 +72,15 @@ export const verifyOtpService = async (email: string, otp: string) => {
     throw new Error("Invalid OTP");
   }
 
-  //need to delete pending after verification?
+  //need to delete pending after verification ?,  yes need to delete
   await deletePendingByEmail(email);
   
   return {
     email: pending.email,
   };
 };
+
+
 
 // nned to fix signup servie
 export const signupService = async (data: any) => {

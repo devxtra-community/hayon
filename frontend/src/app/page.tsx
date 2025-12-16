@@ -125,14 +125,18 @@ hayon help people to reduce time your social account managing
 
  <h1 className="text-4xl w-1/3 text-center">
    Powerful Features 
-to Grow Your Audience
+   To Grow Your Audience
  </h1>
 
- 
+
 
 </div>
 
 </section>
+
+
+  
+
 
    </div>
   );
