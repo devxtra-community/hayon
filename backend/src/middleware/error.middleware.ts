@@ -1,17 +1,18 @@
-import express from "express"
+import express from "express";
+import { ErrorResponse } from "../utils/responses";
 
-export function serverErrorHandler(err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) {
+export function serverErrorHandler(
+  err: any,
+  _req: express.Request,
+  res: express.Response,
+  _next: express.NextFunction,
+) {
   console.error("Error:", err);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Internal server error",
-  });
-};
+  new ErrorResponse(err.message || "Internal server error", { status: err.status || 500 }).send(
+    res,
+  );
+}
 
- 
 export function notFoundHandler(req: express.Request, res: express.Response) {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-  })
+  new ErrorResponse("Route not found", { status: 404 }).send(res);
 }

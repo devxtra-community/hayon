@@ -6,27 +6,26 @@ import { signupService } from "../services/auth.service";
 import { setCookieToken } from "../utils/setAuthCookies";
 import { requestOtpService } from "../services/auth.service";
 import { verifyOtpService } from "../services/auth.service";
-import { SuccessResponse,ErrorResponse } from "../utils/responses";
+import { SuccessResponse, ErrorResponse } from "../utils/responses";
+import { JWTPayload } from "../utils/jwt";
 
+declare global {
+  namespace Express {
+    interface Request {
+      jwtUser?: JWTPayload;
+    }
+  }
+}
 
 export const requestOtp = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     await requestOtpService(email);
-    
-    // Create a common class or funciton to generate response
-    // new SuccessResponse("OTP send successfully", {data, status: 201})
 
-    res.status(200).json({
-      success: true,
-      message: "OTP sent successfully",
-    });
+    // Create a common class or funciton to generate response
+    new SuccessResponse("OTP send successfully", { status: 201 }).send(res);
   } catch (err: any) {
-    // new ErrorResponse("OTP send successfully", {data, status: 403})
-    res.status(400).json({
-      success: false,
-      message: err.message || "Failed to send OTP",
-    });
+    new ErrorResponse("Failed to send OTP", { status: 403 }).send(res);
   }
 };
 
@@ -36,16 +35,9 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
     const result = await verifyOtpService(email, otp);
 
-    res.status(200).json({
-      success: true,
-      message: "OTP verified successfully",
-      data: result,
-    });
+    new SuccessResponse("OTP verified successfully", { data: result }).send(res);
   } catch (err: any) {
-    res.status(400).json({
-      success: false,
-      message: err.message || "OTP verification failed",
-    });
+    new ErrorResponse("OTP verification failed", { status: 400 }).send(res);
   }
 };
 
@@ -54,9 +46,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const { user, token } = await signupService(req.body);
     setCookieToken(res, token);
 
-    res.status(201).json({
-      success: true,
-      message: "Account created successfully",
+    new SuccessResponse("Account created successfully", {
       data: {
         user: {
           id: user._id,
@@ -65,12 +55,10 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
           role: user.role,
         },
       },
-    });
+      status: 201,
+    }).send(res);
   } catch (err: any) {
-    res.status(400).json({
-      success: false,
-      message: err.message || "Signup failed",
-    });
+    new ErrorResponse(err.message || "Signup failed", { status: 400 }).send(res);
   }
 };
 
@@ -79,38 +67,25 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({
-        success: false,
-        message: "Email and password are required",
-      });
+      new ErrorResponse("Email and password are required", { status: 400 }).send(res);
       return;
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
+      new ErrorResponse("Invalid email or password", { status: 401 }).send(res);
       return;
     }
 
     if (user.auth.provider !== "email" || !user.auth.passwordHash) {
-      res.status(400).json({
-        success: false,
-        message: "Please login with Google",
-      });
+      new ErrorResponse("Please login with Google", { status: 400 }).send(res);
       return;
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.auth.passwordHash);
 
     if (!isPasswordValid) {
-      res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-      // throw new ErrorResponse ("Invalid email or password", {satusCode: 401})
+      new ErrorResponse("Invalid email or password", { status: 401 }).send(res);
       return;
     }
 
@@ -125,9 +100,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     setCookieToken(res, token);
 
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
+    new SuccessResponse("Login successful", {
       data: {
         user: {
           id: user._id,
@@ -138,13 +111,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           subscription: user.subscription,
         },
       },
-    });
+    }).send(res);
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during login",
-    });
+    new ErrorResponse("Server error during login", { status: 500 }).send(res);
   }
 };
 
@@ -154,30 +124,19 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
     const user = await User.findById(req.jwtUser?.userId).select("-auth.password_hash");
 
     if (!user) {
-      res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      new ErrorResponse("User not found", { status: 404 }).send(res);
       return;
     }
 
-    res.status(200).json({
-      success: true,
-      user,
-    });
+    new SuccessResponse("User fetched successfully", { data: { user } }).send(res);
+   
   } catch (error) {
     console.error("Get user error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    new ErrorResponse("Server error fetching user", { status: 500 }).send(res);
   }
 };
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
   res.clearCookie("token");
-  res.status(200).json({
-    success: true,
-    message: "Logged out successfully",
-  });
+  new SuccessResponse("Logged out successfully").send(res);
 };

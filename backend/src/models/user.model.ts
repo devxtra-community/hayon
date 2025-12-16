@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IUser, IUserAuth, IUserSubscription } from "../types/index";
+import { IUser, IUserAuth, IUserSubscription } from "../interfaces/user.interface";
 
 // Auth Subdocument Schema
 

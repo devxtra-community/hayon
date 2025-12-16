@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IPendingSignup } from "../types";
+import { IPendingSignup } from "../interfaces/otp.interface";
 
 const PendingSignupSchema = new Schema<IPendingSignup>({
   email: {

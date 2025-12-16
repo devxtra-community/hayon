@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
+import { ErrorResponse } from '../utils/responses';
 
 export const authenticate =  (
   req: Request,
@@ -11,10 +12,7 @@ export const authenticate =  (
     const token = req.cookies.token;
    
     if (!token) {
-      res.status(401).json({
-        success: false,
-        message: 'No token provided',
-      });
+      new ErrorResponse('No token provided', { status: 401 }).send(res);
       return;
     }
     const decoded = verifyToken(token);
@@ -22,9 +20,6 @@ export const authenticate =  (
     
     next();
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: 'Invalid or expired token',
-    });
+    new ErrorResponse('Invalid or expired token', { status: 401 }).send(res);
   }
 };
