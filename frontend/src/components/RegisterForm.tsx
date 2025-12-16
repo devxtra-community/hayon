@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, ArrowRight, Check, Upload, User } from "lucide-react";
 
 type Step = "email" | "otp" | "details";
@@ -22,8 +22,26 @@ export default function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [isResending, setIsResending] = useState(false);
 
   const progress = step === "email" ? 33 : step === "otp" ? 66 : 100;
+
+  // Timer effect for OTP resend cooldown
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const interval = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [resendTimer]);
 
   const handleGoogleSignUp = () => {
     console.log("Google OAuth sign up");
@@ -34,36 +52,103 @@ export default function RegisterForm() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Add your OTP sending API call here
-    console.log("Sending OTP to:", email);
-    
-    setTimeout(() => {
+    try {
+      // Add your OTP sending API call here
+      const response = await fetch('/api/auth/request-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStep("otp");
+        setResendTimer(15); // Start 15-second cooldown
+      } else {
+        alert(data.message || "Failed to send OTP");
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      alert("Failed to send OTP. Please try again.");
+    } finally {
       setIsLoading(false);
-      setStep("otp");
-    }, 1000);
+    }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Add your OTP verification API call here
-    console.log("Verifying OTP:", otp);
-    
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep("details");
-    }, 1000);
-  };
+    try {
+      // Add your OTP verification API call here
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp }),
+      });
 
+      const data = await response.json();
+
+      if (data.success) {
+        setStep("details");
+      } else {
+        alert(data.message || "Invalid OTP");
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      alert("Failed to verify OTP. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-
-    // need to todo.
-
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  
+  const handleResendOTP = async () => {
+    if (resendTimer > 0 || isResending) return;
+    
+    setIsResending(true);
+    
+    try {
+      // Add your OTP resend API call here
+      const response = await fetch('/api/auth/request-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResendTimer(15); // Restart 15-second cooldown
+        alert("OTP sent successfully!");
+      } else {
+        alert(data.message || "Failed to resend OTP");
+      }
+    } catch (error) {
+      console.error("Failed to resend OTP:", error);
+      alert("Failed to resend OTP. Please try again.");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -74,21 +159,38 @@ export default function RegisterForm() {
     
     setIsLoading(true);
     
-    const userData = {
-      email,
-      name,
-      password,
-      avatar,
-    };
-    
-    console.log("Completing registration:", userData);
-    
-    // Add your registration API call here
-    setTimeout(() => {
+    try {
+      const userData = {
+        email,
+        name,
+        password,
+        avatar,
+      };
+      
+      // Add your registration API call here
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Registration successful!");
+        // Redirect to dashboard or login
+        window.location.href = '/dashboard';
+      } else {
+        alert(data.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Error completing registration:", error);
+      alert("Failed to complete registration. Please try again.");
+    } finally {
       setIsLoading(false);
-      // Redirect to dashboard or login
-      alert("Registration successful!");
-    }, 1000);
+    }
   };
 
   return (
@@ -146,7 +248,7 @@ export default function RegisterForm() {
               </div>
             </div>
 
-            <form onSubmit={handleSendOTP} className="space-y-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
@@ -164,20 +266,20 @@ export default function RegisterForm() {
               </div>
 
               <Button
-                type="submit"
+                onClick={handleSendOTP}
                 className="w-full h-12 text-base font-semibold gradient hover:opacity-90 transition-opacity"
                 disabled={isLoading || !email}
               >
                 {isLoading ? "Sending..." : "Send Verification Code"}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-            </form>
+            </div>
           </>
         )}
 
         {/* STEP 2: OTP Verification */}
         {step === "otp" && (
-          <form onSubmit={handleVerifyOTP} className="space-y-6">
+          <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="otp">Verification Code</Label>
               <Input
@@ -194,19 +296,25 @@ export default function RegisterForm() {
                 Didnt receive the code?{" "}
                 <button
                   type="button"
-                  className="text-[#318D62] hover:underline font-semibold"
-                  onClick={(e) => {
-                    // e.preventDefault();
-                    // handleSendOTP(e as any);
-                  }}
+                  className={`font-semibold ${
+                    resendTimer > 0 || isResending
+                      ? "text-muted-foreground cursor-not-allowed"
+                      : "text-[#318D62] hover:underline"
+                  }`}
+                  onClick={handleResendOTP}
+                  disabled={resendTimer > 0 || isResending}
                 >
-                  Resend
+                  {isResending
+                    ? "Sending..."
+                    : resendTimer > 0
+                    ? `Resend in ${resendTimer}s`
+                    : "Resend"}
                 </button>
               </p>
             </div>
 
             <Button
-              type="submit"
+              onClick={handleVerifyOTP}
               className="w-full h-12 text-base font-semibold gradient hover:opacity-90 transition-opacity"
               disabled={isLoading || otp.length !== 6}
             >
@@ -222,12 +330,12 @@ export default function RegisterForm() {
             >
               Change Email
             </Button>
-          </form>
+          </div>
         )}
 
         {/* STEP 3: User Details */}
         {step === "details" && (
-          <form onSubmit={handleCompleteRegistration} className="space-y-4">
+          <div className="space-y-4">
             {/* Avatar Upload */}
             <div className="flex flex-col items-center space-y-3">
               <Avatar className="w-24 h-24">
@@ -295,13 +403,13 @@ export default function RegisterForm() {
             </div>
 
             <Button
-              type="submit"
+              onClick={handleCompleteRegistration}
               className="w-full h-12 text-base font-semibold gradient hover:opacity-90 transition-opacity"
               disabled={isLoading}
             >
               {isLoading ? "Creating Account..." : "Complete Registration"}
             </Button>
-          </form>
+          </div>
         )}
       </CardContent>
 
