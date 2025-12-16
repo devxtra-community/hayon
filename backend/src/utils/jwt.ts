@@ -1,15 +1,15 @@
 import jwt, { Secret } from 'jsonwebtoken';
-
 import dotenv from 'dotenv';
+import { ENV } from '../config/env';
 dotenv.config();
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET as Secret;
+const JWT_SECRET: Secret = ENV.AUTH.JWT_SECRET as Secret;
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined');
 }
 
-const JWT_EXPIRES_IN = '7d';
+const JWT_EXPIRES_IN = ENV.AUTH.JWT_EXPIRES_IN || '7d';
 
 export interface JWTPayload {
   userId: string;

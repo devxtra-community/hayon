@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
 import { SuccessResponse,ErrorResponse } from "../utils/responses";
+import {ENV} from "../config/env";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+const stripe = new Stripe(ENV.STRIPE.SECRET_KEY as string);
 
 export const createCheckoutSession = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -25,8 +26,8 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
         },
       ],
       mode: "subscription",
-      success_url: `${process.env.FRONTEND_URL}/payment/success`,
-      cancel_url: `${process.env.FRONTEND_URL}/payment/cancel`,
+      success_url: `${ENV.APP.FRONTEND_URL}/payment/success`,
+      cancel_url: `${ENV.APP.FRONTEND_URL}/payment/cancel`,
     });
 
     new SuccessResponse("Checkout session created", { data: { url: session.url } }).send(res);

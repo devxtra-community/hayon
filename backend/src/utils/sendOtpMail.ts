@@ -1,11 +1,12 @@
 import { transporter } from "../config/mailer";
+import { ENV } from "../config/env";
 
 export const sendOtpMail = async (
   email: string,
   otp: string
 ): Promise<void> => {
   await transporter.sendMail({
-    from: `"Hayon" <${process.env.EMAIL_USER}>`,
+    from: `"Hayon" <${ENV.EMAIL.USER}>`,
     to: email,
     subject: "Hayon OTP Code",
     html: `

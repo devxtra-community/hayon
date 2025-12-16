@@ -11,6 +11,7 @@ import {
 import { authenticate } from "../middleware/auth.middleware";
 import { generateToken } from "../utils/jwt";
 import cookieParser from "cookie-parser";
+import { ENV } from "../config/env";
 
 const router = express.Router();
 
@@ -37,7 +38,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_auth_failed`,
+    failureRedirect: `${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`,
   }),
   (req, res) => {
     try {
@@ -51,15 +52,15 @@ router.get(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: ENV.APP.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=true`);
+      res.redirect(`${ENV.APP.FRONTEND_URL}/auth/callback?success=true`);
     } catch (error) {
       res.redirect(
-        `${process.env.FRONTEND_URL}/login?error=token_generation_failed`
+        `${ENV.APP.FRONTEND_URL}/login?error=token_generation_failed`
       );
     }
   }
