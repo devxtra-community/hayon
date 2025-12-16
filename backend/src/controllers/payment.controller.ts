@@ -18,7 +18,7 @@ export const createCheckoutSession = async (
               name: 'Pro Plan',
               description: 'Monthly subscription',
             },
-            unit_amount: 999, // $9.99 in cents
+            unit_amount: 999,
             recurring: {
               interval: 'month',
             },

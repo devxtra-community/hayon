@@ -42,12 +42,8 @@ export const requestOtpService = async (email: string) => {
     });
   }
 
-
-  // SEND OTP EMAIL HERE
   await sendOtpMail(email,otp);
   await updateOtpSendCount(email);
-
-  // Nodemailer setup , todo:
 
   return true;
 };
@@ -66,11 +62,11 @@ export const verifyOtpService = async (email: string, otp: string) => {
   }
 
 
-  if (pending.otp_attempts >= 5) {
+  if (pending.otpAttempts >= 5) {
     throw new Error("Too many OTP attempts");
   }
 
-  const isValid = await bcrypt.compare(otp, pending.otp_hash);
+  const isValid = await bcrypt.compare(otp, pending.otpHash);
 
   if (!isValid) {
     await updateOtpAttempts(email);

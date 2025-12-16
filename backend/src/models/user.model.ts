@@ -1,41 +1,69 @@
-import mongoose, { Document, Schema, Types } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import { IUser, IUserAuth, IUserSubscription } from "../types/index";
 
-export interface IUser extends Document {
-  _id: Types.ObjectId;
+// Auth Subdocument Schema
 
-  email: string;
-  name: string;
-  avatar: string | null;
-  timezone: string;
+const authSchema = new Schema<IUserAuth>(
+  {
+    provider: {
+      type: String,
+      enum: ["email", "google"],
+      required: true,
+      default: "email",
+    },
+    googleId: {
+      type: String,
+      default: null,
+    },
+    passwordHash: {
+      type: String,
+      default: null,
+    },
+  },
+  { _id: false }
+);
 
-  role: "user" | "admin";
-  is_disabled: boolean;
+// Subscription Subdocument Schema
 
-  auth: {
-    provider: "email" | "google";
-    google_id: string | null;
-    password_hash: string | null;
-  };
+const subscriptionSchema = new Schema<IUserSubscription>(
+  {
+    plan: {
+      type: String,
+      enum: ["free", "pro"],
+      default: "free",
+    },
+    status: {
+      type: String,
+      enum: ["active", "cancelled", "pastDue"],
+      default: "active",
+    },
+    stripeCustomerId: {
+      type: String,
+      default: null,
+    },
+    stripeSubscriptionId: {
+      type: String,
+      default: null,
+    },
+    currentPeriodStart: {
+      type: Date,
+      default: null,
+    },
+    currentPeriodEnd: {
+      type: Date,
+      default: null,
+    },
+    cancelAtPeriodEnd: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { _id: false }
+);
 
-  subscription: {
-    plan: "free" | "pro";
-    status: "active" | "cancelled" | "past_due";
-    stripe_customer_id: string | null;
-    stripe_subscription_id: string | null;
-    current_period_start: Date | null;
-    current_period_end: Date | null;
-    cancel_at_period_end: boolean;
-  };
+// Main User Schema
 
-  last_login: Date | null;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// TODO: Use camel case, Use proper JS convention.
-
-const UserSchema = new Schema<IUser>(
+const userSchema = new Schema<IUser>(
   {
     email: {
       type: String,
@@ -44,93 +72,37 @@ const UserSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
-
     name: {
       type: String,
       required: true,
       trim: true,
     },
-
     avatar: {
       type: String,
       default: null,
     },
-
     timezone: {
       type: String,
       default: "Asia/Kolkata",
     },
-
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
-
-    is_disabled: {
+    isDisabled: {
       type: Boolean,
       default: false,
     },
-
     auth: {
-      provider: {
-        type: String,
-        enum: ["email", "google"],
-        required: true,
-        default: "email",
-      },
-
-      google_id: {
-        type: String,
-        default: null,
-      },
-
-      password_hash: {
-        type: String,
-        default: null,
-      },
+      type: authSchema,
+      required: true,
     },
-
     subscription: {
-      plan: {
-        type: String,
-        enum: ["free", "pro"],
-        default: "free",
-      },
-
-      status: {
-        type: String,
-        enum: ["active", "cancelled", "past_due"],
-        default: "active",
-      },
-
-      stripe_customer_id: {
-        type: String,
-        default: null,
-      },
-
-      stripe_subscription_id: {
-        type: String,
-        default: null,
-      },
-
-      current_period_start: {
-        type: Date,
-        default: null,
-      },
-
-      current_period_end: {
-        type: Date,
-        default: null,
-      },
-
-      cancel_at_period_end: {
-        type: Boolean,
-        default: false,
-      },
+      type: subscriptionSchema,
+      required: true,
     },
-
-    last_login: {
+    lastLogin: {
       type: Date,
       default: null,
     },
@@ -141,7 +113,8 @@ const UserSchema = new Schema<IUser>(
 );
 
 // Indexes
-UserSchema.index({ email: 1 }, { unique: true });
-UserSchema.index({ "auth.google_id": 1 }, { sparse: true }); // sparse for optional field
 
-export default mongoose.model<IUser>("User", UserSchema);
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ "auth.googleId": 1 }, { sparse: true });
+
+export default mongoose.model<IUser>("User", userSchema);

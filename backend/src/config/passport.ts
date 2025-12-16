@@ -2,6 +2,10 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/user.model';
 
+
+
+// need to do as repository.
+
 passport.use(
   new GoogleStrategy(
     {
@@ -12,11 +16,11 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         // Check if user exists
-        let user = await User.findOne({ 'auth.google_id': profile.id });
+        let user = await User.findOne({ 'auth.googleId': profile.id });
         
         if (user) {
           // Update last login
-          user.last_login = new Date();
+          user.lastLogin = new Date();
           await user.save();
           return done(null, user);
         }
@@ -38,11 +42,11 @@ passport.use(
           avatar: profile.photos?.[0].value,
           auth: {
             provider: 'google',
-            google_id: profile.id,
-            email_verified: true,
+            googleId: profile.id,
+            emailVerified: true,
           },
           role: 'user',
-          last_login: new Date(),
+          lastLogin: new Date(),
         });
         
         done(null, user);

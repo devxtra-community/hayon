@@ -1,15 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, JWTPayload } from '../utils/jwt';
-
-// TODO: WHY ???. Move to types folder
-declare global {
-  namespace Express {
-    interface Request {
-      jwtUser?: JWTPayload;
-    }
-  }
-}
-
+import { verifyToken } from '../utils/jwt';
 
 export const authenticate =  (
   req: Request,

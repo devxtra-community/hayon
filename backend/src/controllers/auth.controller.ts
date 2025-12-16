@@ -92,7 +92,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (user.auth.provider !== "email" || !user.auth.password_hash) {
+    if (user.auth.provider !== "email" || !user.auth.passwordHash) {
       res.status(400).json({
         success: false,
         message: "Please login with Google",
@@ -100,7 +100,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.auth.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.auth.passwordHash);
 
     if (!isPasswordValid) {
       res.status(401).json({
@@ -111,7 +111,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    user.last_login = new Date();
+    user.lastLogin = new Date();
     await user.save();
 
     const token = generateToken({
