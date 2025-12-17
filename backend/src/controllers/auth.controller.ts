@@ -4,6 +4,8 @@ import { requestOtpService } from "../services/auth.service";
 import { verifyOtpService } from "../services/auth.service";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import { setRefreshTokenCookie } from "../utils/setAuthCookies";
+import { ENV } from "../config/env";
+import { logoutAllService } from "../services/auth.service";
 
 export const requestOtp = async (req: Request, res: Response) => {
   try {
@@ -144,19 +146,46 @@ export const getCurrentUser = async (
 };
 
 
-
-export const logout = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const logout = async (req: Request, res: Response): Promise<void> => {
   const refreshToken = req.cookies.refreshToken;
 
   if (refreshToken) {
     await logoutService(refreshToken);
   }
+  
+  // ✅ Clear cookie with SAME path as set
   res.clearCookie("refreshToken", {
     path: "/auth/refresh",
+    httpOnly: true,
+    secure: ENV.APP.NODE_ENV === "production",
+    sameSite: "strict",
   });
 
   new SuccessResponse("Logged out successfully").send(res);
+};
+
+
+export const logoutAll = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.auth) {
+      new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+      return;
+    }
+
+    await logoutAllService(req.auth.id);
+    
+    // Clear current refresh token cookie
+    res.clearCookie("refreshToken", {
+      path: "/auth/refresh",
+      httpOnly: true,
+      secure: ENV.APP.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    new SuccessResponse("Logged out from all devices").send(res);
+  } catch (err: any) {
+    new ErrorResponse(err.message || "Logout failed", {
+      status: 500,
+    }).send(res);
+  }
 };

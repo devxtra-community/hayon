@@ -45,11 +45,13 @@ export const googleOAuthCallback = async (
 
     setRefreshTokenCookie(res, refreshToken);
 
-    // Redirect with access token (or use fragment)
+ //   Used  fragment
     res.redirect(
-      `${process.env.FRONTEND_URL}/auth/callback?accessToken=${accessToken}`
+      `${process.env.FRONTEND_URL}/auth/callback#accessToken=${accessToken}`
     );
   } catch (error) {
-    new ErrorResponse("Google login failed", { status: 500 }).send(res);
+    res.redirect(
+      `${process.env.FRONTEND_URL}/login?error=google_auth_failed`
+    );
   }
 };

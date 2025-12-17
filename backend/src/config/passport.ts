@@ -1,10 +1,9 @@
+// config/passport.ts
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/user.model";
 import { ENV } from './env';
 
-
-//need to do as repository.
 passport.use(
   new GoogleStrategy(
     {
@@ -17,7 +16,7 @@ passport.use(
         const email = profile.emails?.[0]?.value?.toLowerCase();
 
         if (!email) {
-          return done(new Error("Google account has no email"), false);
+          return done(null, false, { message: "no_email" }); // ✅ Return error info
         }
 
         let user = await User.findOne({ "auth.googleId": profile.id });
@@ -26,10 +25,8 @@ passport.use(
           const existingEmailUser = await User.findOne({ email });
 
           if (existingEmailUser) {
-            return done(
-              new Error("Email already registered with different method"),
-              false
-            );
+            // ✅ Return specific error message
+            return done(null, false, { message: "email_exists_different_provider" });
           }
 
           user = await User.create({
@@ -48,7 +45,6 @@ passport.use(
           await user.save();
         }
 
-        // ✅ Return ONLY what OAuth needs
         return done(null, {
           userId: user._id.toString(),
           role: user.role,

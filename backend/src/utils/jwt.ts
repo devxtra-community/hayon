@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import { ENV } from '../config/env';
 dotenv.config();
 
-/* ===================== SECRETS ===================== */
 
 const ACCESS_TOKEN_SECRET: Secret = ENV.AUTH.ACCESS_TOKEN_SECRET as Secret;
 const REFRESH_TOKEN_SECRET: Secret = ENV.AUTH.REFRESH_TOKEN_SECRET as Secret;
@@ -13,12 +12,9 @@ if (!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET) {
   throw new Error("JWT secrets are not defined");
 }
 
-/* ===================== EXPIRY ===================== */
-
 const ACCESS_TOKEN_EXPIRES_IN = "10m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
-/* ===================== PAYLOADS ===================== */
 
 export interface AccessTokenPayload {
   sub: string;
@@ -29,8 +25,6 @@ export interface RefreshTokenPayload {
   sub: string;
   tokenId: string;
 }
-
-/* ===================== GENERATORS ===================== */
 
 export const generateAccessToken = (
   payload: AccessTokenPayload
@@ -48,7 +42,6 @@ export const generateRefreshToken = (
   });
 };
 
-/* ===================== VERIFIERS ===================== */
 
 export const verifyAccessToken = (
   token: string

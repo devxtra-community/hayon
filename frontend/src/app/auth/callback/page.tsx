@@ -1,25 +1,36 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { setAccessToken } from '@/lib/axios';
 
 export default function AuthCallback() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const success = searchParams.get('success');
-    const error = searchParams.get('error');
+    // Extract from fragment (#)
+    const hash = window.location.hash.substring(1); // Remove #
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('accessToken');
+    const error = new URLSearchParams(window.location.search).get('error');
 
     if (error) {
       router.push(`/login?error=${error}`);
       return;
     }
 
-    if (success) {
+    if (accessToken) {
+      // Store in memory
+      setAccessToken(accessToken);
+      
+      // Clean URL
+      window.history.replaceState({}, document.title, '/auth/callback');
+      
       router.push('/dashboard');
+    } else {
+      router.push('/login?error=no_token');
     }
-  }, [searchParams, router]);
+  }, [router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -13,17 +14,39 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, setAccessToken } from "@/lib/axios";
 import { AxiosError } from "axios";
 
 export default function LoginForm() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    if (error) {
+      const errorMessages: Record<string, string> = {
+        email_exists_different_provider:
+          "This email is already registered with email/password. Please login with your password instead.",
+        no_email: "Unable to get email from Google account. Please try again.",
+        google_auth_failed: "Google authentication failed. Please try again.",
+        session_expired: "Your session has expired. Please login again.",
+      };
+
+      const message = errorMessages[error] || "An error occurred. Please try again.";
+
+      // Show alert, toast, or error component
+      alert(message);
+
+      // Optional: Clear error from URL
+      window.history.replaceState({}, "", "/login");
+    }
+  }, [error]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);

@@ -9,25 +9,25 @@ import {
   requestOtp,
   verifyOtp,
   refresh,
+  logoutAll,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { ENV } from "../config/env";
+import { logoutAllService } from "../services/auth.service";
 
+const router = express.Router();
 
-  const router = express.Router();
+router.post("/signup", signup);
+router.post("/login", login);
+router.post("/request-otp", requestOtp);
+router.post("/verify-otp", verifyOtp);
+router.post("/refresh", refresh);
 
-  router.post("/signup", signup);
-  router.post("/login", login);
-  router.post("/request-otp", requestOtp);
-  router.post("/verify-otp", verifyOtp);
-  router.post("/refresh", refresh);
+router.get("/me", authenticate, getCurrentUser);
 
-  router.get("/me", authenticate, getCurrentUser);
-
-  // Logout user
-  router.delete("/logout", logout);
-
-
+// Logout user
+router.delete("/logout", logout);
+router.delete("/logout/all", authenticate, logoutAll);
 
 // Google OAuth Routes
 router.get(
@@ -35,15 +35,33 @@ router.get(
   passport.authenticate("google", {
     scope: ["profile", "email"],
     session: false,
-  })
+  }),
 );
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: `${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`,
-  }),
+  (req, res, next) => {
+    passport.authenticate("google", { session: false }, (err, user, info) => {
+      // ✅ Custom callback to handle errors
+      if (err) {
+        console.error("Google OAuth error:", err);
+        return res.redirect(
+          `${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`
+        );
+      }
+
+      if (!user) {
+        // ✅ Handle specific error messages
+        const errorMessage = info?.message || "google_auth_failed";
+        return res.redirect(
+          `${ENV.APP.FRONTEND_URL}/login?error=${errorMessage}`
+        );
+      }
+
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   googleOAuthCallback
 );
 
