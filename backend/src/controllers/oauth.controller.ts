@@ -33,10 +33,10 @@ export const googleOAuthCallback = async (
       expiresAt,
     });
 
-    const accessToken = generateAccessToken({
-      sub: oauthUser.userId,
-      role: oauthUser.role,
-    });
+    // const accessToken = generateAccessToken({
+    //   sub: oauthUser.userId,
+    //   role: oauthUser.role,
+    // });
 
     const refreshToken = generateRefreshToken({
       sub: oauthUser.userId,
@@ -46,9 +46,11 @@ export const googleOAuthCallback = async (
     setRefreshTokenCookie(res, refreshToken);
 
  //   Used  fragment
-    res.redirect(
-      `${process.env.FRONTEND_URL}/auth/callback#accessToken=${accessToken}`
-    );
+    // res.redirect(
+    //   `${process.env.FRONTEND_URL}/auth/callback#accessToken=${accessToken}`
+    // );
+
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=true`);
   } catch (error) {
     res.redirect(
       `${process.env.FRONTEND_URL}/login?error=google_auth_failed`
