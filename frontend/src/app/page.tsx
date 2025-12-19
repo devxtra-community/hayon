@@ -1,14 +1,46 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import dashboard_IMG from "@/assets/Dashboard.png"
 import logo_IMG from "@/assets/logo.png"
 import { BookOpen } from "lucide-react";
 import { Book } from "lucide-react";
 import Link from "next/link";
 import { CardImage } from "@/components/ui/card";
+import { useEffect } from "react";
+import { api, } from '@/lib/axios';
+import { useRouter } from "next/navigation";
 
 
 export default function Home() {
+
+   const router = useRouter();
+   useEffect(() => {
+      const checkAuth = async () => {
+          try {
+            const { data } = await api.get('/auth/me');
+          
+            console.log("role" , data.data.role);
+             if(data.data.role == 'user'){
+               router.push('/dashboard');
+               return;
+             }
+             else if(data.data.role == 'admin'){
+                  router.push('/admin/dashboard');
+                  return;
+             }
+  
+          } catch (error) {
+            // do nothing
+            return;
+          }
+        }
+  
+       
+    
+  
+      checkAuth();
+    }, []);
+
   return (
    <div >
 

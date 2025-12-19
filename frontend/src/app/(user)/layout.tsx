@@ -25,6 +25,11 @@ export default function ProtectedLayout({
           const { data } = await api.post('/auth/refresh');
           setAccessToken(data.data.accessToken);
           token = data.data.accessToken;
+           if(data.data.role !== 'user'){
+             router.push('/admin/dashboard');
+             return;
+           }
+
         } catch (error) {
           // No valid refresh token - redirect to login
           router.push('/login');
