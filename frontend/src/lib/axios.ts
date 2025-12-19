@@ -1,27 +1,14 @@
-import axios, {
-  AxiosError,
-  AxiosInstance,
-  InternalAxiosRequestConfig,
-} from 'axios';
+import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
-/* -------------------------------------------------------------------------- */
-/*                               API INSTANCE                                 */
-/* -------------------------------------------------------------------------- */
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // sends httpOnly refresh cookie
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
-
-/* -------------------------------------------------------------------------- */
-/*                         IN-MEMORY ACCESS TOKEN                              */
-/* -------------------------------------------------------------------------- */
 
 let accessToken: string | null = null;
 
@@ -35,10 +22,6 @@ export const clearAccessToken = () => {
   accessToken = null;
 };
 
-/* -------------------------------------------------------------------------- */
-/*                         REQUEST INTERCEPTOR                                 */
-/* -------------------------------------------------------------------------- */
-
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (accessToken) {
@@ -47,12 +30,8 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error: AxiosError) => Promise.reject(error)
+  (error: AxiosError) => Promise.reject(error),
 );
-
-/* -------------------------------------------------------------------------- */
-/*                         RESPONSE INTERCEPTOR                                 */
-/* -------------------------------------------------------------------------- */
 
 type FailedRequest = {
   resolve: (token: string | null) => void;
@@ -62,10 +41,7 @@ type FailedRequest = {
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
 
-const processQueue = (
-  error: AxiosError | null,
-  token: string | null = null
-) => {
+const processQueue = (error: AxiosError | null, token: string | null = null) => {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) {
       reject(error);
@@ -87,7 +63,7 @@ api.interceptors.response.use(
     if (
       !originalRequest ||
       error.response?.status !== 401 ||
-      originalRequest.url?.includes('/auth/refresh') ||
+      originalRequest.url?.includes("/auth/refresh") ||
       originalRequest._retry
     ) {
       return Promise.reject(error);
@@ -113,7 +89,7 @@ api.interceptors.response.use(
     try {
       const { data } = await api.post<{
         data: { accessToken: string };
-      }>('/auth/refresh');
+      }>("/auth/refresh");
 
       const newAccessToken = data.data.accessToken;
 
@@ -125,21 +101,18 @@ api.interceptors.response.use(
 
       return api(originalRequest);
     } catch (refreshError) {
-      const axiosError =
-        refreshError instanceof AxiosError
-          ? refreshError
-          : error;
+      const axiosError = refreshError instanceof AxiosError ? refreshError : error;
 
       processQueue(axiosError, null);
       clearAccessToken();
-
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login?session=expired';
+      
+      if (typeof window !== "undefined") {
+        window.location.href = "/login?session=expired";
       }
 
       return Promise.reject(axiosError);
     } finally {
       isRefreshing = false;
     }
-  }
+  },
 );

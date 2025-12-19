@@ -16,7 +16,7 @@ export const requestOtp = async (req: Request, res: Response) => {
     new SuccessResponse("OTP send successfully", { status: 201 }).send(res);
   } catch (err: any) {
     console.log(err);
-    new ErrorResponse("Failed to send OTP", { status: 403 }).send(res);
+    new ErrorResponse(err.message || "Failed to send OTP", { status: 403 }).send(res);
   }
 };
 
@@ -153,9 +153,9 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     await logoutService(refreshToken);
   }
   
-  // ✅ Clear cookie with SAME path as set
+  // Clear cookie with SAME path as set
   res.clearCookie("refreshToken", {
-    path: "/auth/refresh",
+    path: "api/auth/refresh",
     httpOnly: true,
     secure: ENV.APP.NODE_ENV === "production",
     sameSite: "strict",

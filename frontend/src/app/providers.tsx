@@ -10,7 +10,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data } = await api.post('/auth/refresh');
         setAccessToken(data.data.accessToken);
-      } catch (error) {
+      } catch ( error ) {
         // No valid refresh token - user needs to login
         console.log('No active session');
       }
@@ -19,5 +19,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
-  return <>{children}</>;
+  return <>{children}</>; 
 }

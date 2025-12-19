@@ -1,23 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
+import { ErrorResponse } from '../utils/responses';
 
 export const isAdmin = (
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  if (!req.jwtUser) {
-    res.status(401).json({
-      success: false,
-      message: 'Authentication required',
-    });
+  if (!req.auth) {
+    new ErrorResponse("Unauthorized", { status: 401 }).send(res);
     return;
   }
   
-  if (req.jwtUser.role !== 'admin') {
-    res.status(403).json({
-      success: false,
-      message: 'Admin access required',
-    });
+  if (req.auth.role !== 'admin') {
+    new ErrorResponse("Forbidden - Admin only", { status: 403 }).send(res);
     return;
   }
   
