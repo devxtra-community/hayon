@@ -19,12 +19,12 @@ export default function Home() {
           try {
             const { data } = await api.get('/auth/me');
           
-            console.log("role" , data.data.role);
-             if(data.data.role == 'user'){
+            console.log("role" , data.data.user.role);
+             if(data.data.user.role == 'user'){
                router.push('/dashboard');
                return;
              }
-             else if(data.data.role == 'admin'){
+             else if(data.data.user.role == 'admin'){
                   router.push('/admin/dashboard');
                   return;
              }
