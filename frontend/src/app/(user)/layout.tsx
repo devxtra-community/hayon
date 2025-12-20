@@ -1,22 +1,18 @@
 // app/(protected)/layout.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { api, getAccessToken, setAccessToken } from '@/lib/axios';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, getAccessToken, setAccessToken } from "@/lib/axios";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
 }
 
-export default function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,35 +21,29 @@ export default function ProtectedLayout({
     const checkAuth = async () => {
       let token = getAccessToken();
 
-      // Step 1: If no token in memory, try to refresh
       if (!token) {
         try {
-          const { data } = await api.post('/auth/refresh');
+          const { data } = await api.post("/auth/refresh");
           setAccessToken(data.data.accessToken);
           token = data.data.accessToken;
-        } catch (error) {
-          // No valid refresh token - redirect to login
-          router.push('/login');
+        } catch {
+          router.push("/login");
           return;
         }
       }
 
-      // Step 2: Verify token and get user data
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get("/auth/me");
         const user: User = data.data.user;
-        
-        // Step 3: Check user role and redirect accordingly
-        if (user.role === 'admin') {
-          router.push('/admin/dashboard');
+
+        if (user.role === "admin") {
+          router.push("/admin/dashboard");
           return;
         }
-        
-        // User is 'user' role - allow access
         setIsAuthenticated(true);
       } catch (error) {
-        // Token invalid - redirect to login
-        router.push('/login');
+        console.log(error);
+        router.push("/login");
       } finally {
         setIsLoading(false);
       }
