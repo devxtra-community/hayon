@@ -22,7 +22,7 @@ export default function DashboardPage() {
         const { data } = await api.get('/auth/me');
         setUser(data.data.user);
       } catch (error) {
-        console.error('Failed to fetch user');
+        console.error('Failed to fetch user' , error);
       }
     };
 

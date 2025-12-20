@@ -1,4 +1,4 @@
-// app/(protected)/layout.tsx
+// app/(auth)/layout.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,67 +12,55 @@ interface User {
   role: 'user' | 'admin';
 }
 
-export default function ProtectedLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
-      let token = getAccessToken();
+      const token = getAccessToken();
 
-      // Step 1: If no token in memory, try to refresh
       if (!token) {
         try {
           const { data } = await api.post('/auth/refresh');
           setAccessToken(data.data.accessToken);
-          token = data.data.accessToken;
-        } catch (error) {
-          // No valid refresh token - redirect to login
-          router.push('/login');
+        } catch{
+          setIsChecking(false);
           return;
         }
       }
 
-      // Step 2: Verify token and get user data
       try {
         const { data } = await api.get('/auth/me');
         const user: User = data.data.user;
         
-        // Step 3: Check user role and redirect accordingly
         if (user.role === 'admin') {
           router.push('/admin/dashboard');
           return;
+        } else if (user.role === 'user') {
+          router.push('/dashboard');
+          return;
         }
-        
-        // User is 'user' role - allow access
-        setIsAuthenticated(true);
-      } catch (error) {
-        // Token invalid - redirect to login
-        router.push('/login');
-      } finally {
-        setIsLoading(false);
+      } catch{
+        setIsChecking(false);
       }
     };
 
     checkAuth();
   }, [router]);
 
-  if (isLoading) {
+
+  if (isChecking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         <p className="ml-4 text-gray-600">Loading...</p>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   return <>{children}</>;
