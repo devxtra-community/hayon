@@ -1,49 +1,49 @@
 // app/(protected)/layout.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { api, getAccessToken, setAccessToken } from '@/lib/axios';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, getAccessToken, setAccessToken } from "@/lib/axios";
 
-export default function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: "user" | "admin";
+}
+
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Step 1: Check if we have access token in memory
       let token = getAccessToken();
 
-      // Step 2: If no access token, try to refresh
       if (!token) {
         try {
-          const { data } = await api.post('/auth/refresh');
+          const { data } = await api.post("/auth/refresh");
           setAccessToken(data.data.accessToken);
           token = data.data.accessToken;
-           if(data.data.role !== 'user'){
-             router.push('/admin/dashboard');
-             return;
-           }
-
-        } catch (error) {
-          // No valid refresh token - redirect to login
-          router.push('/login');
+        } catch {
+          router.push("/login");
           return;
         }
       }
 
-      // Step 3: Verify token by fetching user data
       try {
-        await api.get('/auth/me');
+        const { data } = await api.get("/auth/me");
+        const user: User = data.data.user;
+
+        if (user.role === "admin") {
+          router.push("/admin/dashboard");
+          return;
+        }
         setIsAuthenticated(true);
       } catch (error) {
-        // Token invalid - redirect to login
-        router.push('/login');
+        console.log(error);
+        router.push("/login");
       } finally {
         setIsLoading(false);
       }
@@ -52,7 +52,6 @@ export default function ProtectedLayout({
     checkAuth();
   }, [router]);
 
-  // Show loading spinner while checking auth
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -62,11 +61,9 @@ export default function ProtectedLayout({
     );
   }
 
-  // Don't render anything if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null;
   }
 
-  // User is authenticated - render the page
   return <>{children}</>;
 }
