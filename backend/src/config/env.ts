@@ -65,4 +65,15 @@ export const ENV = {
     PASS: required("EMAIL_PASS"),
   },
 
+   /** ======================
+   *  AWS
+   *  ====================== */
+  
+  AWS: {
+    ACCESS_KEY_ID: required("AWS_ACCESS_KEY_ID"),
+    SECRET_ACCESS_KEY: required("AWS_SECRET_ACCESS_KEY"),
+    REGION: required("AWS_REGION"),
+    S3_BUCKET_NAME: required("AWS_S3_BUCKET_NAME"),
+  },
+
 } as const;
