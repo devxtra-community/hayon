@@ -53,7 +53,7 @@ There is **no shared runtime code** between frontend and backend. Communication 
 
 ## 🎯 Project Purpose
 
-Hayon solves one core problem:
+Hayon solves one main problem:
 
 > **Managing and publishing content across multiple social media platforms from a single place.**
 
