@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
-import { getCurrentUserService, loginService, logoutService, refreshService, signupService } from "../services/auth.service";
+import {
+  getCurrentUserService,
+  loginService,
+  logoutService,
+  refreshService,
+  signupService,
+} from "../services/auth.service";
 import { requestOtpService } from "../services/auth.service";
 import { verifyOtpService } from "../services/auth.service";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
@@ -28,18 +34,12 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
     new SuccessResponse("OTP verified successfully", { data: result }).send(res);
   } catch (err: any) {
-    new ErrorResponse("OTP verification failed", { status: 400 }).send(res);
+    new ErrorResponse(err.message || "OTP verification failed", { status: 400 }).send(res);
   }
 };
 
-export const signup = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-
-    
-    
     const { user, accessToken, refreshToken } =
       await signupService(req.body);
 
@@ -64,14 +64,9 @@ export const signup = async (
   }
 };
 
-
-export const login = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { user, accessToken, refreshToken } =
-      await loginService(req.body);
+    const { user, accessToken, refreshToken } = await loginService(req.body);
 
     setRefreshTokenCookie(res, refreshToken);
 
@@ -95,12 +90,7 @@ export const login = async (
   }
 };
 
-
-
-export const refresh = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
@@ -111,26 +101,21 @@ export const refresh = async (
       return;
     }
 
-    const { accessToken, refreshToken: newRefreshToken } =
-      await refreshService(refreshToken);
+    const { accessToken, refreshToken: newRefreshToken } = await refreshService(refreshToken);
 
     setRefreshTokenCookie(res, newRefreshToken);
 
     new SuccessResponse("Token refreshed", {
       data: { accessToken },
     }).send(res);
-  } catch (err) {
-    new ErrorResponse("Invalid refresh token", {
+  } catch (err: any) {
+    new ErrorResponse(err.message || "Invalid refresh token", {
       status: 401,
     }).send(res);
   }
 };
 
-
-export const getCurrentUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.auth) {
       new ErrorResponse("Unauthorized", { status: 401 }).send(res);
@@ -148,25 +133,23 @@ export const getCurrentUser = async (
   }
 };
 
-
 export const logout = async (req: Request, res: Response): Promise<void> => {
   const refreshToken = req.cookies.refreshToken;
 
   if (refreshToken) {
     await logoutService(refreshToken);
   }
-  
+
   // Clear cookie with SAME path as set
   res.clearCookie("refreshToken", {
-    path: "api/auth/refresh",
+    path: "/api/auth/refresh",
     httpOnly: true,
     secure: ENV.APP.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
   });
 
   new SuccessResponse("Logged out successfully").send(res);
 };
-
 
 export const logoutAll = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -176,7 +159,7 @@ export const logoutAll = async (req: Request, res: Response): Promise<void> => {
     }
 
     await logoutAllService(req.auth.id);
-    
+
     // Clear current refresh token cookie
     res.clearCookie("refreshToken", {
       path: "/auth/refresh",

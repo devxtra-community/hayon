@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# build outputs
+.next/
+dist/
+build/
+out/
+
+# environment files
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# coverage
+coverage/
+
+# cache
+.cache/

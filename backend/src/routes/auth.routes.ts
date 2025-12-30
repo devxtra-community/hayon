@@ -13,7 +13,7 @@ import {
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { ENV } from "../config/env";
-import { logoutAllService } from "../services/auth.service";
+// import { logoutAllService } from "../services/auth.service";
 
 const router = express.Router();
 
@@ -45,25 +45,20 @@ router.get(
       // ✅ Custom callback to handle errors
       if (err) {
         console.error("Google OAuth error:", err);
-        return res.redirect(
-          `${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`
-        );
+        return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`);
       }
 
       if (!user) {
         // ✅ Handle specific error messages
         const errorMessage = info?.message || "google_auth_failed";
-        return res.redirect(
-          `${ENV.APP.FRONTEND_URL}/login?error=${errorMessage}`
-        );
+        return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=${errorMessage}`);
       }
 
       req.user = user;
-      next();
+      return next();
     })(req, res, next);
   },
-  googleOAuthCallback
+  googleOAuthCallback,
 );
-
 
 export default router;
