@@ -12,7 +12,6 @@ import helmet from "helmet";
 import { SuccessResponse } from "./utils/responses";
 import morgan from "morgan";
 
-
 dotenv.config();
 const expressInstance: Application = express();
 
@@ -27,7 +26,7 @@ const corsOptions = {
 
 expressInstance.use(morgan("dev"));
 expressInstance.use(cors(corsOptions));
-expressInstance.use(helmet());  
+expressInstance.use(helmet());
 expressInstance.use(cookieParser());
 expressInstance.use(express.json());
 expressInstance.use(express.urlencoded({ extended: true }));
@@ -44,10 +43,8 @@ expressInstance.use("/api", appRouter);
 appRouter.use("/auth", authRoutes);
 appRouter.use("/payments", paymentRoutes);
 
-
 expressInstance.use(notFoundHandler);
-expressInstance.use(serverErrorHandler)
-
+expressInstance.use(serverErrorHandler);
 
 expressInstance.listen(ENV.APP.PORT, () => {
   console.log(`🚀 Server running on port ${ENV.APP.PORT}`);
