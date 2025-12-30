@@ -1,5 +1,3 @@
----
-
 # 🚀 Hayon – Social Media Auto-Poster (Monorepo)
 
 Hayon is a **full-stack social media automation platform** built as a **single monorepo** containing both the frontend and backend.
@@ -16,7 +14,7 @@ Frontend and backend are developed and run **independently**, but live in the sa
 
 ---
 
-## Repository Structure
+## 📁 Repository Structure
 
 ```bash
 hayon/
@@ -49,12 +47,11 @@ hayon/
 └── README.md
 ```
 
-There is **no shared runtime code** between frontend and backend.
-Communication happens strictly via HTTP APIs.
+There is **no shared runtime code** between frontend and backend. Communication happens strictly via HTTP APIs.
 
 ---
 
-## Project Purpose
+## 🎯 Project Purpose
 
 Hayon solves one core problem:
 
@@ -75,7 +72,7 @@ This is a **production-oriented system**, not a demo or a toy project.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Frontend
 
@@ -106,7 +103,7 @@ This is a **production-oriented system**, not a demo or a toy project.
 
 ---
 
-## Branch Strategy
+## 🌿 Branch Strategy
 
 This repository uses **three long-living branches**.
 
@@ -132,22 +129,21 @@ This repository uses **three long-living branches**.
 
 * Branch off from `dev`
 * Example:
-
   * `feature/ai-captions`
   * `feature/post-scheduler`
   * `feature/stripe-integration`
 
-Merging rules:
+### Merging Rules
 
 * `feature/*` → `dev`
 * `dev` → `staging`
 * `staging` → `main`
 
-Skipping branches is how bugs reach production.
+**Skipping branches is how bugs reach production.**
 
 ---
 
-## Local Development Setup
+## 💻 Local Development Setup
 
 Frontend and backend **must be run separately**.
 
@@ -158,11 +154,11 @@ Frontend and backend **must be run separately**.
 * Redis
 * RabbitMQ
 
-If Redis or RabbitMQ are not running, **background jobs will fail**. That’s expected.
+⚠️ If Redis or RabbitMQ are not running, **background jobs will fail**. That's expected.
 
 ---
 
-## Backend Setup
+## 🔧 Backend Setup
 
 ```bash
 cd backend
@@ -218,7 +214,7 @@ http://localhost:4000
 
 ---
 
-## Frontend Setup
+## 🎨 Frontend Setup
 
 ```bash
 cd frontend
@@ -246,7 +242,7 @@ http://localhost:3000
 
 ---
 
-## High-Level System Flow
+## 🔄 High-Level System Flow
 
 1. User authenticates (Google OAuth or Email + OTP)
 2. User connects social media accounts
@@ -259,22 +255,22 @@ http://localhost:3000
 9. Redis is used for caching and fast lookups
 10. Post status, analytics, and notifications are updated
 
-Frontend **never communicates directly** with social media APIs or third-party services.
+**Frontend never communicates directly** with social media APIs or third-party services.
 
 ---
 
-## Contribution Rules
+## 🤝 Contribution Rules
 
 * Do not commit directly to `main`
 * Keep frontend and backend changes scoped
-* No “quick fixes” bypassing `staging`
+* No "quick fixes" bypassing `staging`
 * Auth, payments, and queue logic are sensitive — test before merging
 
 ---
 
-## License
+## 📄 License
 
-Private / Internal
+Private / Internal  
 Not intended for public redistribution.
 
 ---
