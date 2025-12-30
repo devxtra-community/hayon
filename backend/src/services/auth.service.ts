@@ -12,6 +12,9 @@ import {
   verifyRefreshToken
 } from "../utils/jwt";
 import { createRefreshToken } from "../repositories/refreshToken.repository";
+import s3Service from "./s3/s3.service";
+import { parseBase64Image } from "../utils/bufferConvertion";
+
 
 export const requestOtpService = async (email: string) => {
   if (!email) {
@@ -92,7 +95,13 @@ export const verifyOtpService = async (email: string, otp: string) => {
 
 // nned to fix signup servie
 export const signupService = async (data: any) => {
-  const { email, password, confirmPassword, name } = data;
+
+
+  const { email, password, confirmPassword, name, avatar } = data;
+
+  const { buffer } = parseBase64Image(avatar);
+  const uploadResult = await s3Service.uploadFile(`users/${name}/profile.png`, buffer, 'image/png');
+  
 
   if (!email || !password || !confirmPassword || !name) {
     throw new Error("Missing required fields");
@@ -113,6 +122,7 @@ export const signupService = async (data: any) => {
 
   const user = await createUser({
     email: normalizedEmail,
+    avatar: uploadResult.location,
     name,
     role: "user",
     auth: {

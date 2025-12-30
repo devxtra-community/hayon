@@ -17,7 +17,7 @@ class S3Service {
 
     constructor() {
         this.s3Client = new S3Client({
-            region: ENV.AWS.REGION || 'us-east-1',
+            region: ENV.AWS.REGION || 'ap-south-1',
             credentials: {
                 accessKeyId: ENV.AWS.ACCESS_KEY_ID ,
                 secretAccessKey: ENV.AWS.SECRET_ACCESS_KEY ,
@@ -33,12 +33,14 @@ async uploadFile(
         fileType: string
     ): Promise<UploadResponse> {
         try {
+          
             const command = new PutObjectCommand({
                 Bucket: this.bucketName,
                 Key: key,
                 Body: fileBuffer,
                 ContentType: fileType,
             });
+
 
             const result = await this.s3Client.send(command);
 
@@ -57,3 +59,4 @@ async uploadFile(
 }
 
 export default new S3Service();
+ 

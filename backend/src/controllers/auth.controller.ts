@@ -37,6 +37,9 @@ export const signup = async (
   res: Response
 ): Promise<void> => {
   try {
+
+    
+    
     const { user, accessToken, refreshToken } =
       await signupService(req.body);
 

@@ -10,6 +10,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  avatar: string;
 }
 
 export default function DashboardPage() {
@@ -21,6 +22,7 @@ export default function DashboardPage() {
       try {
         const { data } = await api.get('/auth/me');
         setUser(data.data.user);
+        console.log('Fetched user:', data.data.user); 
       } catch (error) {
         console.error('Failed to fetch user' , error);
       }
@@ -49,6 +51,7 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-bold">Dashboard</h1>
       <p className="mt-4">Welcome, {user.name}!</p>
       <p className="text-gray-600">{user.email}</p>
+      <img className='rounded-full' src={user.avatar} alt="avatar" />
       <button
         onClick={handleLogout}
         className="mt-4 bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2 rounded transition"
