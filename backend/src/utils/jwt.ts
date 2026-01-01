@@ -1,7 +1,5 @@
 import jwt, { Secret } from "jsonwebtoken";
-import dotenv from "dotenv";
 import { ENV } from '../config/env';
-dotenv.config();
 
 
 const ACCESS_TOKEN_SECRET: Secret = ENV.AUTH.ACCESS_TOKEN_SECRET as Secret;

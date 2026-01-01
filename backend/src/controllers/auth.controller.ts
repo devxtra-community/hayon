@@ -12,6 +12,7 @@ import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import { setRefreshTokenCookie } from "../utils/setAuthCookies";
 import { ENV } from "../config/env";
 import { logoutAllService } from "../services/auth.service";
+import logger from "../utils/logger";
 
 export const requestOtp = async (req: Request, res: Response) => {
   try {
@@ -21,7 +22,7 @@ export const requestOtp = async (req: Request, res: Response) => {
     // Create a common class or funciton to generate response
     new SuccessResponse("OTP send successfully", { status: 201 }).send(res);
   } catch (err: any) {
-    console.log(err);
+    logger.error(err);
     new ErrorResponse(err.message || "Failed to send OTP", { status: 403 }).send(res);
   }
 };

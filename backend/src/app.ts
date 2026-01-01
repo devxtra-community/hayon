@@ -1,7 +1,6 @@
 import express, { Application } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import dotenv from "dotenv";
 import connectDB from "./config/database";
 import authRoutes from "./routes/auth.routes";
 import paymentRoutes from "./routes/payment.routes";
@@ -11,8 +10,8 @@ import { ENV } from "./config/env";
 import helmet from "helmet";
 import { SuccessResponse } from "./utils/responses";
 import morgan from "morgan";
+import logger from "./utils/logger";
 
-dotenv.config();
 const expressInstance: Application = express();
 
 connectDB();
@@ -47,5 +46,5 @@ expressInstance.use(notFoundHandler);
 expressInstance.use(serverErrorHandler);
 
 expressInstance.listen(ENV.APP.PORT, () => {
-  console.log(`🚀 Server running on port ${ENV.APP.PORT}`);
+  logger.info(`🚀 Server running on port ${ENV.APP.PORT}`);
 });

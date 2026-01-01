@@ -13,6 +13,7 @@ import {
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { ENV } from "../config/env";
+import logger from "../utils/logger";
 // import { logoutAllService } from "../services/auth.service";
 
 const router = express.Router();
@@ -44,7 +45,7 @@ router.get(
     passport.authenticate("google", { session: false }, (err, user, info) => {
       // ✅ Custom callback to handle errors
       if (err) {
-        console.error("Google OAuth error:", err);
+        logger.error("Google OAuth error:", err);
         return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`);
       }
 
