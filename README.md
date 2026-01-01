@@ -1,6 +1,10 @@
-# 🚀 Hayon – Social Media Auto-Poster (Monorepo)
+<div style="display:flex; justify-content:center; align-items:center; border-radius:12px;">
+  <h1 style="background:#318D62; font-weight:800; font-family: 'Times New Roman', Times, serif ; padding:12px; border-radius:8px;">Hayon – Social Media Auto-Poster (Monorepo) </h1>
+</div>
 
+<div style="font-family: 'monospace'">
 Hayon is a **full-stack social media automation platform** built as a **single monorepo** containing both the frontend and backend.
+</div>
 
 The system allows users to create, schedule, and automatically publish posts across multiple social platforms, with **AI-generated captions**, analytics, notifications, and admin controls.
 
