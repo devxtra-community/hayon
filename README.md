@@ -28,7 +28,7 @@
     <img src="images/logo.png" alt="Hayon Logo" width="120" height="120">
   </a>
 
-  <h1 align="center">🚀 Hayon</h1>
+  <h1 align="center"> Hayon</h1>
 
   <p align="center">
     <strong>The Ultimate Social Media Auto-Poster Platform</strong>
@@ -39,7 +39,7 @@
     <a href="https://github.com/devxtra-community/hayon"><strong>📚 Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://hayon.vercel.app">🌐 View Demo</a>
+    <a href="https://hayon.site">🌐 View Demo</a>
     ·
     <a href="https://github.com/devxtra-community/hayon/issues/new?labels=bug&template=bug-report---.md">🐛 Report Bug</a>
     ·
@@ -147,7 +147,7 @@ Whether you're a social media manager, content creator, or marketing team, Hayon
       <sub>Smart, platform-specific content suggestions</sub>
     </td>
     <td align="center" width="33%">
-      <img src="https://img.icons8.com/fluency/48/000000/schedule.png" alt="Scheduling"/>
+      <img src="https://img.icons8.com/fluency/48/000000/calendar.png" alt="Scheduling"/>
       <br />
       <strong>Smart Scheduling</strong>
       <br />
@@ -199,22 +199,22 @@ This project leverages a modern, scalable tech stack:
       <img src="https://skillicons.dev/icons?i=nextjs" width="24"/> Next.js (App Router)<br/>
       <img src="https://skillicons.dev/icons?i=tailwind" width="24"/> Tailwind CSS<br/>
       <img src="https://skillicons.dev/icons?i=ts" width="24"/> TypeScript<br/>
-      📊 Recharts<br/>
-      🎨 shadcn/ui
+      <img src="https://recharts.org/favicon.ico" width="24"/> Recharts<br/>
+      <img src="https://avatars.githubusercontent.com/u/139895814?s=200&v=4" width="24" style="border-radius: 4px;"/> shadcn/ui
     </td>
     <td>
       <img src="https://skillicons.dev/icons?i=nodejs" width="24"/> Node.js<br/>
       <img src="https://skillicons.dev/icons?i=express" width="24"/> Express<br/>
       <img src="https://skillicons.dev/icons?i=mongodb" width="24"/> MongoDB<br/>
-      🔐 JWT + Google OAuth<br/>
-      📝 TypeScript
+      <img src="https://cdn.worldvectorlogo.com/logos/jwt-3.svg" width="24"/> JWT + <img src="https://skillicons.dev/icons?i=gcp" width="24"/> Google OAuth<br/>
+      <img src="https://skillicons.dev/icons?i=ts" width="24"/> TypeScript
     </td>
     <td>
       <img src="https://skillicons.dev/icons?i=redis" width="24"/> Redis<br/>
       <img src="https://skillicons.dev/icons?i=rabbitmq" width="24"/> RabbitMQ<br/>
       <img src="https://skillicons.dev/icons?i=aws" width="24"/> AWS S3<br/>
-      💳 Stripe<br/>
-      🤖 Google Gemini AI
+      <img src="https://cdn.worldvectorlogo.com/logos/stripe-4.svg" width="24"/> Stripe<br/>
+      <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" width="24"/> Google Gemini AI
     </td>
     <td>
       <img src="https://skillicons.dev/icons?i=vercel" width="24"/> Vercel (Frontend)<br/>
@@ -355,6 +355,10 @@ graph TB
         A[Next.js Frontend]
     end
     
+    subgraph Reverse Proxy
+        N[🔀 Nginx]
+    end
+    
     subgraph Backend
         B[Express API Server]
         C[Background Workers]
@@ -373,15 +377,16 @@ graph TB
         J[Social APIs]
     end
     
-    A -->|HTTP/REST| B
+    A -->|HTTP/REST| N
+    N --> B
     B --> D
     B --> E
     B --> F
-    F --> C
-    C --> G
-    C --> J
+    B --> G
     B --> H
     B --> I
+    F --> C
+    C --> J
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -575,6 +580,12 @@ If you have a suggestion that would make this better, please fork the repo and c
 | Keep frontend/backend changes separate | Make "quick fixes" bypassing `staging` |
 | Test thoroughly before merging | Skip testing for auth/payment logic |
 | Write descriptive commit messages | Use vague commit messages |
+
+### 🏆 Top Contributors
+
+<a href="https://github.com/devxtra-community/hayon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=devxtra-community/hayon" alt="Top Contributors" />
+</a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
