@@ -7,10 +7,16 @@ export type AuthProvider = "email" | "google";
 export type SubscriptionPlan = "free" | "pro";
 export type SubscriptionStatus = "active" | "cancelled" | "pastDue";
 
+export interface IpasswordResetToken {
+  token: string | null;
+  expiresAt: Date | null;
+}
+
 export interface IUserAuth {
   provider: AuthProvider;
   googleId: string | null;
   passwordHash: string | null;
+  passwordResetToken: IpasswordResetToken | null;
 }
 
 export interface IUserSubscription {

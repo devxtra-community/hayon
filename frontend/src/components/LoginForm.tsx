@@ -69,9 +69,21 @@ export default function LoginForm() {
 
   const handleGoogleSignIn = () => {
     // Use environment variable instead of hardcoded URL
-    window.location.href = `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-    }/auth/google`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+      }/auth/google`;
+  };
+
+  const handleForgotPassword = () => {
+    if (!email) {
+      alert("Please enter your email address to reset your password.");
+      return;
+    }
+    api.post("/auth/send-reset-email", { email }).then(() => {
+      alert("Password reset email sent. Please check your inbox.");
+    }).catch(() => {
+      alert("Failed to send reset email. Please try again.");
+    });
+
   };
 
   return (
@@ -137,9 +149,11 @@ export default function LoginForm() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link href="/forgot-password" className="text-sm text-[#318D62] hover:underline">
+              <span
+                onClick={handleForgotPassword}
+                className="text-sm text-[#318D62] cursor-pointer hover:underline">
                 Forgot password?
-              </Link>
+              </span>
             </div>
             <Input
               id="password"

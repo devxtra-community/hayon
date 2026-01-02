@@ -10,6 +10,8 @@ import {
   verifyOtp,
   refresh,
   logoutAll,
+  sendRsetPasswordEmail,
+  resetPassword,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { ENV } from "../config/env";
@@ -25,6 +27,8 @@ router.post("/verify-otp", verifyOtp);
 router.post("/refresh", refresh);
 
 router.get("/me", authenticate, getCurrentUser);
+router.post("/send-reset-email", sendRsetPasswordEmail);
+router.post("/reset-password", resetPassword);
 
 // Logout user
 router.delete("/logout", logout);
@@ -61,5 +65,7 @@ router.get(
   },
   googleOAuthCallback,
 );
+
+
 
 export default router;

@@ -91,3 +91,32 @@ export const sendOtpMail = async (
     `,
   });
 };
+
+
+export const sendResetPasswordEmail = async (
+  email: string,
+  resetToken: string 
+): Promise<void> => {
+  const resetLink = `${ENV.APP.FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;    
+    await transporter.sendMail({
+    from: `"Hayon" <${ENV.EMAIL.USER}>`,
+    to: email,
+    subject: "Hayon Password Reset",
+    html: `
+    <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+      <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #2e7d32;">Password Reset Request</h2>
+        <p>Hi,</p>
+        <p>We received a request to reset your password. Click the button below to reset it:</p>
+        <p style="text-align: center;">
+            <a href="${resetLink}" style="background-color: #2e7d32; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+        </p>
+        <p>If you did not request a password reset, please ignore this email or contact support if you have questions.</p>
+        <p>Thanks,<br>The Hayon Team</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+        <p style="font-size: 12px; color: #999999;">© 2024 Hayon. All rights reserved.</p>
+        </div>
+    </div>
+    `,
+  });
+}

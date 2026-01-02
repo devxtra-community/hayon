@@ -5,6 +5,7 @@ import {
   logoutService,
   refreshService,
   signupService,
+  sendResetPasswordEmailService
 } from "../services/auth.service";
 import { requestOtpService } from "../services/auth.service";
 import { verifyOtpService } from "../services/auth.service";
@@ -13,6 +14,7 @@ import { setRefreshTokenCookie } from "../utils/setAuthCookies";
 import { ENV } from "../config/env";
 import { logoutAllService } from "../services/auth.service";
 import logger from "../utils/logger";
+import { resetPasswordService } from "../services/auth.service";
 
 export const requestOtp = async (req: Request, res: Response) => {
   try {
@@ -176,3 +178,33 @@ export const logoutAll = async (req: Request, res: Response): Promise<void> => {
     }).send(res);
   }
 };
+
+
+
+//  reset password controller to be implemented
+
+export const sendRsetPasswordEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    // Call the service to send reset password email
+    await sendResetPasswordEmailService(email); 
+    new SuccessResponse("Password reset email sent successfully").send(res);
+  } catch (err: any) {
+    logger.error(err);
+    new ErrorResponse(err.message || "Failed to send password reset email", { status: 500 }).send(res);
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token, password ,email} = req.body;
+    await resetPasswordService(email, password, token);
+    new SuccessResponse("Password has been reset successfully").send(res);
+  }
+    catch (err: any) {
+    logger.error(err);
+    new ErrorResponse(err.message || "Failed to reset password", { status: 500 }).
+    send(res);
+  }
+}

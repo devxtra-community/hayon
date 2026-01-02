@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { findUserByEmail, createUser, findUserByIdSafe } from "../repositories/user.repository";
 import { findPendingByEmail, deletePendingByEmail, createPendingSignup, updateOtpSendCount, updateOtpNumber, findSendCount} from "../repositories/pendingSignup.repository";
 import { updateOtpAttempts } from "../repositories/pendingSignup.repository";
-import { sendOtpMail } from "../utils/sendOtpMail";
+import { sendOtpMail } from "../utils/nodemailer";
 import { v4 as uuidv4 } from "uuid";
 import { RefreshToken } from "../models/refreshToken.model";
 import {
@@ -14,6 +14,10 @@ import {
 import { createRefreshToken } from "../repositories/refreshToken.repository";
 import s3Service from "./s3/s3.service";
 import { parseBase64Image } from "../utils/bufferConvertion";
+import { findResetPasswordToken,setPasswordResetToken,updateUserPassword } from "../repositories/user.repository";
+import { sendResetPasswordEmail } from "../utils/nodemailer";
+import logger from "../utils/logger";
+
 
 
 export const requestOtpService = async (email: string) => {
@@ -130,6 +134,7 @@ export const signupService = async (data: any) => {
       passwordHash: passwordHash,
     },
   });
+
 
   // 🔐 Create refresh token session
   const tokenId = uuidv4();
@@ -299,3 +304,31 @@ export const logoutAllService = async (userId: string) => {
     { revoked: true }
   );
 };
+
+
+export const sendResetPasswordEmailService = async (email: string ) => {
+  // Implementation for sending reset password email
+  const resetToken = await setPasswordResetToken(email);
+  logger.info(`Sending password reset email to ${email} , token ${resetToken}`);
+   await sendResetPasswordEmail(email, resetToken);
+}
+
+export const resetPasswordService = async (email:string, newPassword:string , token: string) => {
+
+  const resetToken = await findResetPasswordToken(email);
+  logger.info(`Reset token from DB for ${email} : ${resetToken}`);
+  if (!resetToken) {
+    throw new Error("Invalid or expired reset token");
+  }
+
+  logger.info(`Comparing tokens: provided ${token} , stored ${resetToken}`);
+
+  const isValid = await bcrypt.compare(token, resetToken );
+  if (!isValid) {
+    throw new Error("Invalid or expired reset token");
+  }
+
+  logger.info(`Reset token is valid for ${email}, updating password ${newPassword}.`);
+  const passwordHash = bcrypt.hashSync(newPassword, 12);
+  await updateUserPassword(email, passwordHash);
+}

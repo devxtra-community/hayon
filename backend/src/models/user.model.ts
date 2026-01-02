@@ -19,7 +19,18 @@
         type: String,
         default: null,
       },
+      passwordResetToken: {
+      token: {
+        type: String,
+        default: null,
+      },
+      expiresAt: {
+        type: Date,
+        default: null,
+      },
     },
+    },  
+  
     { _id: false }
   );
 
