@@ -53,12 +53,13 @@ jobs:
       # ---------- FRONTEND FILES ----------
       - name: Deploy frontend (standalone)
         run: |
-          rsync -avz \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/standalone/ \
-            frontend/.next/static \
-            frontend/public \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend/
+         rsync -avz --delete \
+          -e "ssh -i ~/.ssh/ec2.pem" \
+          frontend/.next/standalone/ \
+          frontend/.next/static \
+          frontend/public \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-runtime/
+
 
       # ---------- FRONTEND RESTART ----------
       - name: Restart frontend
@@ -67,8 +68,8 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
 
-            cd ${{ secrets.APP_DIR }}/frontend
-            npm install
-            pm2 restart frontend || pm2 start --name "frontend" npm -- start
-            pm2 save
+          cd ~/hayon/frontend-runtime
+          pm2 restart frontend || pm2 start server.js --name frontend
+          pm2 save
+
           EOF
