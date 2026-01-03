@@ -53,8 +53,8 @@
                 npm install
                 pm2 restart backend || pm2 start --name 'backend'  npm -- dev run || true
 
-                sudo rm -rf /var/www/frontend
-                sudo mkdir -p /var/www/frontend
+                rm -rf /var/www/frontend
+                mkdir -p /var/www/frontend
                EOF
 
 
@@ -89,4 +89,4 @@
 
                   systemctl reload nginx
                 EOF
-                
+
