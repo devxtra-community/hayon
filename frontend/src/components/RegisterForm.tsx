@@ -18,8 +18,18 @@ import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Mail, ArrowRight, Check, Upload, User } from "lucide-react";
+import { requestOtpSchema, verifyOtpSchema, signupSchema } from "@hayon/schemas";
+import type { ZodError } from "zod";
 
 type Step = "email" | "otp" | "details";
+
+interface FormErrors {
+  email?: string;
+  otp?: string;
+  name?: string;
+  password?: string;
+  confirmPassword?: string;
+}
 
 export default function RegisterForm() {
   const [step, setStep] = useState<Step>("email");
@@ -32,6 +42,7 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [isResending, setIsResending] = useState(false);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   const progress = step === "email" ? 33 : step === "otp" ? 66 : 100;
 
@@ -57,8 +68,73 @@ export default function RegisterForm() {
     }/auth/google`;
   };
 
+  const validateEmailStep = (): boolean => {
+    const result = requestOtpSchema.safeParse({ email });
+    if (!result.success) {
+      const errors: FormErrors = {};
+      const zodErrors = result.error as ZodError;
+      zodErrors.errors.forEach((err) => {
+        const field = err.path[0] as keyof FormErrors;
+        if (!errors[field]) {
+          errors[field] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      return false;
+    }
+    setFormErrors({});
+    return true;
+  };
+
+  const validateOtpStep = (): boolean => {
+    const result = verifyOtpSchema.safeParse({ email, otp });
+    if (!result.success) {
+      const errors: FormErrors = {};
+      const zodErrors = result.error as ZodError;
+      zodErrors.errors.forEach((err) => {
+        const field = err.path[0] as keyof FormErrors;
+        if (!errors[field]) {
+          errors[field] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      return false;
+    }
+    setFormErrors({});
+    return true;
+  };
+
+  const validateDetailsStep = (): boolean => {
+    const result = signupSchema.safeParse({
+      email,
+      password,
+      confirmPassword,
+      name,
+      avatar: avatar || undefined,
+    });
+    if (!result.success) {
+      const errors: FormErrors = {};
+      const zodErrors = result.error as ZodError;
+      zodErrors.errors.forEach((err) => {
+        const field = err.path[0] as keyof FormErrors;
+        if (!errors[field]) {
+          errors[field] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      return false;
+    }
+    setFormErrors({});
+    return true;
+  };
+
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateEmailStep()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -75,12 +151,18 @@ export default function RegisterForm() {
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateOtpStep()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await api.post("/auth/verify-otp", { email, otp });
 
       setStep("details");
+      setFormErrors({});
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
       alert(axiosError.response?.data?.message || "Error message here");
@@ -99,7 +181,6 @@ export default function RegisterForm() {
       };
       reader.readAsDataURL(file);
     }
-
   };
 
   const handleResendOTP = async () => {
@@ -123,8 +204,8 @@ export default function RegisterForm() {
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+    // Zod validates password match via refine()
+    if (!validateDetailsStep()) {
       return;
     }
 
@@ -228,9 +309,10 @@ export default function RegisterForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-11 pl-10"
+                    className={`h-11 pl-10 ${formErrors.email ? "border-red-500" : ""}`}
                   />
                 </div>
+                {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
               </div>
 
               <Button
@@ -258,8 +340,11 @@ export default function RegisterForm() {
                 onChange={(e) => setOtp(e.target.value)}
                 required
                 maxLength={6}
-                className="h-12 text-center text-2xl tracking-widest font-semibold"
+                className={`h-12 text-center text-2xl tracking-widest font-semibold ${formErrors.otp ? "border-red-500" : ""}`}
               />
+              {formErrors.otp && (
+                <p className="text-sm text-red-500 text-center">{formErrors.otp}</p>
+              )}
               <p className="text-sm text-center text-muted-foreground">
                 Didnt receive the code?{" "}
                 <button
@@ -275,8 +360,8 @@ export default function RegisterForm() {
                   {isResending
                     ? "Sending..."
                     : resendTimer > 0
-                    ? `Resend in ${resendTimer}s`
-                    : "Resend"}
+                      ? `Resend in ${resendTimer}s`
+                      : "Resend"}
                 </button>
               </p>
             </div>
@@ -336,8 +421,9 @@ export default function RegisterForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="h-11"
+                className={`h-11 ${formErrors.name ? "border-red-500" : ""}`}
               />
+              {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
             </div>
 
             <div className="space-y-2">
@@ -349,10 +435,14 @@ export default function RegisterForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11"
+                className={`h-11 ${formErrors.password ? "border-red-500" : ""}`}
                 minLength={8}
               />
-              <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
+              {formErrors.password ? (
+                <p className="text-sm text-red-500">{formErrors.password}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -364,8 +454,11 @@ export default function RegisterForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="h-11"
+                className={`h-11 ${formErrors.confirmPassword ? "border-red-500" : ""}`}
               />
+              {formErrors.confirmPassword && (
+                <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+              )}
             </div>
 
             <Button

@@ -18,11 +18,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, setAccessToken } from "@/lib/axios";
 import { AxiosError } from "axios";
+import { loginSchema } from "@hayon/schemas";
+import type { ZodError } from "zod";
 
 interface LoginFormProps {
   isAdmin?: boolean;
   loginEndpoint?: string;
   redirectPath?: string;
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
 }
 
 export default function LoginForm({
@@ -36,6 +43,7 @@ export default function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -55,8 +63,35 @@ export default function LoginForm({
     }
   }, [error, isAdmin]);
 
+  const validateForm = (): boolean => {
+    const result = loginSchema.safeParse({ email, password });
+
+    if (!result.success) {
+      const errors: FormErrors = {};
+      const zodErrors = result.error as ZodError;
+
+      zodErrors.errors.forEach((err) => {
+        const field = err.path[0] as keyof FormErrors;
+        if (!errors[field]) {
+          errors[field] = err.message;
+        }
+      });
+
+      setFormErrors(errors);
+      return false;
+    }
+
+    setFormErrors({});
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -160,8 +195,9 @@ export default function LoginForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-11"
+              className={`h-11 ${formErrors.email ? "border-red-500" : ""}`}
             />
+            {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -183,8 +219,9 @@ export default function LoginForm({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="h-11"
+              className={`h-11 ${formErrors.password ? "border-red-500" : ""}`}
             />
+            {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
           </div>
 
           <Button

@@ -15,22 +15,32 @@ import {
   adminLogin,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
+import { validate } from "../middleware/validate.middleware";
+import {
+  requestOtpSchema,
+  verifyOtpSchema,
+  signupSchema,
+  loginSchema,
+  adminLoginSchema,
+  sendResetEmailSchema,
+  resetPasswordSchema,
+} from "@hayon/schemas";
 import { ENV } from "../config/env";
 import logger from "../utils/logger";
 // import { logoutAllService } from "../services/auth.service";
 
 const router = express.Router();
 
-router.post("/signup", signup);
-router.post("/login", login);
-router.post("/admin-login", adminLogin);
-router.post("/request-otp", requestOtp);
-router.post("/verify-otp", verifyOtp);
+router.post("/signup", validate(signupSchema), signup);
+router.post("/login", validate(loginSchema), login);
+router.post("/admin-login", validate(adminLoginSchema), adminLogin);
+router.post("/request-otp", validate(requestOtpSchema), requestOtp);
+router.post("/verify-otp", validate(verifyOtpSchema), verifyOtp);
 router.post("/refresh", refresh);
 
 router.get("/me", authenticate, getCurrentUser);
-router.post("/send-reset-email", sendRsetPasswordEmail);
-router.post("/reset-password", resetPassword);
+router.post("/send-reset-email", validate(sendResetEmailSchema), sendRsetPasswordEmail);
+router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
 
 // Logout user
 router.delete("/logout", logout);

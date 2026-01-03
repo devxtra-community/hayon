@@ -26,11 +26,7 @@ import { sendResetPasswordEmail } from "../utils/nodemailer";
 import logger from "../utils/logger";
 
 export const requestOtpService = async (email: string) => {
-  if (!email) {
-    throw new Error("Email is required");
-  }
-
-  email = email.toLowerCase().trim();
+  // Email is already validated and normalized by Zod schema
 
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
@@ -63,11 +59,7 @@ export const requestOtpService = async (email: string) => {
 };
 
 export const verifyOtpService = async (email: string, otp: string) => {
-  if (!email || !otp) {
-    throw new Error("Email and OTP are required");
-  }
-
-  email = email.toLowerCase().trim();
+  // Email and OTP are already validated by Zod schema
 
   const pending = await findPendingByEmail(email);
   if (!pending) {
@@ -93,24 +85,16 @@ export const verifyOtpService = async (email: string, otp: string) => {
   };
 };
 
-// nned to fix signup servie
+// Signup service - validation is handled by Zod schema
 export const signupService = async (data: any) => {
-  const { email, password, confirmPassword, name, avatar } = data;
+  const { email, password, name, avatar } = data;
+  // confirmPassword already validated to match password by Zod schema
 
   const { buffer } = parseBase64Image(avatar);
   const uploadResult = await s3Service.uploadFile(`users/${name}/profile.png`, buffer, "image/png");
 
-  if (!email || !password || !confirmPassword || !name) {
-    throw new Error("Missing required fields");
-  }
-
-  if (password !== confirmPassword) {
-    throw new Error("Passwords do not match");
-  }
-
-  const normalizedEmail = email.toLowerCase();
-
-  const existingUser = await findUserByEmail(normalizedEmail);
+  // Email is already normalized by Zod schema
+  const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw new Error("Email already registered");
   }
@@ -118,7 +102,7 @@ export const signupService = async (data: any) => {
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await createUser({
-    email: normalizedEmail,
+    email: email,
     avatar: uploadResult.location,
     name,
     role: "user",
@@ -157,13 +141,10 @@ export const signupService = async (data: any) => {
 
 export const loginService = async (data: any) => {
   const { email, password } = data;
+  // Email and password are already validated by Zod schema
+  // Email is already normalized (lowercase, trimmed) by Zod
 
-  if (!email || !password) {
-    throw new Error("Email and password are required");
-  }
-
-  const normalizedEmail = email.toLowerCase();
-  const user = await findUserByEmail(normalizedEmail);
+  const user = await findUserByEmail(email);
 
   if (!user) {
     throw new Error("Invalid email or password");
@@ -216,13 +197,10 @@ export const loginService = async (data: any) => {
 
 export const adminLoginService = async (data: any) => {
   const { email, password } = data;
+  // Email and password are already validated by Zod schema
+  // Email is already normalized (lowercase, trimmed) by Zod
 
-  if (!email || !password) {
-    throw new Error("Email and password are required");
-  }
-
-  const normalizedEmail = email.toLowerCase();
-  const user = await findUserByEmail(normalizedEmail);
+  const user = await findUserByEmail(email);
 
   if (!user) {
     throw new Error("Invalid email or password");

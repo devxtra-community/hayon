@@ -1,4 +1,11 @@
 {
+  "name": "hayon-monorepo",
+  "private": true,
+  "workspaces": [
+    "schemas",
+    "backend",
+    "frontend"
+  ],
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.1.1",
     "eslint": "^9.39.2",

@@ -4,16 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/axios";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AxiosError } from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { resetPasswordSchema } from "@hayon/schemas";
+import type { ZodError } from "zod";
+
+interface FormErrors {
+  password?: string;
+  token?: string;
+  email?: string;
+}
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -25,23 +27,50 @@ function ResetPasswordContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+
+  const validateForm = (): boolean => {
+    // First check if token and email exist
+    if (!token || !email) {
+      setErrorMessage("Invalid reset link. Missing token or email.");
+      return false;
+    }
+
+    // Check password confirmation manually before Zod validation
+    // (resetPasswordSchema doesn't have confirmPassword field)
+    if (password !== confirmPassword) {
+      setFormErrors({ password: "Passwords do not match" });
+      return false;
+    }
+
+    const result = resetPasswordSchema.safeParse({
+      email,
+      token,
+      password,
+    });
+
+    if (!result.success) {
+      const errors: FormErrors = {};
+      const zodErrors = result.error as ZodError;
+      zodErrors.errors.forEach((err) => {
+        const field = err.path[0] as keyof FormErrors;
+        if (!errors[field]) {
+          errors[field] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      return false;
+    }
+
+    setFormErrors({});
+    setErrorMessage("");
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage("");
 
-    if (password !== confirmPassword) {
-      setErrorMessage("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long");
-      return;
-    }
-
-    if (!token || !email) {
-      setErrorMessage("Invalid reset link. Missing token or email.");
+    if (!validateForm()) {
       return;
     }
 
@@ -60,7 +89,7 @@ function ResetPasswordContent() {
       const axiosError = error as AxiosError<{ message?: string }>;
       setErrorMessage(
         axiosError.response?.data?.message ||
-          "Failed to reset password. Please try again or request a new link."
+          "Failed to reset password. Please try again or request a new link.",
       );
     } finally {
       setIsLoading(false);
@@ -70,9 +99,7 @@ function ResetPasswordContent() {
   return (
     <Card className="border-2 border-gray-300 shadow-xl w-full max-w-md mx-auto">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-3xl font-bold text-center">
-          Reset Password
-        </CardTitle>
+        <CardTitle className="text-3xl font-bold text-center">Reset Password</CardTitle>
         <CardDescription className="text-center text-base">
           Enter your new password below
         </CardDescription>
@@ -95,8 +122,13 @@ function ResetPasswordContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="h-11"
+              className={`h-11 ${formErrors.password ? "border-red-500" : ""}`}
             />
+            {formErrors.password ? (
+              <p className="text-sm text-red-500">{formErrors.password}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
+            )}
           </div>
 
           <div className="space-y-2">
