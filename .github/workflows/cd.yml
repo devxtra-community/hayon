@@ -60,7 +60,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: frontend/.next/**
-          target: ~/${{ secrets.APP_DIR }}/frontend/
+          target: ~/hayon/frontend/
 
       # ---------- FRONTEND RESTART ----------
       - name: Restart frontend
