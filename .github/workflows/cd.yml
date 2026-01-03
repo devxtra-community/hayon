@@ -1,91 +1,85 @@
-name: Deploy to EC2
+      name: Deploy to EC2
 
-on:
-  push:
-    branches:
-      - main
+      on:
+        push:
+          branches:
+            - main
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
 
-    steps:
-     
-      - name: Checkout repo
-        uses: actions/checkout@v4
+          steps:
+          
+            - name: Checkout repo
+              uses: actions/checkout@v4
 
-    
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: 20
+                cache: npm
+                cache-dependency-path: frontend/package-lock.json
 
-      - name: Build frontend (Next.js)
-        run: |
-          cd frontend
-          npm ci
-          npm run build
+            - name: Build frontend (Next.js)
+              run: |
+                cd frontend
+                npm ci
+                npm run build
 
-    
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/ec2.pem
-          chmod 600 ~/.ssh/ec2.pem
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
+            - name: Setup SSH
+              run: |
+                mkdir -p ~/.ssh
+                echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/ec2.pem
+                chmod 600 ~/.ssh/ec2.pem
+                ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-   
-      - name: Deploy to EC2
-        run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
+        
+            - name: Deploy to EC2
+              run: |
+               ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+                set -e
 
-            # Load NVM
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-            node -v
-            npm -v
-            pm2 -v || npm install -g pm2
+                cd ${{ secrets.APP_DIR }}
 
-            cd ${{ secrets.APP_DIR }}
+                git pull origin main
 
-            # -------- BACKEND --------
-            git pull origin main
-            cd backend
-            npm install
-            pm2 reload backend --update-env || pm2 start npm --name backend -- start || true
+                cd backend
+                npm install
+                pm2 reload backend --update-env || pm2 start npm --name backend -- start || true
 
-            # -------- FRONTEND (BUILD ONLY COPY) --------
-            sudo rm -rf /var/www/frontend
-            sudo mkdir -p /var/www/frontend
-            sudo chown -R $USER:$USER /var/www/frontend
-            exit
-          EOF
+                rm -rf /var/www/frontend
+                mkdir -p /var/www/frontend
+               EOF
 
-     
-      - name: Upload frontend build
-        run: |
-          rsync -avz \
-            frontend/.next \
-            frontend/public \
-            frontend/package.json \
-            frontend/package-lock.json \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/frontend
 
-     
-      - name: Restart frontend
-        run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
+          
+            - name: Upload frontend build
+              run: |
+               rsync -avz \
+                -e "ssh -i ~/.ssh/ec2.pem" \
+                frontend/.next \
+                frontend/public \
+                frontend/package.json \
+                frontend/package-lock.json \
+                ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/frontend/
 
-            cd /var/www/frontend
-            npm ci --omit=dev
-            pm2 reload frontend || pm2 start npm --name frontend -- start
+          
+            - name: Restart frontend
+              run: |
+                ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+                  export NVM_DIR="$HOME/.nvm"
+                  source "$NVM_DIR/nvm.sh"
 
-            pm2 save
-            sudo systemctl reload nginx
-          EOF
+                  cd /var/www/frontend
+                  npm ci --omit=dev
+                  pm2 reload frontend || pm2 start npm --name frontend -- start
+
+                  pm2 save
+                  sudo systemctl reload nginx
+                EOF
