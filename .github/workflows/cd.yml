@@ -68,6 +68,7 @@ jobs:
             source "$NVM_DIR/nvm.sh"
 
             cd ${{ secrets.APP_DIR }}/frontend
-            pm2 restart frontend || pm2 start server.js --name frontend
+            npm install
+            pm2 restart frontend || pm2 start --name "frontend" npm -- start
             pm2 save
           EOF
