@@ -55,7 +55,6 @@
 
                 sudo rm -rf /var/www/frontend
                 sudo mkdir -p /var/www/frontend
-                sudo chown $USER:$USER /var/www/frontend
                EOF
 
 
@@ -73,14 +72,20 @@
           
             - name: Restart frontend
               run: |
-                ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+                ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+                    -i ~/.ssh/ec2.pem \
+                    ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+
                   export NVM_DIR="$HOME/.nvm"
                   source "$NVM_DIR/nvm.sh"
 
                   cd /var/www/frontend
-                  npm ci --omit=dev
+
+                  npm ci --omit=dev --loglevel=info
+
                   pm2 reload frontend || pm2 start npm --name frontend -- start
 
                   pm2 save
-                  sudo systemctl reload nginx
+
+                  systemctl reload nginx
                 EOF
