@@ -25,8 +25,13 @@ jobs:
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd ${{ secrets.APP_DIR }}
             git pull origin main
-            npm ci
+            cd backend
+            npm install
             pm2 restart 0
+            cd ../frontend
+            npm install
+            npm run build
+            pm2 restart 1
             sudo systemctl restart nginx
           EOF
 
