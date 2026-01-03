@@ -23,15 +23,26 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            node -v
+            npm -v
+            pm2 -v || npm install -g pm2
+
             cd ${{ secrets.APP_DIR }}
             git pull origin main
+
             cd backend
             npm install
-            pm2 restart 0
+            pm2 restart backend || pm2 start npm --name backend -- start
+
             cd ../frontend
             npm install
             npm run build
-            pm2 restart 1
+            pm2 restart frontend || pm2 start npm --name frontend -- start
+
             sudo systemctl restart nginx
           EOF
+
 
