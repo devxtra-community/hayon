@@ -56,12 +56,12 @@ jobs:
             git pull origin main
             cd backend
             npm install
-            pm2 reload backend || pm2 start npm --name backend -- start
+            pm2 reload backend --update-env || pm2 start npm --name backend -- start || true
 
             # -------- FRONTEND (BUILD ONLY COPY) --------
             sudo rm -rf /var/www/frontend
             sudo mkdir -p /var/www/frontend
-
+            sudo chown -R $USER:$USER /var/www/frontend
             exit
           EOF
 
