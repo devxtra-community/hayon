@@ -1,9 +1,21 @@
-export { default as Sidebar } from './Sidebar';
-export { default as Header } from './Header';
-export { default as StatsCard } from './StatsCard';
-export { default as ImpressionsChart } from './ImpressionsChart';
-export { default as BestPostCard } from './BestPostCard';
-export { default as PlanInfoCard } from './PlanInfoCard';
-export { default as ConnectedPlatformsCard } from './ConnectedPlatformsCard';
-export { default as PlatformPerformanceCard } from './PlatformPerformanceCard';
-export { default as UpgradeCard } from './UpgradeCard';
+import Sidebar from './Sidebar';
+import Header from './Header';
+import StatsCard from './StatsCard';
+import ImpressionsChart from './ImpressionsChart';
+import BestPostCard from './BestPostCard';
+import PlanInfoCard from './PlanInfoCard';
+import ConnectedPlatformsCard from './ConnectedPlatformsCard';
+import PlatformPerformanceCard from './PlatformPerformanceCard';
+import UpgradeCard from './UpgradeCard';
+
+export {
+    Sidebar,
+    Header,
+    StatsCard,
+    ImpressionsChart,
+    BestPostCard,
+    PlanInfoCard,
+    ConnectedPlatformsCard,
+    PlatformPerformanceCard,
+    UpgradeCard
+};

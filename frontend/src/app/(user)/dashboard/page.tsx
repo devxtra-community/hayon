@@ -13,7 +13,7 @@ import {
   PlanInfoCard,
   ConnectedPlatformsCard,
   PlatformPerformanceCard,
-  UpgradeCard,
+  UpgradeCard
 } from '@/components/dashboard';
 import Link from 'next/link';
 

@@ -43,3 +43,6 @@ dist/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+logs
+*.log
