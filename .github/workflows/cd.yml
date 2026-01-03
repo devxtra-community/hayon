@@ -53,8 +53,9 @@
                 npm install
                 pm2 reload backend --update-env || pm2 start npm --name backend -- start || true
 
-                rm -rf /var/www/frontend
-                mkdir -p /var/www/frontend
+                sudo rm -rf /var/www/frontend
+                sudo mkdir -p /var/www/frontend
+                sudo chown $USER:$USER /var/www/frontend
                EOF
 
 
