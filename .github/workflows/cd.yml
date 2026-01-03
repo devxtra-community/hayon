@@ -1,92 +1,73 @@
-      name: Deploy to EC2
+name: Deploy to EC2
 
-      on:
-        push:
-          branches:
-            - main
+on:
+  push:
+    branches:
+      - main
 
-      jobs:
-        deploy:
-          runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-          steps:
-          
-            - name: Checkout repo
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-          
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                node-version: 20
-                cache: npm
-                cache-dependency-path: frontend/package-lock.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-            - name: Build frontend (Next.js)
-              run: |
-                cd frontend
-                npm ci
-                npm run build
+      # ---------- BUILD FRONTEND ----------
+      - name: Build frontend (Next.js standalone)
+        run: |
+          cd frontend
+          npm ci
+          npm run build
 
-          
-            - name: Setup SSH
-              run: |
-                mkdir -p ~/.ssh
-                echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/ec2.pem
-                chmod 600 ~/.ssh/ec2.pem
-                ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      # ---------- SSH ----------
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-        
-            - name: Deploy to EC2
-              run: |
-               ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-                set -e
+      # ---------- BACKEND ----------
+      - name: Deploy backend
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
 
-                export NVM_DIR="$HOME/.nvm"
-                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            cd ${{ secrets.APP_DIR }}
+            git pull origin main
 
-                cd ${{ secrets.APP_DIR }}
+            cd backend
+            npm install
+            pm2 restart backend || pm2 start npm --name backend -- run dev
+            pm2 save
+          EOF
 
-                git pull origin main
+      # ---------- FRONTEND FILES ----------
+      - name: Deploy frontend (standalone)
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            frontend/.next/standalone/ \
+            frontend/.next/static \
+            frontend/public \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend/
 
-                cd backend
-                npm install
-                pm2 restart backend || pm2 start --name 'backend'  npm -- dev run || true
+      # ---------- FRONTEND RESTART ----------
+      - name: Restart frontend
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
 
-                rm -rf /var/www/frontend
-                mkdir -p /var/www/frontend
-               EOF
-
-
-          
-            - name: Upload frontend build
-              run: |
-               rsync -avz \
-                -e "ssh -i ~/.ssh/ec2.pem" \
-                frontend/.next \
-                frontend/public \
-                frontend/package.json \
-                frontend/package-lock.json \
-                ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:hayon/frontend/
-
-          
-            - name: Restart frontend
-              run: |
-                ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
-                    -i ~/.ssh/ec2.pem \
-                    ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-
-                  export NVM_DIR="$HOME/.nvm"
-                  source "$NVM_DIR/nvm.sh"
-
-                  cd hayon/frontend
-
-                  npm ci --omit=dev --loglevel=info
-
-                  pm2 reload frontend || pm2 start npm --name frontend -- start
-
-                  pm2 save
-
-                  systemctl reload nginx
-                EOF
-
+            cd ${{ secrets.APP_DIR }}/frontend
+            pm2 restart frontend || pm2 start server.js --name frontend
+            pm2 save
+          EOF
