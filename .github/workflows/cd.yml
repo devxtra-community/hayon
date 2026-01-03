@@ -67,7 +67,7 @@
                 frontend/public \
                 frontend/package.json \
                 frontend/package-lock.json \
-                ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/frontend/
+                ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:hayon/frontend/
 
           
             - name: Restart frontend
@@ -79,7 +79,7 @@
                   export NVM_DIR="$HOME/.nvm"
                   source "$NVM_DIR/nvm.sh"
 
-                  cd /var/www/frontend
+                  cd hayon/frontend
 
                   npm ci --omit=dev --loglevel=info
 
