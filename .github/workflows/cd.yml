@@ -59,8 +59,8 @@ jobs:
             pm2 reload backend || pm2 start npm --name backend -- start
 
             # -------- FRONTEND (BUILD ONLY COPY) --------
-            rm -rf /var/www/frontend
-            mkdir -p /var/www/frontend
+            sudo rm -rf /var/www/frontend
+            sudo mkdir -p /var/www/frontend
 
             exit
           EOF
