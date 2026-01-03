@@ -1,0 +1,75 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # ---------- BUILD FRONTEND ----------
+      - name: Build frontend (Next.js standalone)
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # ---------- SSH ----------
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      # ---------- BACKEND ----------
+      - name: Deploy backend
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+
+            cd ${{ secrets.APP_DIR }}
+            git pull origin main
+
+            cd backend
+            npm install
+            pm2 restart backend || pm2 start npm --name backend -- run dev
+            pm2 save
+          EOF
+
+      # ---------- FRONTEND FILES ----------
+      - name: Deploy frontend (standalone)
+        run: |
+         rsync -avz --delete \
+          -e "ssh -i ~/.ssh/ec2.pem" \
+          frontend/.next/standalone/ \
+          frontend/.next/static \
+          frontend/public \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-runtime/
+
+
+      # ---------- FRONTEND RESTART ----------
+      - name: Restart frontend
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+
+          cd ~/hayon/frontend-runtime
+          pm2 restart frontend || pm2 start server.js --name frontend
+          pm2 save
+
+          EOF

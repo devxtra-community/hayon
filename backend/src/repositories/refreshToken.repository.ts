@@ -1,0 +1,10 @@
+import { RefreshToken } from "../models/refreshToken.model";
+import { Types } from "mongoose";
+
+export const createRefreshToken = async (data: {
+  tokenId: string;
+  userId: Types.ObjectId;
+  expiresAt: Date;
+}) => {
+  return RefreshToken.create(data);
+};
