@@ -51,15 +51,15 @@ jobs:
           EOF
 
       # ---------- FRONTEND FILES ----------
-      - name: Deploy frontend (standalone)
-        run: |
-         rsync -avz --delete \
-          -e "ssh -i ~/.ssh/ec2.pem" \
-          frontend/.next/standalone/ \
-          frontend/.next/static \
-          frontend/public \
-          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-runtime/
-
+      - name: upload to ec2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          debug: true
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: .next
+          target: ~/${{ secrets.APP_DIR }}/frontend/
 
       # ---------- FRONTEND RESTART ----------
       - name: Restart frontend
@@ -68,8 +68,8 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
 
-          cd ~/hayon/frontend-runtime/frontend
-          pm2 restart frontend || pm2 start server.js --name frontend
+          cd ~/hayon/frontend
+          pm2 restart frontend || pm2 start --name "frontend" npm -- start
           pm2 save
 
           EOF
