@@ -75,42 +75,44 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
 
-            cd ${{ secrets.APP_DIR }}
+            # 1. Go directly to the backend folder where package.json and .env live
+            cd ${{ secrets.APP_DIR }}/backend
             
-            # Install production deps only
-            npm install -g pnpm
+            # 2. Install production deps (using pnpm)
+            # We do this inside the backend folder
             pnpm install --prod --frozen-lockfile --ignore-scripts
 
-            cd backend
-            pm2 restart backend || pm2 start dist/app.js --name backend
+            # 3. Restart the app
+            # We use 'delete' then 'start' to ensure a clean slate and correct CWD
+            pm2 delete backend || true
+            pm2 start dist/app.js --name "backend"
             pm2 save
           EOF
 
 # ---------- DEPLOY FRONTEND ----------
       - name: Deploy Frontend Artifacts
         run: |
-          # Ensure the entire path exists before any syncing happens
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ${{ secrets.APP_DIR }}/frontend-deploy/.next/static"
+          # 1. Create the directory structure manually to prevent rsync errors
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mkdir -p ${{ secrets.APP_DIR }}/frontend-deploy/.next/static ${{ secrets.APP_DIR }}/frontend-deploy/public"
 
-          # 1. Copy standalone build
-          # Note the trailing slash on standalone/
+          # 2. Copy standalone build
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/ec2.pem" \
             frontend/.next/standalone/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
 
-          # 2. Copy static files (.next/static)
-          # We target the parent .next/ folder to ensure it lands in the right spot
+          # 3. Copy static files (public)
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/static \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/.next/
-
-          # 3. Copy public files
+            frontend/public/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/public/
+          
+          # 4. Copy static files (.next/static)
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/public \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
+            frontend/.next/static/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/.next/static/
 
       - name: Restart Frontend
         run: |
@@ -118,9 +120,9 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
 
-            cd ${{ secrets.APP_DIR }}/frontend-deploy
+            cd ${{ secrets.APP_DIR }}/frontend-deploy/frontend
             
             # Start standalone server
-            pm2 restart frontend || pm2 start server.js --name "frontend"
+            PORT=3000 pm2 restart frontend || PORT=3000 pm2 start server.js --name "frontend"
             pm2 save
           EOF
