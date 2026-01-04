@@ -86,21 +86,26 @@ jobs:
             pm2 save
           EOF
 
-      # ---------- DEPLOY FRONTEND ----------
+# ---------- DEPLOY FRONTEND ----------
       - name: Deploy Frontend Artifacts
         run: |
-          # Copy standalone build
+          # 1. Create the directory structure manually to prevent rsync errors
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mkdir -p ${{ secrets.APP_DIR }}/frontend-deploy/.next/static ${{ secrets.APP_DIR }}/frontend-deploy/public"
+
+          # 2. Copy standalone build
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/ec2.pem" \
             frontend/.next/standalone/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
 
-          # Copy static files (public and .next/static)
+          # 3. Copy static files (public)
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
             frontend/public/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/public/
           
+          # 4. Copy static files (.next/static)
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
             frontend/.next/static/ \
