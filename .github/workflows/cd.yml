@@ -27,6 +27,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # ---------- SCHEMAS BUILD ----------
+      - name: Build schemas
+        working-directory: schemas
+        run: pnpm run build
+
       # ---------- BACKEND BUILD ----------
       - name: Build backend
         working-directory: backend

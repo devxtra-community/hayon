@@ -2,9 +2,15 @@
     "name": "@hayon/schemas",
     "version": "1.0.0",
     "description": "Shared Zod validation schemas for frontend and backend",
-    "main": "index.ts",
-    "types": "index.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc"
+    },
     "dependencies": {
         "zod": "^3.24.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0"
     }
 }

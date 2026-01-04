@@ -30,9 +30,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build backend
-        working-directory: backend
-        run: pnpm run build
+      - name: Build workspaces
+        run: pnpm -r run build
 
   frontend:
     name: Frontend CI
@@ -55,6 +54,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build frontend
-        working-directory: frontend
-        run: pnpm run build
+      - name: Build workspaces
+        run: pnpm -r run build
