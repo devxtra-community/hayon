@@ -18,12 +18,14 @@ jobs:
         with:
           node-version: 20
 
-      # ---------- BUILD FRONTEND ----------
       - name: Build frontend (Next.js standalone)
+        working-directory: frontend
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
         run: |
-          cd frontend
           npm ci
           npm run build
+
 
       # ---------- SSH ----------
       - name: Setup SSH
