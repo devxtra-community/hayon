@@ -1,91 +1,76 @@
-      name: Deploy to EC2
+name: Deploy to EC2
 
-      on:
-        push:
-          branches:
-            - main
+on:
+  push:
+    branches:
+      - main
 
-      jobs:
-        deploy:
-          runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-          steps:
-          
-            - name: Checkout repo
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-          
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                node-version: 20
-                cache: npm
-                cache-dependency-path: frontend/package-lock.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-            - name: Build frontend (Next.js)
-              run: |
-                cd frontend
-                npm ci
-                npm run build
-
-          
-            - name: Setup SSH
-              run: |
-                mkdir -p ~/.ssh
-                echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/ec2.pem
-                chmod 600 ~/.ssh/ec2.pem
-                ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-        
-            - name: Deploy to EC2
-              run: |
-               ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-                set -e
-
-                export NVM_DIR="$HOME/.nvm"
-                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-
-                cd ${{ secrets.APP_DIR }}
-
-                git pull origin main
-
-                cd backend
-                npm install
-                pm2 restart backend || pm2 start --name 'backend'  npm -- dev run || true
-
-                sudo rm -rf /var/www/frontend
-                sudo mkdir -p /var/www/frontend
-               EOF
+      - name: Build frontend (Next.js standalone)
+        working-directory: frontend
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          npm ci
+          npm run build
 
 
-          
-            - name: Upload frontend build
-              run: |
-               rsync -avz \
-                -e "ssh -i ~/.ssh/ec2.pem" \
-                frontend/.next \
-                frontend/public \
-                frontend/package.json \
-                frontend/package-lock.json \
-                ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/frontend/
+      # ---------- SSH ----------
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+
+      # ---------- BACKEND ----------
+      - name: Deploy backend
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+
+            cd ${{ secrets.APP_DIR }}
+            git pull origin main
+
+            cd backend
+            npm install
+            pm2 restart backend || pm2 start npm --name backend -- run dev
+            pm2 save
+          EOF
+
+      # ---------- FRONTEND FILES ----------
+      - name: Copy .next via rsync
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            frontend/.next/ \
+            ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/hayon/frontend/.next/
 
           
-            - name: Restart frontend
-              run: |
-                ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
-                    -i ~/.ssh/ec2.pem \
-                    ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+      # ---------- FRONTEND RESTART ----------
+      - name: Restart frontend
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
 
-                  export NVM_DIR="$HOME/.nvm"
-                  source "$NVM_DIR/nvm.sh"
+          cd ~/hayon/frontend
+          pm2 restart frontend || pm2 start --name "frontend" npm -- start
+          pm2 save
 
-                  cd /var/www/frontend
-
-                  npm ci --omit=dev --loglevel=info
-
-                  pm2 reload frontend || pm2 start npm --name frontend -- start
-
-                  pm2 save
-
-                  systemctl reload nginx
-                EOF
+          EOF
