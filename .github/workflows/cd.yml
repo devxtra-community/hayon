@@ -75,15 +75,12 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
 
-            # 1. Go directly to the backend folder where package.json and .env live
             cd ${{ secrets.APP_DIR }}/backend
             
-            # 2. Install production deps (using pnpm)
-            # We do this inside the backend folder
-            pnpm install --prod --frozen-lockfile --ignore-scripts
+            # Use CI=true to bypass the TTY/interactive prompt
+            # Also added --force to ensure it actually wipes the bad modules
+            CI=true pnpm install --prod --frozen-lockfile --ignore-scripts --force
 
-            # 3. Restart the app
-            # We use 'delete' then 'start' to ensure a clean slate and correct CWD
             pm2 delete backend || true
             pm2 start dist/app.js --name "backend"
             pm2 save
