@@ -79,7 +79,7 @@ jobs:
             
             # Install production deps only
             npm install -g pnpm
-            pnpm install --prod --frozen-lockfile
+            pnpm install --prod --frozen-lockfile --ignore-scripts
 
             cd backend
             pm2 restart backend || pm2 start dist/app.js --name backend
