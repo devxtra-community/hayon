@@ -16,24 +16,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache: 'pnpm'
 
-      - name: Install backend deps
-        working-directory: backend
-        run: npm install
-
-      - name: Test backend
-        working-directory: backend
-        run: npm test
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build backend
         working-directory: backend
-        run: npm run build
+        run: pnpm run build
 
   frontend:
     name: Frontend CI
@@ -42,21 +41,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache: 'pnpm'
 
-      - name: Install frontend deps
-        working-directory: frontend
-        run: npm install
-
-      - name: Test frontend
-        working-directory: frontend
-        run: npm test
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build frontend
         working-directory: frontend
-        run: npm run build
+        run: pnpm run build
