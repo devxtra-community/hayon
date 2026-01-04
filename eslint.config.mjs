@@ -1,62 +1,59 @@
-// eslint.config.mjs (ROOT)
+// eslint.config.mjs
 
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import nextVitals from "eslint-config-next/core-web-vitals";
 import prettier from "eslint-config-prettier";
+import next from "@next/eslint-plugin-next";
 
 /**
- * ONE ESLint config
- * Plugins defined ONCE
- * Rules scoped by files
+ * ESLint v9 Flat Config
+ * - NO legacy configs
+ * - NO FlatCompat
+ * - NO eslint-config-next
+ * - This is the ONLY stable setup right now
  */
 
 export default [
-  /* ------------------------------------------------------------------ */
-  /* Base JS rules                                                       */
-  /* ------------------------------------------------------------------ */
+  /* -------------------------------------------------- */
+  /* Base JS / TS                                       */
+  /* -------------------------------------------------- */
   js.configs.recommended,
-
-  /* ------------------------------------------------------------------ */
-  /* Base TypeScript rules (NON type-aware, safe defaults)               */
-  /* ------------------------------------------------------------------ */
   ...tseslint.configs.recommended,
-
-  /* ------------------------------------------------------------------ */
-  /* Disable formatting rules (Prettier owns formatting)                 */
-  /* ------------------------------------------------------------------ */
   prettier,
 
-  /* ------------------------------------------------------------------ */
-  /* -------------------------- BACKEND -------------------------------- */
-  /* ------------------------------------------------------------------ */
+  /* -------------------------------------------------- */
+  /* Backend (Node)                                     */
+  /* -------------------------------------------------- */
   {
     files: ["backend/src/**/*.ts"],
     languageOptions: {
       parserOptions: {
         project: "./backend/tsconfig.json",
-        sourceType: "module",
       },
     },
     rules: {
       "no-console": "off",
       "consistent-return": "error",
-
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_" },
       ],
-
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 
-  /* ------------------------------------------------------------------ */
-  /* -------------------------- FRONTEND ------------------------------- */
-  /* ------------------------------------------------------------------ */
+  /* -------------------------------------------------- */
+  /* Frontend (Next.js — FLAT NATIVE)                    */
+  /* -------------------------------------------------- */
   {
-    files: ["frontend/**/*.{ts,tsx,js,jsx}"],
-    extends: [...nextVitals],
+    files: ["frontend/**/*.{js,jsx,ts,tsx}"],
+    plugins: {
+      "@next/next": next,
+    },
+    rules: {
+      ...next.configs.recommended.rules,
+      ...next.configs["core-web-vitals"].rules,
+    },
     languageOptions: {
       parserOptions: {
         project: "./frontend/tsconfig.json",
@@ -64,9 +61,9 @@ export default [
     },
   },
 
-  /* ------------------------------------------------------------------ */
-  /* -------------------------- GLOBAL IGNORES ------------------------- */
-  /* ------------------------------------------------------------------ */
+  /* -------------------------------------------------- */
+  /* Global ignores                                     */
+  /* -------------------------------------------------- */
   {
     ignores: [
       "**/node_modules/**",

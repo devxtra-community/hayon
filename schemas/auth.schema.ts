@@ -1,0 +1,130 @@
+import { z } from "zod";
+
+// =============================================================================
+// Base Schemas (Reusable)
+// =============================================================================
+
+/**
+ * Email schema with normalization.
+ * - Validates email format
+ * - Transforms to lowercase
+ * - Trims whitespace
+ */
+export const emailSchema = z
+  .string()
+  .min(1, "Email is required")
+  .email("Please enter a valid email address")
+  .toLowerCase()
+  .trim();
+
+/**
+ * Password schema with minimum length requirement.
+ * Used for both signup and password reset.
+ */
+export const passwordSchema = z
+  .string()
+  .min(1, "Password is required")
+  .min(8, "Password must be at least 8 characters");
+
+/**
+ * OTP schema - exactly 6 digits.
+ */
+export const otpSchema = z
+  .string()
+  .min(1, "OTP is required")
+  .length(6, "OTP must be exactly 6 digits")
+  .regex(/^\d{6}$/, "OTP must contain only numbers");
+
+/**
+ * Name schema - user's display name.
+ */
+export const nameSchema = z
+  .string()
+  .min(1, "Name is required")
+  .min(2, "Name must be at least 2 characters")
+  .max(100, "Name must be at most 100 characters")
+  .trim();
+
+// =============================================================================
+// Auth Endpoint Schemas
+// =============================================================================
+
+/**
+ * POST /auth/request-otp
+ * Request OTP for email verification during signup.
+ */
+export const requestOtpSchema = z.object({
+  email: emailSchema,
+});
+
+/**
+ * POST /auth/verify-otp
+ * Verify OTP sent to user's email.
+ */
+export const verifyOtpSchema = z.object({
+  email: emailSchema,
+  otp: otpSchema,
+});
+
+/**
+ * POST /auth/signup
+ * Complete user registration after OTP verification.
+ */
+export const signupSchema = z
+  .object({
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+    name: nameSchema,
+    avatar: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+/**
+ * POST /auth/login
+ * User login with email and password.
+ */
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Password is required"),
+});
+
+/**
+ * POST /auth/admin-login
+ * Admin login with email and password.
+ * Same validation as regular login.
+ */
+export const adminLoginSchema = loginSchema;
+
+/**
+ * POST /auth/send-reset-email
+ * Request password reset email.
+ */
+export const sendResetEmailSchema = z.object({
+  email: emailSchema,
+});
+
+/**
+ * POST /auth/reset-password
+ * Reset password using token from email.
+ */
+export const resetPasswordSchema = z.object({
+  email: emailSchema,
+  token: z.string().min(1, "Reset token is required"),
+  password: passwordSchema,
+});
+
+// =============================================================================
+// Type Exports (for TypeScript consumers)
+// =============================================================================
+
+export type RequestOtpInput = z.infer<typeof requestOtpSchema>;
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
+export type SignupInput = z.infer<typeof signupSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
+export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
+export type SendResetEmailInput = z.infer<typeof sendResetEmailSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

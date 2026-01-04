@@ -228,7 +228,45 @@ This project leverages a modern, scalable tech stack:
 ---
 
 <!-- GETTING STARTED -->
-## 🚀 Getting Started
+## Getting Started
+
+This project uses [pnpm](https://pnpm.io/) for package management.
+
+### Prerequisites
+
+- Node.js (v20 or later)
+- pnpm (v9 or later)
+
+To install pnpm:
+```bash
+npm install -g pnpm
+```
+
+### Installation
+
+```bash
+pnpm install
+```
+
+### Running the App
+
+```bash
+# Start backend and frontend concurrently (if configured)
+pnpm run dev
+
+# Or run individually:
+# Backend
+cd backend
+pnpm run dev
+
+# Frontend
+cd frontend
+pnpm run dev
+```
+
+## Migration Note
+We have migrated from npm to pnpm. If you have old `node_modules` or `package-lock.json` files, please remove them.
+
 
 This project is a **monorepo** containing both frontend and backend. They run independently but share the same repository.
 

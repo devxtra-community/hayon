@@ -1,0 +1,10 @@
+{
+    "name": "@hayon/schemas",
+    "version": "1.0.0",
+    "description": "Shared Zod validation schemas for frontend and backend",
+    "main": "index.ts",
+    "types": "index.ts",
+    "dependencies": {
+        "zod": "^3.24.0"
+    }
+}

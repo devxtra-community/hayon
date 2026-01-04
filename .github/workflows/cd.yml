@@ -13,19 +13,31 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
-      - name: Build frontend (Next.js standalone)
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ---------- BACKEND BUILD ----------
+      - name: Build backend
+        working-directory: backend
+        run: pnpm run build
+
+      # ---------- FRONTEND BUILD ----------
+      - name: Build frontend
         working-directory: frontend
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
-        run: |
-          npm ci
-          npm run build
-
+        run: pnpm run build
 
       # ---------- SSH ----------
       - name: Setup SSH
@@ -35,9 +47,28 @@ jobs:
           chmod 600 ~/.ssh/ec2.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
+      # ---------- DEPLOY BACKEND ----------
+      - name: Deploy Backend Artifacts
+        run: |
+          # Copy compiled backend code and package files
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            backend/dist backend/package.json backend/pnpm-lock.yaml \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/backend/
+          
+          # Deploy schemas (needed for workspace)
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            schemas/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/schemas/
 
-      # ---------- BACKEND ----------
-      - name: Deploy backend
+          # Copy root config
+          rsync -avz \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            pnpm-workspace.yaml package.json pnpm-lock.yaml \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/
+
+      - name: Restart Backend
         run: |
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
@@ -45,32 +76,45 @@ jobs:
             source "$NVM_DIR/nvm.sh"
 
             cd ${{ secrets.APP_DIR }}
-            git pull origin main
+            
+            # Install production deps only
+            npm install -g pnpm
+            pnpm install --prod --frozen-lockfile
 
             cd backend
-            npm install
-            pm2 restart backend || pm2 start npm --name backend -- run dev
+            pm2 restart backend || pm2 start dist/app.js --name backend
             pm2 save
           EOF
 
-      # ---------- FRONTEND FILES ----------
-      - name: Copy .next via rsync
+      # ---------- DEPLOY FRONTEND ----------
+      - name: Deploy Frontend Artifacts
         run: |
+          # Copy standalone build
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            frontend/.next/standalone/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
+
+          # Copy static files (public and .next/static)
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/ \
-            ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/hayon/frontend/.next/
-
+            frontend/public/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/public/
           
-      # ---------- FRONTEND RESTART ----------
-      - name: Restart frontend
+          rsync -avz \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            frontend/.next/static/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/.next/static/
+
+      - name: Restart Frontend
         run: |
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
 
-          cd ~/hayon/frontend
-          pm2 restart frontend || pm2 start --name "frontend" npm -- start
-          pm2 save
-
+            cd ${{ secrets.APP_DIR }}/frontend-deploy
+            
+            # Start standalone server
+            pm2 restart frontend || pm2 start server.js --name "frontend"
+            pm2 save
           EOF
