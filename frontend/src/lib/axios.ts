@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.hayon.site/api";
+const API_BASE_URL = process.env.BACKEND_URL ?? "http://localhost:5000/api";
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -100,14 +100,12 @@ api.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
       return api(originalRequest);
-
-      
     } catch (refreshError) {
       const axiosError = refreshError instanceof AxiosError ? refreshError : error;
 
       processQueue(axiosError, null);
       clearAccessToken();
-      
+
       if (typeof window !== "undefined") {
         window.location.href = "/login?session=expired";
       }
