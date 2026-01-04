@@ -89,27 +89,28 @@ jobs:
 # ---------- DEPLOY FRONTEND ----------
       - name: Deploy Frontend Artifacts
         run: |
-          # 1. Create the directory structure manually to prevent rsync errors
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "mkdir -p ${{ secrets.APP_DIR }}/frontend-deploy/.next/static ${{ secrets.APP_DIR }}/frontend-deploy/public"
+          # Ensure the entire path exists before any syncing happens
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ${{ secrets.APP_DIR }}/frontend-deploy/.next/static"
 
-          # 2. Copy standalone build
+          # 1. Copy standalone build
+          # Note the trailing slash on standalone/
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/ec2.pem" \
             frontend/.next/standalone/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
 
-          # 3. Copy static files (public)
+          # 2. Copy static files (.next/static)
+          # We target the parent .next/ folder to ensure it lands in the right spot
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/public/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/public/
-          
-          # 4. Copy static files (.next/static)
+            frontend/.next/static \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/.next/
+
+          # 3. Copy public files
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/static/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/.next/static/
+            frontend/public \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
 
       - name: Restart Frontend
         run: |
