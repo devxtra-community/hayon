@@ -52,15 +52,12 @@ jobs:
           EOF
 
       # ---------- FRONTEND FILES ----------
-      - name: upload to ec2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          debug: true
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: frontend/.next/**
-          target: /home/ubuntu/hayon/frontend/.next/
+      - name: Copy .next via rsync
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/ec2.pem" \
+            frontend/.next/ \
+            ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/hayon/frontend/.next/
 
           
       # ---------- FRONTEND RESTART ----------
