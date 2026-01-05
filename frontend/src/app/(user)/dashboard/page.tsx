@@ -187,7 +187,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Floating Action Button (Mobile Only) */}
-      <Link href="/create-post" className="fixed bottom-6 right-6 lg:hidden z-40 shadow-xl">
+      <Link href="/create-post" className="fixed bottom-6 right-6 lg:hidden z-40">
         <Button
           size="icon"
           className="h-14 w-14 rounded-full bg-[#318D62] hover:bg-[#287350] text-white shadow-lg shadow-green-900/20"
