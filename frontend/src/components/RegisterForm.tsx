@@ -20,6 +20,7 @@ import { useState, useEffect } from "react";
 import { Mail, ArrowRight, Check, Upload, User } from "lucide-react";
 import { requestOtpSchema, verifyOtpSchema, signupSchema } from "@hayon/schemas";
 import type { ZodError } from "zod";
+import { useToast } from "@/context/ToastContext";
 
 type Step = "email" | "otp" | "details";
 
@@ -43,6 +44,7 @@ export default function RegisterForm() {
   const [resendTimer, setResendTimer] = useState(0);
   const [isResending, setIsResending] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const { showToast } = useToast();
 
   const progress = step === "email" ? 33 : step === "otp" ? 66 : 100;
 
@@ -141,7 +143,11 @@ export default function RegisterForm() {
       setResendTimer(15);
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
-      alert(axiosError.response?.data?.message || "Error message here");
+      showToast(
+        "error",
+        "Failed to send OTP",
+        axiosError.response?.data?.message || "Error message here",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +169,7 @@ export default function RegisterForm() {
       setFormErrors({});
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
-      alert(axiosError.response?.data?.message || "Error message here");
+      showToast("error", "Failed to verify OTP", axiosError.response?.data?.message || "");
     } finally {
       setIsLoading(false);
     }
@@ -190,10 +196,10 @@ export default function RegisterForm() {
       await api.post("/auth/request-otp", { email });
 
       setResendTimer(15);
-      alert("OTP sent successfully!");
+      showToast("success", "OTP sent successfully", "Please check your inbox.");
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
-      alert(axiosError.response?.data?.message || "Error message here");
+      showToast("error", "Failed to send OTP", axiosError.response?.data?.message || "");
     } finally {
       setIsResending(false);
     }
@@ -221,11 +227,15 @@ export default function RegisterForm() {
       // Store access token in memory
       setAccessToken(data.accessToken);
 
-      alert("Registration successful!");
+      showToast("success", "Registration successful!", "You have been successfully registered.");
       window.location.href = "/dashboard";
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
-      alert(axiosError.response?.data?.message || "Error message here");
+      showToast(
+        "error",
+        "Registration failed",
+        axiosError.response?.data?.message || "Registration failed. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }

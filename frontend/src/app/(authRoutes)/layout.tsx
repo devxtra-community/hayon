@@ -1,22 +1,19 @@
 // app/(auth)/layout.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { api, getAccessToken, setAccessToken } from '@/lib/axios';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, getAccessToken, setAccessToken } from "@/lib/axios";
+import { ToastProvider } from "@/context/ToastContext";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
 }
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
 
@@ -26,33 +23,32 @@ export default function AuthLayout({
 
       if (!token) {
         try {
-          const { data } = await api.post('/auth/refresh');
+          const { data } = await api.post("/auth/refresh");
           setAccessToken(data.data.accessToken);
-        } catch{
+        } catch {
           setIsChecking(false);
           return;
         }
       }
 
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get("/auth/me");
         const user: User = data.data.user;
-        
-        if (user.role === 'admin') {
-          router.push('/admin/dashboard');
+
+        if (user.role === "admin") {
+          router.push("/admin/dashboard");
           return;
-        } else if (user.role === 'user') {
-          router.push('/dashboard');
+        } else if (user.role === "user") {
+          router.push("/dashboard");
           return;
         }
-      } catch{
+      } catch {
         setIsChecking(false);
       }
     };
 
     checkAuth();
   }, [router]);
-
 
   if (isChecking) {
     return (
@@ -63,5 +59,5 @@ export default function AuthLayout({
     );
   }
 
-  return <>{children}</>;
+  return <ToastProvider>{children}</ToastProvider>;
 }
