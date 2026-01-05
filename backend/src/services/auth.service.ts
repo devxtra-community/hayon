@@ -86,7 +86,7 @@ export const verifyOtpService = async (email: string, otp: string) => {
 };
 
 // Signup service - validation is handled by Zod schema
-export const signupService = async (data: any) => {
+export const signupService = async (data: any, ipAddress?: string, userAgent?: string) => {
   const { email, password, name, avatar } = data;
   // confirmPassword already validated to match password by Zod schema
 
@@ -120,6 +120,8 @@ export const signupService = async (data: any) => {
     tokenId,
     userId: user._id,
     expiresAt: refreshExpiresAt,
+    ipAddress,
+    userAgent,
   });
 
   const accessToken = generateAccessToken({
@@ -139,7 +141,7 @@ export const signupService = async (data: any) => {
   };
 };
 
-export const loginService = async (data: any) => {
+export const loginService = async (data: any, ipAddress?: string, userAgent?: string) => {
   const { email, password } = data;
   // Email and password are already validated by Zod schema
   // Email is already normalized (lowercase, trimmed) by Zod
@@ -176,6 +178,8 @@ export const loginService = async (data: any) => {
     tokenId,
     userId: user._id,
     expiresAt: refreshExpiresAt,
+    ipAddress,
+    userAgent,
   });
 
   const accessToken = generateAccessToken({
@@ -195,7 +199,7 @@ export const loginService = async (data: any) => {
   };
 };
 
-export const adminLoginService = async (data: any) => {
+export const adminLoginService = async (data: any, ipAddress?: string, userAgent?: string) => {
   const { email, password } = data;
   // Email and password are already validated by Zod schema
   // Email is already normalized (lowercase, trimmed) by Zod
@@ -232,6 +236,8 @@ export const adminLoginService = async (data: any) => {
     tokenId,
     userId: user._id,
     expiresAt: refreshExpiresAt,
+    ipAddress,
+    userAgent,
   });
 
   const accessToken = generateAccessToken({
@@ -253,7 +259,11 @@ export const adminLoginService = async (data: any) => {
 
 // check if needed to change to controller.
 
-export const refreshService = async (refreshTokenJwt: string) => {
+export const refreshService = async (
+  refreshTokenJwt: string,
+  ipAddress?: string,
+  userAgent?: string,
+) => {
   // 1. Verify JWT signature
   const payload = verifyRefreshToken(refreshTokenJwt);
 
@@ -262,9 +272,19 @@ export const refreshService = async (refreshTokenJwt: string) => {
     tokenId: payload.tokenId,
   });
 
-  // 3. Hard fail conditions
-  if (!existingToken || existingToken.revoked || existingToken.expiresAt < new Date()) {
-    // ⚠️ Possible token reuse attack
+  if (!existingToken) {
+    throw new Error("Invalid refresh token");
+  }
+
+  // 3. Token Reuse Detection
+  if (existingToken.revoked) {
+    // 🚨 Security Alert: Attempt to use a revoked token!
+    // This implies the token was stolen. Invalidate ALL sessions for this user.
+    await logoutAllService(existingToken.userId.toString());
+    throw new Error("Security alert: Token reuse detected. All sessions have been terminated.");
+  }
+
+  if (existingToken.expiresAt < new Date()) {
     throw new Error("Invalid refresh token");
   }
 
@@ -280,6 +300,8 @@ export const refreshService = async (refreshTokenJwt: string) => {
     tokenId: newTokenId,
     userId: existingToken.userId,
     expiresAt: newExpiresAt,
+    ipAddress: ipAddress || existingToken.ipAddress, // Update if new, else keep old
+    userAgent: userAgent || existingToken.userAgent,
   });
 
   // 6. Issue new tokens
@@ -340,4 +362,38 @@ export const resetPasswordService = async (email: string, newPassword: string, t
   logger.info(`Reset token is valid for ${email}, updating password ${newPassword}.`);
   const passwordHash = bcrypt.hashSync(newPassword, 12);
   await updateUserPassword(email, passwordHash);
+};
+
+export const getDevicesService = async (userId: string, currentRefreshTokenJwt?: string) => {
+  let currentTokenId = "";
+  if (currentRefreshTokenJwt) {
+    try {
+      const payload = verifyRefreshToken(currentRefreshTokenJwt);
+      currentTokenId = payload.tokenId;
+    } catch {
+      // Ignore invalid token here, just won't mark as current
+    }
+  }
+
+  const devices = await RefreshToken.find({
+    userId,
+    revoked: false,
+    expiresAt: { $gt: new Date() },
+  })
+    .select("tokenId ipAddress userAgent lastActive createdAt")
+    .lean();
+
+  return devices.map((device) => ({
+    ...device,
+    isCurrent: device.tokenId === currentTokenId,
+  }));
+};
+
+export const logoutDeviceService = async (userId: string, tokenId: string) => {
+  const token = await RefreshToken.findOne({ tokenId, userId });
+  if (!token) {
+    throw new Error("Device not found or unauthorized");
+  }
+  token.revoked = true;
+  await token.save();
 };

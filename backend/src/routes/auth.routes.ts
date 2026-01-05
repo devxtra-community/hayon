@@ -13,6 +13,8 @@ import {
   sendRsetPasswordEmail,
   resetPassword,
   adminLogin,
+  getDevices,
+  logoutDevice,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate.middleware";
@@ -45,6 +47,10 @@ router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
 // Logout user
 router.delete("/logout", logout);
 router.delete("/logout/all", authenticate, logoutAll);
+
+// Device management
+router.get("/devices", authenticate, getDevices);
+router.delete("/devices/:tokenId", authenticate, logoutDevice);
 
 // Google OAuth Routes
 router.get(
