@@ -20,6 +20,7 @@ import { api, setAccessToken } from "@/lib/axios";
 import { AxiosError } from "axios";
 import { loginSchema } from "@hayon/schemas";
 import type { ZodError } from "zod";
+import { useToast } from "@/context/ToastContext";
 
 interface LoginFormProps {
   isAdmin?: boolean;
@@ -45,6 +46,7 @@ export default function LoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (error) {
@@ -58,7 +60,7 @@ export default function LoginForm({
 
       const message = errorMessages[error] || "An error occurred. Please try again.";
 
-      alert(message);
+      showToast("error", "Login failed", message);
       window.history.replaceState({}, "", isAdmin ? "/admin-login" : "/login");
     }
   }, [error, isAdmin]);
@@ -103,7 +105,11 @@ export default function LoginForm({
       router.push(redirectPath);
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
-      alert(axiosError.response?.data?.message || "Login failed. Please try again.");
+      showToast(
+        "error",
+        "Login failed",
+        axiosError.response?.data?.message || "Login failed. Please try again.",
+      );
       console.error("Login error", error);
     } finally {
       setIsLoading(false);
@@ -116,16 +122,20 @@ export default function LoginForm({
 
   const handleForgotPassword = () => {
     if (!email) {
-      alert("Please enter your email address to reset your password.");
+      showToast(
+        "error",
+        "Failed to send reset email",
+        "Please enter your email address to reset your password.",
+      );
       return;
     }
     api
       .post("/auth/send-reset-email", { email })
       .then(() => {
-        alert("Password reset email sent. Please check your inbox.");
+        showToast("success", "Password reset email sent", "Please check your inbox.");
       })
       .catch(() => {
-        alert("Failed to send reset email. Please try again.");
+        showToast("error", "Failed to send reset email", "Please try again.");
       });
   };
 

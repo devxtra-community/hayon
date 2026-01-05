@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-// import { AuthProvider } from "./providers";
+import { ToastProvider } from "@/context/ToastContext";
 
 const poppins = Poppins({
   variable: "--font-poppins-sans",
@@ -11,7 +11,8 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Hayon",
-  description: "A full-stack social media management platform that enables multi-platform post creation, scheduling, AI-generated captions, background job processing, and centralized analytics using a scalable, production-oriented architecture.",
+  description:
+    "A full-stack social media management platform that enables multi-platform post creation, scheduling, AI-generated captions, background job processing, and centralized analytics using a scalable, production-oriented architecture.",
 };
 
 export default function RootLayout({
@@ -19,10 +20,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-
-
-
   return (
     <html lang="en">
       <head>
@@ -33,11 +30,11 @@ export default function RootLayout({
         ></link>
         <link rel="icon" href="/logo.png" type="image/png" />
       </head>
-      {/* <AuthProvider> */}
 
-      <body className={`${poppins.variable} antialiased`}>{children}</body>
-      {/* </AuthProvider> */}
-
+      <body className={`${poppins.variable} antialiased`}>
+        {children}
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

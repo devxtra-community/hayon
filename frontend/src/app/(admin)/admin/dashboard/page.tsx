@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, clearAccessToken } from "@/lib/axios";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/context/ToastContext";
 
 // ✅ Define user type
 interface User {
@@ -16,6 +17,7 @@ interface User {
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null); // ✅ Add type here
   const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -38,7 +40,7 @@ export default function DashboardPage() {
       router.push("/login");
     } catch (error) {
       console.error(error);
-      alert("Logout failed");
+      showToast("error", "Logout failed", "Please try again.");
     }
   };
 

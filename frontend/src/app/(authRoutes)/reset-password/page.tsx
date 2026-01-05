@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { resetPasswordSchema } from "@hayon/schemas";
 import type { ZodError } from "zod";
+import { useToast } from "@/context/ToastContext";
 
 interface FormErrors {
   password?: string;
@@ -22,6 +23,7 @@ function ResetPasswordContent() {
   const token = searchParams.get("token");
   const email = searchParams.get("email");
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -83,7 +85,7 @@ function ResetPasswordContent() {
         password,
       });
 
-      alert("Password reset successfully. Please login with your new password.");
+      showToast("success", "Password reset successfully", "Please login with your new password.");
       router.push("/login");
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
