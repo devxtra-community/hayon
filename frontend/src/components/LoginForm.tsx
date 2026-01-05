@@ -111,7 +111,7 @@ export default function LoginForm({
   };
 
   const handleGoogleSignIn = () => {
-    window.location.href = `${process.env.BACKEND_URL || "http://localhost:5000/api"}/auth/google`;
+    window.location.href = `${process.env.BACKEND_URL || "https://api.hayon.site/api"}/auth/google`;
   };
 
   const handleForgotPassword = () => {
