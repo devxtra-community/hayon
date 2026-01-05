@@ -119,19 +119,6 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </div>
-
-          {/* Stats Cards Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            <StatsCard
-              title="Total Posts"
-              value="25"
-              trend="5% increased from last month"
-              variant="primary"
-            />
-            <StatsCard title="Total schedules" value="10" trend="8% increased from last month" />
-            <StatsCard title="Total Drafts" value="12" trend="8% increased from last month" />
-            <StatsCard title="Total Impressions" value="2" trend="8% increased from last month" />
-          </div>
           {/* Wrapper for responsive vertical stacking on mobile */}
           <div className="space-y-5 lg:space-y-0 lg:block">
             {/* Stats Cards Row */}
