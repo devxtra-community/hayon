@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/axios';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { api } from "@/lib/axios";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   Header,
@@ -13,9 +13,9 @@ import {
   PlanInfoCard,
   ConnectedPlatformsCard,
   PlatformPerformanceCard,
-  UpgradeCard
-} from '@/components/dashboard';
-import Link from 'next/link';
+  UpgradeCard,
+} from "@/components/dashboard";
+import Link from "next/link";
 
 interface User {
   id: string;
@@ -31,11 +31,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get("/auth/me");
         setUser(data.data.user);
-        console.log('Fetched user:', data.data.user);
+        console.log("Fetched user:", data.data.user);
       } catch (error) {
-        console.error('Failed to fetch user', error);
+        console.error("Failed to fetch user", error);
       }
     };
 
@@ -69,9 +69,14 @@ export default function DashboardPage() {
           {/* Welcome Section */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Hi, {user.name.split(' ')[0]}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Hi, {user.name.split(" ")[0]}</h1>
               <p className="text-gray-500 text-sm">welcome back</p>
             </div>
+            <Link href="/dashboard/devices">
+              <Button variant="outline" className="mr-2">
+                Manage Devices
+              </Button>
+            </Link>
             <Link href="/create-post">
               <Button variant="default" className="gap-2">
                 Create a post
@@ -88,21 +93,9 @@ export default function DashboardPage() {
               trend="5% increased from last month"
               variant="primary"
             />
-            <StatsCard
-              title="Total schedules"
-              value="10"
-              trend="8% increased from last month"
-            />
-            <StatsCard
-              title="Total Drafts"
-              value="12"
-              trend="8% increased from last month"
-            />
-            <StatsCard
-              title="Total Impressions"
-              value="2"
-              trend="8% increased from last month"
-            />
+            <StatsCard title="Total schedules" value="10" trend="8% increased from last month" />
+            <StatsCard title="Total Drafts" value="12" trend="8% increased from last month" />
+            <StatsCard title="Total Impressions" value="2" trend="8% increased from last month" />
           </div>
 
           {/* Main Grid - Charts and Cards */}
