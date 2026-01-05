@@ -106,18 +106,20 @@ export default function DashboardPage() {
               </h1>
               <p className="text-gray-500 text-xs lg:text-sm">welcome back</p>
             </div>
-            {/* Desktop Create Post Button */}
-            <Link href="/dashboard/devices">
-              <Button variant="outline" className="mr-2">
-                Manage Devices
-              </Button>
-            </Link>
-            <Link href="/create-post" className="hidden lg:block">
-              <Button variant="default" className="gap-2">
-                Create a post
-                <Plus size={18} />
-              </Button>
-            </Link>
+
+            <div className="flex gap-2">
+              <Link href="/dashboard/devices">
+                <Button variant="outline" className="mr-2">
+                  Manage Devices
+                </Button>
+              </Link>
+              <Link href="/create-post" className="hidden lg:block">
+                <Button variant="default" className="gap-2">
+                  Create a post
+                  <Plus size={18} />
+                </Button>
+              </Link>
+            </div>
           </div>
           {/* Wrapper for responsive vertical stacking on mobile */}
           <div className="space-y-5 lg:space-y-0 lg:block">
@@ -185,7 +187,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Floating Action Button (Mobile Only) */}
-      <Link href="/create-post" className="fixed bottom-6 right-6 lg:hidden z-40 shadow-xl">
+      <Link href="/create-post" className="fixed bottom-6 right-6 lg:hidden z-40">
         <Button
           size="icon"
           className="h-14 w-14 rounded-full bg-[#318D62] hover:bg-[#287350] text-white shadow-lg shadow-green-900/20"
