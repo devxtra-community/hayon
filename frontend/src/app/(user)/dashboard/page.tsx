@@ -106,18 +106,20 @@ export default function DashboardPage() {
               </h1>
               <p className="text-gray-500 text-xs lg:text-sm">welcome back</p>
             </div>
-            {/* Desktop Create Post Button */}
-            <Link href="/dashboard/devices">
-              <Button variant="outline" className="mr-2">
-                Manage Devices
-              </Button>
-            </Link>
-            <Link href="/create-post" className="hidden lg:block">
-              <Button variant="default" className="gap-2">
-                Create a post
-                <Plus size={18} />
-              </Button>
-            </Link>
+
+            <div className="flex gap-2">
+              <Link href="/dashboard/devices">
+                <Button variant="outline" className="mr-2">
+                  Manage Devices
+                </Button>
+              </Link>
+              <Link href="/create-post" className="hidden lg:block">
+                <Button variant="default" className="gap-2">
+                  Create a post
+                  <Plus size={18} />
+                </Button>
+              </Link>
+            </div>
           </div>
           {/* Wrapper for responsive vertical stacking on mobile */}
           <div className="space-y-5 lg:space-y-0 lg:block">

@@ -15,6 +15,17 @@ import {
   LogOut,
 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface NavItem {
   name: string;
@@ -126,15 +137,34 @@ export default function Sidebar() {
 
           {/* Logout Button */}
           <div className="relative flex items-center">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-4 px-4 py-2 w-full text-gray-500 hover:text-gray-900 transition-all duration-200"
-            >
-              <span className="text-gray-400">
-                <LogOut size={20} />
-              </span>
-              <span className="text-base">Logout</span>
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button className="flex items-center gap-4 px-4 py-2 w-full text-gray-500 hover:text-gray-900 transition-all duration-200">
+                  <span className="text-gray-400">
+                    <LogOut size={20} />
+                  </span>
+                  <span className="text-base">Logout</span>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Logout Confirmation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to logout? You will need to log in again to access your
+                    dashboard.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Logout
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </nav>
       </div>

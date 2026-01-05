@@ -6,6 +6,8 @@ import { Sidebar, Header } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface User {
   id: string;
@@ -25,6 +27,7 @@ export default function SettingsPage() {
   const { showToast } = useToast();
   const [update, setUpdate] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -167,11 +170,35 @@ export default function SettingsPage() {
         <Sidebar />
       </div>
 
+      {/* Mobile Sidebar Overlay */}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/50 lg:hidden transition-opacity duration-300",
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        )}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <div
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-72 bg-none transition-transform duration-300 transform",
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Sidebar />
+        </div>
+      </div>
+
       {/* Right Column */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className="pb-4">
-          <Header userName={user.name} userEmail={user.email} userAvatar={user.avatar} />
+          <Header
+            userName={user.name}
+            userEmail={user.email}
+            userAvatar={user.avatar}
+            onMenuClick={() => setIsMobileMenuOpen(true)}
+          />
         </div>
 
         {/* Settings Content */}
@@ -222,13 +249,21 @@ export default function SettingsPage() {
                   )}
                 </div>
 
-                <div className="flex-1 flex flex-col justify-between w-full min-h-[6rem]">
+                <div className="flex-1 flex flex-col gap-5 justify-between w-full min-h-[7rem]">
                   <div className="text-center md:text-left">
                     <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
                     <p className="text-gray-500 mb-2">{user.email}</p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 items-center justify-center md:justify-end mt-4 md:mt-0">
+                  <div className="w-full flex flex-col sm:flex-row gap-3 pr-6 items-center justify-center md:justify-end mt-6 md:mt-0">
+                    <Link href="/dashboard/devices">
+                      <Button
+                        variant="secondary"
+                        className="h-9 px-4 text-xs font-medium border-none"
+                      >
+                        Manage Devices
+                      </Button>
+                    </Link>
                     <Button
                       variant="outline"
                       className="h-9 px-4 text-xs font-medium border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
