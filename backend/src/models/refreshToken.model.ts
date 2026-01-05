@@ -27,19 +27,22 @@ const RefreshTokenSchema = new Schema<IRefreshToken>(
       type: Boolean,
       default: false,
     },
+    ipAddress: {
+      type: String,
+    },
+    userAgent: {
+      type: String,
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
+RefreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-RefreshTokenSchema.index(
-  { expiresAt: 1 },
-  { expireAfterSeconds: 0 }
-);
-
-export const RefreshToken = mongoose.model<IRefreshToken>(
-  "RefreshToken",
-  RefreshTokenSchema
-);
+export const RefreshToken = mongoose.model<IRefreshToken>("RefreshToken", RefreshTokenSchema);

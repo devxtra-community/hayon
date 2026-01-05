@@ -5,6 +5,8 @@ export const createRefreshToken = async (data: {
   tokenId: string;
   userId: Types.ObjectId;
   expiresAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
 }) => {
   return RefreshToken.create(data);
 };

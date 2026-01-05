@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/axios';
-import { Plus, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { api } from "@/lib/axios";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   Header,
@@ -13,10 +13,10 @@ import {
   PlanInfoCard,
   ConnectedPlatformsCard,
   PlatformPerformanceCard,
-  UpgradeCard
-} from '@/components/dashboard';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+  UpgradeCard,
+} from "@/components/dashboard";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface User {
   id: string;
@@ -33,11 +33,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get("/auth/me");
         setUser(data.data.user);
-        console.log('Fetched user:', data.data.user);
+        console.log("Fetched user:", data.data.user);
       } catch (error) {
-        console.error('Failed to fetch user', error);
+        console.error("Failed to fetch user", error);
       }
     };
 
@@ -54,7 +54,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
-
       {/* Desktop Sidebar */}
       <div className="hidden lg:block h-full">
         <Sidebar />
@@ -64,14 +63,14 @@ export default function DashboardPage() {
       <div
         className={cn(
           "fixed inset-0 z-50 bg-black/50 lg:hidden transition-opacity duration-300",
-          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
         )}
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <div
           className={cn(
             "absolute left-0 top-0 bottom-0 w-72 bg-none  transition-transform duration-300 transform",
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           )}
           onClick={(e) => e.stopPropagation()}
         >
@@ -102,10 +101,17 @@ export default function DashboardPage() {
           {/* Welcome Section */}
           <div className="flex items-center justify-between mb-6 lg:mb-8">
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Hi, {user.name.split(' ')[0]}</h1>
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                Hi, {user.name.split(" ")[0]}
+              </h1>
               <p className="text-gray-500 text-xs lg:text-sm">welcome back</p>
             </div>
             {/* Desktop Create Post Button */}
+            <Link href="/dashboard/devices">
+              <Button variant="outline" className="mr-2">
+                Manage Devices
+              </Button>
+            </Link>
             <Link href="/create-post" className="hidden lg:block">
               <Button variant="default" className="gap-2">
                 Create a post
@@ -113,10 +119,8 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </div>
-
           {/* Wrapper for responsive vertical stacking on mobile */}
           <div className="space-y-5 lg:space-y-0 lg:block">
-
             {/* Stats Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:mb-8">
               <StatsCard
@@ -125,22 +129,10 @@ export default function DashboardPage() {
                 trend="5% increased from last month"
                 variant="primary"
               />
-              <StatsCard
-                title="Total Drafts"
-                value="17"
-                trend="5% increased from last month"
-              />
-              <StatsCard
-                title="Total Schedules"
-                value="33"
-                trend="5% increased from last month"
-              />
+              <StatsCard title="Total Drafts" value="17" trend="5% increased from last month" />
+              <StatsCard title="Total Schedules" value="33" trend="5% increased from last month" />
               {/* Re-ordered to match image somewhat, or kept logical */}
-              <StatsCard
-                title="Total Impression"
-                value="48"
-                trend="5% increased from last month"
-              />
+              <StatsCard title="Total Impression" value="48" trend="5% increased from last month" />
             </div>
 
             {/* Main Grid - Charts and Cards */}
@@ -188,7 +180,6 @@ export default function DashboardPage() {
               {/* Upgrade Card */}
               <UpgradeCard />
             </div>
-
           </div>
         </main>
       </div>
@@ -202,7 +193,6 @@ export default function DashboardPage() {
           <Plus size={32} />
         </Button>
       </Link>
-
     </div>
   );
 }
