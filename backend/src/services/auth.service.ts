@@ -86,18 +86,23 @@ export const verifyOtpService = async (email: string, otp: string) => {
 };
 
 // Signup service - validation is handled by Zod schema
-export const signupService = async (data: any) => {
+export const signupService = async (data: any, userId: any) => {
   const { email, password, name, avatar } = data;
-  // confirmPassword already validated to match password by Zod schema
 
-  const { buffer } = parseBase64Image(avatar);
-  const uploadResult = await s3Service.uploadFile(`users/${name}/profile.png`, buffer, "image/png");
+  // confirmPassword already validated to match password by Zod schema
 
   // Email is already normalized by Zod schema
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw new Error("Email already registered");
   }
+
+  const { buffer } = parseBase64Image(avatar);
+  const uploadResult = await s3Service.uploadFile(
+    `users/${userId}/profile.png`,
+    buffer,
+    "image/png",
+  );
 
   const passwordHash = await bcrypt.hash(password, 12);
 

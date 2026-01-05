@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.BACKEND_URL ?? "https://api.hayon.site/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.hayon.site/api";
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
