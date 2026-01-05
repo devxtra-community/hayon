@@ -41,7 +41,7 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
-          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_URL }}
         run: pnpm run build
 
       # ---------- SSH ----------
