@@ -12,51 +12,57 @@ export const createUser = async (data: any) => {
   return User.create(data);
 };
 
-// check fields 
+// check fields
 
 export const findUserByIdSafe = async (userId: string) => {
   return User.findById(userId).select(
-    "-auth.passwordHash -auth.verificationToken -auth.resetToken"
+    "-auth.passwordHash -auth.verificationToken -auth.resetToken",
   );
 };
 
-export const setPasswordResetToken = async (email:string) => {
-
-   const user = await User.findOne({ email });
+export const setPasswordResetToken = async (email: string) => {
+  const user = await User.findOne({ email });
   if (!user) {
-    throw new ErrorResponse("User not found"); 
+    throw new ErrorResponse("User not found");
   }
 
   const resetToken = crypto.randomBytes(32).toString("hex");
 
   const hashedToken = bcrypt.hashSync(resetToken, 12);
 
-    await User.updateOne(
+  await User.updateOne(
     { email },
-     {
-       $set:{
-       "auth.passwordResetToken":{
-        token: hashedToken,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+    {
+      $set: {
+        "auth.passwordResetToken": {
+          token: hashedToken,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        },
       },
-    }
-    }
+    },
   );
   return resetToken;
-}
+};
 
-export const findResetPasswordToken = async (email:string) => {
+export const findResetPasswordToken = async (email: string) => {
   const user = await User.findOne({ email });
   if (!user) {
     throw new ErrorResponse("User not found");
   }
   logger.info(`Found reset token for user ${email}: ${user}`);
   return user.auth.passwordResetToken?.token;
-}
+};
 
-export const updateUserPassword = async (email:string, newPasswordHash:string) => {
-   return User.updateOne(
-    { email },
-    { auth: { passwordHash: newPasswordHash } } 
-  );
-}
+export const updateUserPassword = async (email: string, newPasswordHash: string) => {
+  return User.updateOne({ email }, { auth: { passwordHash: newPasswordHash } });
+};
+
+export const updateAvatar = async (userId: string, avatarUrl: string) => {
+  const user = await User.findOneAndUpdate({ _id: userId }, { avatar: avatarUrl });
+
+  return user;
+};
+
+export const updateUserAvatar = async (userId: string, avatarUrl: string) => {
+  return User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true });
+};

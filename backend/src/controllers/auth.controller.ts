@@ -48,6 +48,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
     const { user, accessToken, refreshToken } = await signupService(
       req.body,
+      req?.auth?.id,
       req.ip,
       req.headers["user-agent"],
     );

@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, getAccessToken, setAccessToken } from "@/lib/axios";
+import { ToastProvider } from "@/context/ToastContext";
 
 interface User {
   id: string;
@@ -65,5 +66,5 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     return null;
   }
 
-  return <>{children}</>;
+  return <ToastProvider>{children}</ToastProvider>;
 }

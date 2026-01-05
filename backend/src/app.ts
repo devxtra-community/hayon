@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDB from "./config/database";
 import authRoutes from "./routes/auth.routes";
 import paymentRoutes from "./routes/payment.routes";
+import profileRoutes from "./routes/profile.routes";
 import passport from "./config/passport";
 import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
 import { ENV } from "./config/env";
@@ -39,8 +40,10 @@ const appRouter = express.Router();
 
 expressInstance.use("/api", appRouter);
 
+// routes
 appRouter.use("/auth", authRoutes);
 appRouter.use("/payments", paymentRoutes);
+appRouter.use("/profile", profileRoutes);
 
 expressInstance.use(notFoundHandler);
 expressInstance.use(serverErrorHandler);
