@@ -6,6 +6,7 @@ import {
   changeUserTimezone,
   updateAvatar,
   updateUserAvatar,
+  changeUserName,
 } from "../repositories/user.repository";
 import logger from "../utils/logger";
 
@@ -63,7 +64,6 @@ export async function changeTimezoneController(req: Request, res: Response): Pro
     const userId = req?.auth?.id as string;
     const { timezone } = req.body;
 
-    // Assuming there's a service or repository function to update the timezone
     await changeUserTimezone(userId, timezone);
 
     new SuccessResponse("Timezone updated successfully").send(res);
@@ -73,6 +73,24 @@ export async function changeTimezoneController(req: Request, res: Response): Pro
       new ErrorResponse(err.message || "Failed to update timezone", { status: 400 }).send(res);
     } else {
       new ErrorResponse("Failed to update timezone", { status: 400 }).send(res);
+    }
+  }
+}
+
+export async function changeNameController(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req?.auth?.id as string;
+    const { name } = req.body;
+
+    await changeUserName(userId, name);
+
+    new SuccessResponse("Name updated successfully").send(res);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      logger.info("Error updating name:", err.message);
+      new ErrorResponse(err.message || "Failed to update name", { status: 400 }).send(res);
+    } else {
+      new ErrorResponse("Failed to update name", { status: 400 }).send(res);
     }
   }
 }

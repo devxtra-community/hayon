@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/axios";
 import { Sidebar, Header } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
-import { Camera } from "lucide-react";
+import { Camera, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -34,6 +34,9 @@ export default function SettingsPage() {
   const [timezoneSearch, setTimezoneSearch] = useState("");
   const [selectedTimezone, setSelectedTimezone] = useState("");
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
   const allTimezones = useRef<string[]>([]);
 
   useEffect(() => {
@@ -245,6 +248,34 @@ export default function SettingsPage() {
       });
   };
 
+  const handleNameUpdate = async () => {
+    if (!editedName.trim() || editedName === user?.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsUpdatingName(true);
+    try {
+      await api.patch("/profile/change-name", {
+        name: editedName.trim(),
+      });
+      showToast("success", "Name Updated", "Your name has been updated successfully.");
+      setUpdate(!update);
+      setIsEditingName(false);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Failed to update name", error);
+        showToast(
+          "error",
+          "Update Failed",
+          error.message || "Could not update name. Please try again.",
+        );
+      }
+    } finally {
+      setIsUpdatingName(false);
+    }
+  };
+
   const handleTimezoneUpdate = async () => {
     if (!selectedTimezone) return;
 
@@ -320,7 +351,9 @@ export default function SettingsPage() {
                 <div className="relative group mx-auto md:mx-0">
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 flex-shrink-0">
                     <Image
-                      src={user.avatar || "https://github.com/shadcn.png"}
+                      width={96}
+                      height={96}
+                      src={user.avatar}
                       alt={user.name}
                       className="w-full h-full object-cover"
                     />
@@ -359,8 +392,51 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex-1 flex flex-col gap-5 justify-between w-full min-h-[7rem]">
-                  <div className="text-center md:text-left">
-                    <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
+                  <div className="text-center md:text-left group flex flex-col">
+                    {isEditingName ? (
+                      <div className="flex items-center gap-2 mb-1">
+                        <input
+                          type="text"
+                          value={editedName}
+                          onChange={(e) => setEditedName(e.target.value)}
+                          className="text-xl font-bold text-gray-900 bg-gray-50 border border-gray-200 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#318D62]/20 w-full max-w-[200px]"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleNameUpdate();
+                            if (e.key === "Escape") setIsEditingName(false);
+                          }}
+                          autoFocus
+                          disabled={isUpdatingName}
+                        />
+                        <button
+                          onClick={handleNameUpdate}
+                          disabled={isUpdatingName}
+                          className="p-1 hover:bg-green-50 rounded text-green-600 transition-colors"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button
+                          onClick={() => setIsEditingName(false)}
+                          disabled={isUpdatingName}
+                          className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
+                        <button
+                          onClick={() => {
+                            setEditedName(user.name);
+                            setIsEditingName(true);
+                          }}
+                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-[#318D62]"
+                          title="Change name"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    )}
                     <p className="text-gray-500 mb-2">{user.email}</p>
                   </div>
 
