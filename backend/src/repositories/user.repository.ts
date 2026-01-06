@@ -66,3 +66,7 @@ export const updateAvatar = async (userId: string, avatarUrl: string) => {
 export const updateUserAvatar = async (userId: string, avatarUrl: string) => {
   return User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true });
 };
+
+export const changeUserTimezone = async (userId: string, timezone: string) => {
+  return User.findByIdAndUpdate(userId, { timezone }, { new: true });
+};
