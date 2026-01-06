@@ -1,30 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, clearAccessToken } from "@/lib/axios";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/context/ToastContext";
+import { api } from "@/lib/axios";
+import { cn } from "@/lib/utils";
+import { AdminSidebar, AdminHeader, StatsCards } from "@/components/admin";
+import { ActivityChart } from "@/components/admin/charts";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import Link from "next/link";
+import { RefreshCw, Users, BarChart3, ArrowRight } from "lucide-react";
 
-// ✅ Define user type
 interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: "user" | "admin";
   avatar: string;
 }
 
-export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null); // ✅ Add type here
-  const router = useRouter();
-  const { showToast } = useToast();
+export default function AdminDashboardPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const { data } = await api.get("/auth/me");
         setUser(data.data.user);
-        console.log("Fetched user:", data.data.user);
+        console.log("Fetched admin user:", data.data.user);
       } catch (error) {
         console.error("Failed to fetch user", error);
       }
@@ -33,33 +37,152 @@ export default function DashboardPage() {
     fetchUser();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await api.delete("/auth/logout");
-      clearAccessToken(); // ✅ Clear access token from memory
-      router.push("/login");
-    } catch (error) {
-      console.error(error);
-      showToast("error", "Logout failed", "Please try again.");
-    }
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setIsRefreshing(false);
+  };
+
+  // Mock stats
+  const stats = {
+    totalUsers: 1380,
+    activeUsers: 1120,
+    inactiveUsers: 260,
+    paidUsers: 930,
+    monthlyGrowth: 15.2,
+    topPlan: "Professional",
   };
 
   if (!user) {
-    return <div>Loading user...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+          <p className="text-gray-500 font-medium">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      <p className="mt-4">Welcome, {user.name}!</p>
-      <p className="text-gray-600">{user.email}</p>
-      <img className="rounded-full" src={user.avatar} alt="avatar" />
-      <button
-        onClick={handleLogout}
-        className="mt-4 bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2 rounded transition"
+    <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block h-full">
+        <AdminSidebar />
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/50 lg:hidden transition-opacity duration-300",
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        )}
+        onClick={() => setIsMobileMenuOpen(false)}
       >
-        Logout
-      </button>
+        <div
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-72 bg-none transition-transform duration-300 transform",
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AdminSidebar />
+        </div>
+      </div>
+
+      {/* Right Column */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Header */}
+        <div className="pb-2 lg:pb-4">
+          <AdminHeader
+            userName={user.name}
+            userEmail={user.email}
+            userAvatar={user.avatar}
+            onMenuClick={() => setIsMobileMenuOpen(true)}
+          />
+        </div>
+
+        {/* Dashboard Content */}
+        <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
+          {/* Welcome Section */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 lg:mb-8">
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-gray-500 text-xs lg:text-sm">
+                Welcome back, {user.name.split(" ")[0]}! Here{"'"}s an overview of your platform.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="gap-2"
+              >
+                <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="mb-6 lg:mb-8">
+            <StatsCards stats={stats} />
+          </div>
+
+          {/* Quick Action Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 lg:mb-8">
+            <Link href="/admin/users" className="group">
+              <Card className="p-5 border-gray-100 hover:shadow-md hover:border-red-200 transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                      <Users size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Manage Users</h3>
+                      <p className="text-sm text-gray-500">
+                        Enable/disable accounts & change plans
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight
+                    size={20}
+                    className="text-gray-400 group-hover:text-red-500 group-hover:translate-x-1 transition-all"
+                  />
+                </div>
+              </Card>
+            </Link>
+
+            <Link href="/admin/analytics" className="group">
+              <Card className="p-5 border-gray-100 hover:shadow-md hover:border-red-200 transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
+                      <BarChart3 size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">View Analytics</h3>
+                      <p className="text-sm text-gray-500">Detailed insights & reports</p>
+                    </div>
+                  </div>
+                  <ArrowRight
+                    size={20}
+                    className="text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition-all"
+                  />
+                </div>
+              </Card>
+            </Link>
+          </div>
+
+          {/* Activity Chart */}
+          <div className="grid grid-cols-1">
+            <ActivityChart />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
