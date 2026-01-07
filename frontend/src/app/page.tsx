@@ -7,14 +7,14 @@ import { BookOpen, Sparkles, Menu, X, Calendar, BarChart3, FileText } from "luci
 import Link from "next/link";
 import { CardImage } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { api, setAccessToken, getAccessToken } from '@/lib/axios';
+import { api, setAccessToken, getAccessToken } from "@/lib/axios";
 import { useRouter } from "next/navigation";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
 }
 
 export default function Home() {
@@ -27,7 +27,7 @@ export default function Home() {
       const token = getAccessToken();
       if (!token) {
         try {
-          const { data } = await api.post('/auth/refresh');
+          const { data } = await api.post("/auth/refresh");
           setAccessToken(data.data.accessToken);
         } catch {
           setIsChecking(false);
@@ -37,14 +37,14 @@ export default function Home() {
 
       // User has valid token - check their role
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get("/auth/me");
         const user: User = data.data.user;
 
-        if (user.role === 'user') {
-          router.push('/dashboard');
+        if (user.role === "user") {
+          router.push("/dashboard");
           return;
-        } else if (user.role === 'admin') {
-          router.push('/admin/dashboard');
+        } else if (user.role === "admin") {
+          router.push("/admin/dashboard");
           return;
         }
       } catch {
@@ -62,8 +62,8 @@ export default function Home() {
         setMobileMenuOpen(false);
       }
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   if (isChecking) {
@@ -79,7 +79,10 @@ export default function Home() {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
           <div className="absolute inset-0 gradient flex flex-col items-center justify-between pt-6 pb-12 px-6">
             {/* Close Button */}
             <div className="w-full flex justify-start">
@@ -94,20 +97,28 @@ export default function Home() {
             {/* Menu Items */}
             <div className="flex flex-col items-center gap-4 w-full max-w-xs">
               <Link href="#" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"outline"} className="w-full py-6 text-lg">What is Hayon</Button>
+                <Button variant={"outline"} className="w-full py-6 text-lg">
+                  What is Hayon
+                </Button>
               </Link>
               <Link href="/login" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"outline"} className="w-full py-6 text-lg">Login</Button>
+                <Button variant={"outline"} className="w-full py-6 text-lg">
+                  Login
+                </Button>
               </Link>
               <Link href="/pricing" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"outline"} className="w-full py-6 text-lg">Pricing</Button>
+                <Button variant={"outline"} className="w-full py-6 text-lg">
+                  Pricing
+                </Button>
               </Link>
             </div>
 
             {/* CTA Button */}
             <div className="w-full max-w-xs">
               <Link href="/register" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"black"} className="w-full py-6 text-lg">Start Free Trial</Button>
+                <Button variant={"black"} className="w-full py-6 text-lg">
+                  Start Free Trial
+                </Button>
               </Link>
             </div>
           </div>
@@ -190,7 +201,9 @@ export default function Home() {
             <BookOpen size={16} className="mr-1" /> How it works
           </Button>
 
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center">How hayon works</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center">
+            How hayon works
+          </h2>
 
           <p className="text-sm md:text-base text-muted-foreground text-center max-w-md">
             hayon help people to reduce time your social account managing
@@ -198,7 +211,10 @@ export default function Home() {
         </div>
 
         {/* Responsive Grid for How it works */}
-        <div className="mt-8 md:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6 lg:gap-4 w-full max-w-6xl mx-auto" style={{ minHeight: '50vh' }}>
+        <div
+          className="mt-8 md:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6 lg:gap-4 w-full max-w-6xl mx-auto"
+          style={{ minHeight: "50vh" }}
+        >
           {/* On mobile: simple stacked cards, on desktop: original complex grid */}
           <CardImage className="lg:col-span-2 lg:row-span-2 min-h-[150px] sm:min-h-[180px]" />
           <CardImage className="lg:col-span-2 lg:row-span-6 min-h-[150px] sm:min-h-[180px] lg:min-h-0" />
@@ -293,10 +309,16 @@ export default function Home() {
             © 2026 Hayon. All rights reserved.
           </p>
           <div className="flex gap-4">
-            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              href="/privacy"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               Privacy
             </Link>
-            <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              href="/terms"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               Terms
             </Link>
           </div>
