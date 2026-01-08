@@ -29,5 +29,10 @@ export {
   type ResetPasswordInput,
 } from "./auth.schema";
 
+export {
+  // Platform schemas
+  blueskyConnectSchema,
+} from "./platform.schema";
+
 // Re-export zod for convenience
 export { z } from "zod";

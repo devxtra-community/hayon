@@ -12,6 +12,7 @@ import helmet from "helmet";
 import { SuccessResponse } from "./utils/responses";
 import morgan from "morgan";
 import logger from "./utils/logger";
+import platformRoutes from "./routes/platform.routes";
 
 const expressInstance: Application = express();
 
@@ -44,6 +45,7 @@ expressInstance.use("/api", appRouter);
 appRouter.use("/auth", authRoutes);
 appRouter.use("/payments", paymentRoutes);
 appRouter.use("/profile", profileRoutes);
+appRouter.use("/platform", platformRoutes);
 
 expressInstance.use(notFoundHandler);
 expressInstance.use(serverErrorHandler);

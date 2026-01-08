@@ -31,7 +31,6 @@ import { ENV } from "../config/env";
 import logger from "../utils/logger";
 import { Request, Response, NextFunction } from "express";
 // import { AuthenticateCallback } from "passport";
-import { connectBluesky } from "../controllers/blueSky.controller";
 import { SuccessResponse } from "../utils/responses";
 
 // import { logoutAllService } from "../services/auth.service";
@@ -125,7 +124,5 @@ router.get(
     new SuccessResponse("Facebook login successful").send(res);
   },
 );
-
-router.post("/bluesky/connect", connectBluesky);
 
 export default router;
