@@ -29,6 +29,11 @@ import {
 } from "@hayon/schemas";
 import { ENV } from "../config/env";
 import logger from "../utils/logger";
+import { Request, Response, NextFunction } from "express";
+// import { AuthenticateCallback } from "passport";
+import { connectBluesky } from "../controllers/blueSky.controller";
+import { SuccessResponse } from "../utils/responses";
+
 // import { logoutAllService } from "../services/auth.service";
 
 const router = express.Router();
@@ -83,5 +88,44 @@ router.get(
   },
   googleOAuthCallback,
 );
+
+router.get(
+  "/facebook",
+  passport.authenticate("facebook", {
+    scope: [
+      "pages_show_list",
+      "pages_read_engagement",
+      "pages_manage_posts",
+      "instagram_basic",
+      "instagram_content_publish",
+    ],
+  }),
+);
+
+/* FACEBOOK CALLBACK */
+
+router.get(
+  "/facebook/callback",
+  (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate("facebook", { session: false }, (err: any, user: any, info: any) => {
+      console.log("🔥 FACEBOOK CALLBACK:", { err, user, info });
+
+      if (err) {
+        return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=facebook_auth_error`);
+      }
+      if (!info) {
+        return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=got_no_infos`);
+      }
+
+      return next();
+    });
+  },
+  (req: Request, res: Response) => {
+    console.log("✅ Facebook login success");
+    new SuccessResponse("Facebook login successful").send(res);
+  },
+);
+
+router.post("/bluesky/connect", connectBluesky);
 
 export default router;

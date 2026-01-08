@@ -75,4 +75,13 @@ export const ENV = {
     REGION: required("AWS_REGION"),
     S3_BUCKET_NAME: required("AWS_S3_BUCKET_NAME"),
   },
+
+  /** ======================
+   *  META OAUTH
+   *  ====================== */
+  META: {
+    CLIENT_ID: required("META_APP_ID"),
+    CLIENT_SECRET: required("META_APP_SECRET"),
+    CALLBACK_URL: required("META_CALLBACK_URL"),
+  },
 } as const;
