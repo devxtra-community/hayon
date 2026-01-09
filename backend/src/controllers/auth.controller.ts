@@ -14,7 +14,7 @@ import { requestOtpService } from "../services/auth.service";
 import { verifyOtpService } from "../services/auth.service";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import { setRefreshTokenCookie } from "../utils/setAuthCookies";
-import { ENV } from "../config/env";
+// import { ENV } from "../config/env";
 import { logoutAllService } from "../services/auth.service";
 import logger from "../utils/logger";
 import { resetPasswordService } from "../services/auth.service";
@@ -206,8 +206,8 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   res.clearCookie("refreshToken", {
     path: "/api/auth",
     httpOnly: true,
-    secure: ENV.APP.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
   });
 
   new SuccessResponse("Logged out successfully").send(res);
@@ -226,8 +226,8 @@ export const logoutAll = async (req: Request, res: Response): Promise<void> => {
     res.clearCookie("refreshToken", {
       path: "/api/auth",
       httpOnly: true,
-      secure: ENV.APP.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
 
     new SuccessResponse("Logged out from all devices").send(res);

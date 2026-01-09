@@ -26,7 +26,6 @@ import { sendResetPasswordEmail } from "../utils/nodemailer";
 import logger from "../utils/logger";
 
 export const requestOtpService = async (email: string) => {
-  // Email is already validated and normalized by Zod schema
 
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
@@ -59,7 +58,6 @@ export const requestOtpService = async (email: string) => {
 };
 
 export const verifyOtpService = async (email: string, otp: string) => {
-  // Email and OTP are already validated by Zod schema
 
   const pending = await findPendingByEmail(email);
   if (!pending) {
@@ -85,7 +83,6 @@ export const verifyOtpService = async (email: string, otp: string) => {
   };
 };
 
-// Signup service - validation is handled by Zod schema
 export const signupService = async (
   data: any,
   userId: any,
@@ -94,9 +91,6 @@ export const signupService = async (
 ) => {
   const { email, password, name, avatar } = data;
 
-  // confirmPassword already validated to match password by Zod schema
-
-  // Email is already normalized by Zod schema
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw new Error("Email already registered");

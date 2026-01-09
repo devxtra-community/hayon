@@ -100,3 +100,5 @@ export const findPlatformAccounts = async (req: Request, res: Response) => {
     return new ErrorResponse("Failed to find platform accounts", { status: 500 }).send(res);
   }
 };
+
+// =================  PLATFORM ACCOUNTS CONTROLLER (RELATED TO ALL) =================//

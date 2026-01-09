@@ -3,9 +3,10 @@ import {
   SocialAccount,
   Profile,
   Health,
-  Meta,
   MetaAuth,
-  MetaIdentity,
+  Facebook,
+  Instagram,
+  Threads,
   Bluesky,
   Mastodon,
   Tumblr,
@@ -48,9 +49,8 @@ const metaAuthSchema = new Schema<MetaAuth>(
     },
     refreshToken: {
       type: String,
-      required: function (this: any) {
-        return this.parent()?.connected;
-      },
+
+      required: false,
     },
     expiresAt: { type: Date },
     scopes: { type: [String], default: [] },
@@ -58,31 +58,41 @@ const metaAuthSchema = new Schema<MetaAuth>(
   { _id: false },
 );
 
-/* ---------- META IDENTITY (NO AUTH HERE) ---------- */
-const metaIdentitySchema = new Schema<MetaIdentity>(
+/* ---------- FACEBOOK SCHEMA ---------- */
+const facebookSchema = new Schema<Facebook>(
   {
-    platformId: { type: String }, // Page ID / IG User ID / Threads User ID
+    connected: { type: Boolean, default: false },
+    platformId: { type: String }, // Page ID
     profile: profileSchema,
+    auth: metaAuthSchema,
+    health: healthSchema,
   },
   { _id: false },
 );
 
-/* ---------- META ROOT ---------- */
-const metaSchema = new Schema<Meta>(
+/* ---------- INSTAGRAM SCHEMA ---------- */
+const instagramSchema = new Schema<Instagram>(
   {
     connected: { type: Boolean, default: false },
-
+    platformId: { type: String }, // User ID
+    profile: profileSchema,
     auth: metaAuthSchema,
     health: healthSchema,
 
-    facebook: metaIdentitySchema,
-    instagram: metaIdentitySchema,
-    threads: metaIdentitySchema,
+    linkedPageId: { type: String },
+    businessId: { type: String },
+  },
+  { _id: false },
+);
 
-    platformMetadata: {
-      linkedPageId: { type: String },
-      businessId: { type: String },
-    },
+/* ---------- THREADS SCHEMA ---------- */
+const threadsSchema = new Schema<Threads>(
+  {
+    connected: { type: Boolean, default: false },
+    platformId: { type: String }, // User ID
+    profile: profileSchema,
+    auth: metaAuthSchema,
+    health: healthSchema,
   },
   { _id: false },
 );
@@ -180,7 +190,10 @@ const socialAccountSchema = new Schema<SocialAccount>(
       required: true,
     },
 
-    meta: { type: metaSchema, default: () => ({}) },
+    // Flattened Meta Platforms
+    facebook: { type: facebookSchema, default: () => ({}) },
+    instagram: { type: instagramSchema, default: () => ({}) },
+    threads: { type: threadsSchema, default: () => ({}) },
 
     bluesky: { type: blueskySchema, default: () => ({}) },
     mastodon: { type: mastodonSchema, default: () => ({}) },

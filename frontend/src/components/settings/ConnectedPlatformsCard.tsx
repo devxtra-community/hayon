@@ -28,16 +28,28 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
 }) => {
   const [isBlueskyModalOpen, setIsBlueskyModalOpen] = useState(false);
   const [isDisconnectAlertOpen, setIsDisconnectAlertOpen] = useState(false);
+  const [platformToDelete, setPlatformToDelete] = useState<{
+    name: string;
+    key: "bluesky" | "facebook" | "threads";
+  } | null>(null);
   const { showToast } = useToast();
 
-  const handleBlueskyDisconnect = async () => {
+  const handleDisconnectConfirm = async () => {
+    if (!platformToDelete) return;
+
     try {
-      await api.delete("/platform/bluesky/disconnect");
-      showToast("success", "Disconnected", "Bluesky account disconnected successfully");
+      const endpoint = platformToDelete.key === "bluesky"
+        ? "/platform/bluesky/disconnect"
+        : `/platform/${platformToDelete.key}/disconnect`;
+      await api.delete(endpoint);
+      showToast("success", "Disconnected", `${platformToDelete.name} disconnected successfully`);
       onUpdate();
     } catch (error) {
-      console.error("Failed to disconnect Bluesky", error);
-      showToast("error", "Disconnect Failed", "Could not disconnect Bluesky. Please try again.");
+      console.error(`Failed to disconnect ${platformToDelete.name}`, error);
+      showToast("error", "Disconnect Failed", `Could not disconnect ${platformToDelete.name}. Please try again.`);
+    } finally {
+      setIsDisconnectAlertOpen(false);
+      setPlatformToDelete(null);
     }
   };
 
@@ -76,19 +88,147 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
     ),
   };
 
+  const getExpiryStatus = (expiresAt?: string) => {
+    if (!expiresAt) return null;
+    const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 0) return { label: "Expired", color: "text-red-600", urgent: true };
+    if (daysLeft <= 7) return { label: `Expires in ${daysLeft} days`, color: "text-amber-600", urgent: true };
+    return { label: `Expires in ${daysLeft} days`, color: "text-gray-400", urgent: false };
+  };
+
+  const renderPlatformActions = (platform: any) => {
+    const expiry = platform.expiresAt ? getExpiryStatus(platform.expiresAt) : null;
+
+    const isMeta = ["Facebook", "Instagram", "Threads"].includes(platform.name);
+
+    if (isMeta) {
+      if (platform.status === "connected") {
+        return (
+          <div className="flex items-center gap-2">
+            {expiry && (
+              <span className={`text-[10px] font-medium mr-1 ${expiry.color}`}>
+                {expiry.label}
+              </span>
+            )}
+            {expiry?.urgent && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const endpoint = (platform.name === "Facebook" || platform.name === "Instagram")
+                      ? "/platform/facebook/connect"
+                      : "/platform/threads/connect";
+                    const res = await api.get(endpoint);
+                    if (res.data?.data?.url) window.location.href = res.data.data.url;
+                  } catch (e) { console.error(e); }
+                }}
+                className="rounded-full px-4 h-8 text-[11px] font-medium border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+              >
+                Reconnect
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPlatformToDelete({
+                  name: platform.name === "Threads" ? "Threads" : "Facebook & Instagram",
+                  key: platform.name === "Threads" ? "threads" : "facebook"
+                });
+                setIsDisconnectAlertOpen(true);
+              }}
+              className="rounded-full px-4 h-8 text-[11px] font-medium border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
+            >
+              Disconnect
+            </Button>
+          </div>
+        );
+      } else {
+        return (
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                const endpoint = (platform.name === "Facebook" || platform.name === "Instagram")
+                  ? "/platform/facebook/connect"
+                  : "/platform/threads/connect";
+                const res = await api.get(endpoint);
+                if (res.data?.data?.url) window.location.href = res.data.data.url;
+              } catch {
+                showToast("error", "Error", "Could not initiate connection");
+              }
+            }}
+            className={`rounded-full px-5 h-9 text-xs font-medium border transition-colors bg-[#318D62] text-white hover:bg-[#287350] border-transparent`}
+          >
+            Connect
+          </Button>
+        );
+      }
+    }
+
+    // Fallback for others (Bluesky, etc)
+    if (platform.name === "Bluesky" && platform.status === "connected") {
+      return (
+        <>
+          <Button
+            variant="outline"
+            onClick={() => setIsBlueskyModalOpen(true)}
+            className="rounded-full px-4 h-8 text-[11px] font-medium border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          >
+            Reconnect
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setPlatformToDelete({ name: "Bluesky", key: "bluesky" });
+              setIsDisconnectAlertOpen(true);
+            }}
+            className="rounded-full px-4 h-8 text-[11px] font-medium border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
+          >
+            Disconnect
+          </Button>
+        </>
+      )
+    }
+
+    // Default Connect/Disconnect
+    return (
+      <Button
+        variant="outline"
+        onClick={() => {
+          if (platform.name === "Bluesky" && platform.status === "disconnected") {
+            setIsBlueskyModalOpen(true);
+          } else if (platform.status === "connected") {
+            setPlatformToDelete({
+              name: platform.name,
+              key: platform.name.toLowerCase() as any
+            });
+            setIsDisconnectAlertOpen(true);
+          }
+        }}
+        className={`rounded-full px-5 h-9 text-xs font-medium border transition-colors ${platform.status === "connected"
+          ? "bg-white border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200"
+          : "bg-[#318D62] text-white hover:bg-[#287350] border-transparent"
+          }`}
+      >
+        {platform.status === "connected" ? "Disconnect" : "Connect"}
+      </Button>
+    );
+  };
+
   const platforms = [
     {
       name: "Threads",
       status:
-        connectedPlatforms?.meta?.connected && connectedPlatforms?.meta?.threads?.platformId
+        connectedPlatforms?.threads?.connected && connectedPlatforms?.threads?.platformId
           ? "connected"
           : "disconnected",
       color: "bg-black",
       icon: platformIcons.Threads,
-      userAvatar: connectedPlatforms?.meta?.threads?.profile?.avatar,
+      userAvatar: connectedPlatforms?.threads?.profile?.avatar,
       userName:
-        connectedPlatforms?.meta?.threads?.profile?.handle ||
-        connectedPlatforms?.meta?.threads?.profile?.displayName,
+        connectedPlatforms?.threads?.profile?.handle ||
+        connectedPlatforms?.threads?.profile?.displayName,
+      expiresAt: connectedPlatforms?.threads?.auth?.expiresAt,
     },
     {
       name: "Bluesky",
@@ -123,28 +263,30 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
     {
       name: "Instagram",
       status:
-        connectedPlatforms?.meta?.connected && connectedPlatforms?.meta?.instagram?.platformId
+        connectedPlatforms?.instagram?.connected && connectedPlatforms?.instagram?.platformId
           ? "connected"
           : "disconnected",
       color: "bg-pink-600",
       icon: platformIcons.Instagram,
-      userAvatar: connectedPlatforms?.meta?.instagram?.profile?.avatar,
+      userAvatar: connectedPlatforms?.instagram?.profile?.avatar,
       userName:
-        connectedPlatforms?.meta?.instagram?.profile?.handle ||
-        connectedPlatforms?.meta?.instagram?.profile?.displayName,
+        connectedPlatforms?.instagram?.profile?.handle ||
+        connectedPlatforms?.instagram?.profile?.displayName,
+      expiresAt: connectedPlatforms?.instagram?.auth?.expiresAt,
     },
     {
       name: "Facebook",
       status:
-        connectedPlatforms?.meta?.connected && connectedPlatforms?.meta?.facebook?.platformId
+        connectedPlatforms?.facebook?.connected && connectedPlatforms?.facebook?.platformId
           ? "connected"
           : "disconnected",
       color: "bg-blue-600",
       icon: platformIcons.Facebook,
-      userAvatar: connectedPlatforms?.meta?.facebook?.profile?.avatar,
+      userAvatar: connectedPlatforms?.facebook?.profile?.avatar,
       userName:
-        connectedPlatforms?.meta?.facebook?.profile?.handle ||
-        connectedPlatforms?.meta?.facebook?.profile?.displayName,
+        connectedPlatforms?.facebook?.profile?.handle ||
+        connectedPlatforms?.facebook?.profile?.displayName,
+      expiresAt: connectedPlatforms?.facebook?.auth?.expiresAt,
     },
   ];
 
@@ -185,40 +327,7 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {platform.name === "Bluesky" && platform.status === "connected" ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsBlueskyModalOpen(true)}
-                    className="rounded-full px-4 h-8 text-[11px] font-medium border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                  >
-                    Reconnect
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsDisconnectAlertOpen(true)}
-                    className="rounded-full px-4 h-8 text-[11px] font-medium border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
-                  >
-                    Disconnect
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (platform.name === "Bluesky" && platform.status === "disconnected") {
-                      setIsBlueskyModalOpen(true);
-                    }
-                  }}
-                  className={`rounded-full px-5 h-9 text-xs font-medium border transition-colors ${
-                    platform.status === "connected"
-                      ? "bg-white border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200"
-                      : "bg-[#318D62] text-white hover:bg-[#287350] border-transparent"
-                  }`}
-                >
-                  {platform.status === "connected" ? "Disconnect" : "Connect"}
-                </Button>
-              )}
+              {renderPlatformActions(platform)}
             </div>
           </div>
         ))}
@@ -233,16 +342,16 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
       <AlertDialog open={isDisconnectAlertOpen} onOpenChange={setIsDisconnectAlertOpen}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Disconnect Bluesky?</AlertDialogTitle>
+            <AlertDialogTitle>Disconnect {platformToDelete?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to disconnect your Bluesky account? This will stop all automated
+              Are you sure you want to disconnect your {platformToDelete?.name} account? This will stop all automated
               posts and tracking for this platform.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-full border-gray-200">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleBlueskyDisconnect}
+              onClick={handleDisconnectConfirm}
               className="rounded-full bg-red-600 hover:bg-red-700 text-white"
             >
               Disconnect

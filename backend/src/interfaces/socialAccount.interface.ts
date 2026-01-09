@@ -21,34 +21,43 @@ export interface MetaAuth {
   scopes?: string[];
 }
 
-export interface MetaIdentity {
-  platformId?: string; // Page ID / IG User ID / Threads User ID
+export interface Facebook {
+  connected?: boolean;
+  platformId?: string; // Page ID
   profile?: Profile;
+  auth?: MetaAuth;
+  health?: Health;
 }
 
-export interface MetaPlatformMetadata {
+export interface Instagram {
+  connected?: boolean;
+  platformId?: string; // IG User ID
+  profile?: Profile;
+  auth?: MetaAuth;
+  health?: Health;
+
+  // Specific metadata for IG linking
   linkedPageId?: string;
   businessId?: string;
 }
 
-export interface Meta {
+export interface Threads {
   connected?: boolean;
-
+  platformId?: string; // Threads User ID
+  profile?: Profile;
   auth?: MetaAuth;
   health?: Health;
-
-  facebook?: MetaIdentity;
-  instagram?: MetaIdentity;
-  threads?: MetaIdentity;
-
-  platformMetadata?: MetaPlatformMetadata;
 }
+
+// ----------------------
+// OTHER PLATFORMS
+// ----------------------
 
 export interface BlueskyAuth {
   accessJwt?: string;
   refreshJwt?: string;
   expiresAt?: Date;
-  dpopKeyPair?: any; // you can replace `any` with a stricter type later
+  dpopKeyPair?: any;
 }
 
 export interface Bluesky {
@@ -107,7 +116,11 @@ export interface SocialAccount {
 
   userId: Types.ObjectId;
 
-  meta?: Meta;
+  // Flattened structure
+  facebook?: Facebook;
+  instagram?: Instagram;
+  threads?: Threads;
+
   bluesky?: Bluesky;
   mastodon?: Mastodon;
   tumblr?: Tumblr;

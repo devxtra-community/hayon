@@ -239,4 +239,32 @@ background: linear-gradient(0deg, rgba(35, 117, 78, 1) 0%, rgba(95, 194, 148, 1)
 .mobile-menu-enter {
     animation: slideIn 0.3s ease forwards;
 }
-        
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}
