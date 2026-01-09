@@ -253,3 +253,4 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
     </div>
   );
 };
+    
