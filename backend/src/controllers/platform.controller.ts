@@ -100,3 +100,22 @@ export const findPlatformAccounts = async (req: Request, res: Response) => {
     return new ErrorResponse("Failed to find platform accounts", { status: 500 }).send(res);
   }
 };
+
+
+
+// ================= TUMBLR CONTROLLER =================//
+
+export const tumblrCallback = async (req: Request, res: Response) => {
+  try {
+    // The user info is available in req.user
+    const tumblrUser = req.user;
+    logger.info(`Tumblr user info: ${JSON.stringify(tumblrUser)}`);
+
+    // Here, you would typically link the Tumblr account with your user in the database
+    // For demonstration, we'll just return the Tumblr user info
+    return new SuccessResponse("Tumblr connected successfully", { data: tumblrUser }).send(res);
+  } catch (error) {
+    logger.error(error);
+    return new ErrorResponse("Failed to connect to Tumblr", { status: 500 }).send(res);
+  }
+};

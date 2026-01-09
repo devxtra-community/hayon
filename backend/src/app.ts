@@ -13,6 +13,7 @@ import { SuccessResponse } from "./utils/responses";
 import morgan from "morgan";
 import logger from "./utils/logger";
 import platformRoutes from "./routes/platform.routes";
+import session from "express-session"
 
 const expressInstance: Application = express();
 
@@ -23,8 +24,19 @@ const corsOptions = {
   credentials: true,
 };
 
-// TODO: use windston and morgan.
 
+expressInstance.use(
+  session({
+    name: "tumblr.sid",
+    secret: "tumblr-secret",
+    resave: false,
+    saveUninitialized: true, // IMPORTANT for OAuth 1.0a
+    cookie: {
+      secure: false, // true only on HTTPS
+      sameSite: "lax",
+    },
+  })
+);
 expressInstance.use(morgan("dev"));
 expressInstance.use(cors(corsOptions));
 expressInstance.use(helmet());
@@ -32,6 +44,7 @@ expressInstance.use(cookieParser());
 expressInstance.use(express.json());
 expressInstance.use(express.urlencoded({ extended: true }));
 expressInstance.use(passport.initialize());
+expressInstance.use(passport.session());
 
 expressInstance.get("/health", (req, res) => {
   new SuccessResponse("Server is running").send(res);

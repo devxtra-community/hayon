@@ -84,4 +84,15 @@ export const ENV = {
     CLIENT_SECRET: required("META_APP_SECRET"),
     CALLBACK_URL: required("META_CALLBACK_URL"),
   },
+
+
+  /** ======================
+   *  TUMBLR OAUTH
+   *  ====================== */
+
+  TUMBLR: {
+    CONSUMER_KEY: required("TUMBLR_CONSUMER_KEY"),
+    CONSUMER_SECRET: required("TUMBLR_CONSUMER_SECRET"),
+  },  
+
 } as const;
