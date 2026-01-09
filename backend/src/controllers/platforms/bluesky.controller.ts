@@ -1,0 +1,72 @@
+import { blueskyService } from "../../services/platforms/bluesky.service";
+import { Request, Response } from "express";
+import { ErrorResponse, SuccessResponse } from "../../utils/responses";
+import logger from "../../utils/logger";
+import { updateBlueskyDetails } from "../../repositories/platform.repository";
+
+export const connectBluesky = async (req: Request, res: Response) => {
+  try {
+    const { identifier, appPassword } = req.body;
+    logger.info(`Connecting to Bluesky for identifier: ${identifier}, appPassword: ${appPassword}`);
+
+    if (!identifier || !appPassword) {
+      return new ErrorResponse("Missing identifier or app password", { status: 400 }).send(res);
+    }
+
+    const { session, profile } = await blueskyService.login(identifier, appPassword);
+
+    // 💾 STORE TOKENS (DB)
+
+    if (!req.auth) {
+      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    }
+
+    await updateBlueskyDetails(req.auth.id, {
+      connected: true,
+      did: session.did,
+      handle: session.handle,
+      auth: {
+        accessJwt: session.accessJwt,
+        refreshJwt: session.refreshJwt,
+      },
+      profile: {
+        displayName: profile.displayName,
+        description: profile.description,
+        avatar: profile.avatar,
+      },
+    });
+
+    return new SuccessResponse("Bluesky connected successfully", { data: profile }).send(res);
+  } catch (error) {
+    logger.error(error);
+    return new ErrorResponse("Failed to connect to Bluesky", { status: 500 }).send(res);
+  }
+};
+
+export const disconnectBluesky = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    }
+
+    await updateBlueskyDetails(req.auth.id, {
+      connected: false,
+      did: null,
+      handle: null,
+      auth: {
+        accessJwt: null,
+        refreshJwt: null,
+      },
+      profile: {
+        displayName: null,
+        description: null,
+        avatar: null,
+      },
+    });
+
+    return new SuccessResponse("Bluesky disconnected successfully").send(res);
+  } catch (error) {
+    logger.error(error);
+    return new ErrorResponse("Failed to disconnect from Bluesky", { status: 500 }).send(res);
+  }
+};

@@ -90,4 +90,15 @@ export const ENV = {
     APP_SECRET: required("THREADS_APP_SECRET"),
     REDIRECT_URI: required("THREADS_REDIRECT_URI"),
   },
+
+
+  /** ======================
+   *  TUMBLR OAUTH
+   *  ====================== */
+
+  TUMBLR: {
+    CONSUMER_KEY: required("TUMBLR_CONSUMER_KEY"),
+    CONSUMER_SECRET: required("TUMBLR_CONSUMER_SECRET"),
+  },  
+
 } as const;

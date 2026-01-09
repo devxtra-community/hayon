@@ -24,8 +24,6 @@ export const findPlatformAccountByUserId = async (userId: string) => {
   return await socialAccountModel.findOne({ userId });
 };
 
-// Helper to update any platform generically or specific functions
-// Flattened updates are simpler: we can just use $set on the top-level keys.
 
 export const updateFacebookDetails = async (userId: string, data: Partial<any>) => {
   return await socialAccountModel.findOneAndUpdate(
@@ -49,4 +47,16 @@ export const updateThreadsDetails = async (userId: string, data: Partial<any>) =
     { $set: { threads: data } },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
+};
+
+export const updateTumblerDetails = async (userId: string, tumblrData: Partial<any>) => {
+  const socialAccount = await socialAccountModel.findOne({ userId });
+  if (!socialAccount) {
+    socialAccountModel.create({
+      userId,
+      tumblr: tumblrData,
+    });
+    return;
+  }
+  await socialAccountModel.findOneAndUpdate({ userId }, { tumblr: tumblrData }, { new: true });
 };

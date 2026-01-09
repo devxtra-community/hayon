@@ -1,16 +1,15 @@
 import express from "express";
 import { authenticate } from "../middleware/auth.middleware";
-import { connectBluesky, disconnectBluesky, findPlatformAccounts } from "../controllers/platform.controller";
-import { validate } from "../middleware/validate.middleware";
-import { blueskyConnectSchema } from "@hayon/schemas";
-
+import { findPlatformAccounts } from "../controllers/platform.controller";
+import tumblrRoutes from "./platforms/tumblr.routes";
+import blueskyRoutes from "./platforms/bluesky.routes";
 import facebookRoutes from "./platforms/facebook.routes";
 import threadsRoutes from "./platforms/threads.routes";
 
 const router = express.Router();
+router.use("/tumblr", tumblrRoutes);
+router.use("/bluesky", blueskyRoutes);
 
-router.post("/bluesky/connect", authenticate, validate(blueskyConnectSchema), connectBluesky);
-router.delete("/bluesky/disconnect", authenticate, disconnectBluesky);
 router.get("/find", authenticate, findPlatformAccounts);
 
 // Use sub-routers

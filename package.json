@@ -27,5 +27,8 @@
       "prettier --write",
       "eslint --fix"
     ]
+  },
+  "dependencies": {
+    "passport-tumblr": "^0.1.2"
   }
 }

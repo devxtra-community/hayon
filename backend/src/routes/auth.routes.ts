@@ -30,13 +30,6 @@ import {
 } from "@hayon/schemas";
 import { ENV } from "../config/env";
 import logger from "../utils/logger";
-// import { Request, Response, NextFunction } from "express";
-// import { AuthenticateCallback } from "passport";
-// import axios from "axios";
-// import { SuccessResponse } from "../utils/responses";
-// import { SuccessResponse } from "../utils/responses";
-
-// import { logoutAllService } from "../services/auth.service";
 
 const router = express.Router();
 
@@ -90,6 +83,5 @@ router.get(
   },
   googleOAuthCallback,
 );
-
 
 export default router;
