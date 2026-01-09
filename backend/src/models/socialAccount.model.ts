@@ -136,7 +136,7 @@ const mastodonSchema = new Schema<Mastodon>(
 
     auth: {
       accessToken: { type: String },
-      refreshToken: { type: String },
+      accessTokenSecret: { type: String },
       expiresAt: { type: Date },
       scopes: { type: [String], default: [] },
     },

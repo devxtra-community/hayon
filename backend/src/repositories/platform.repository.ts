@@ -23,3 +23,21 @@ export const updateBlueskyDetails = async (userId: string, blueskyData: Partial<
 export const findPlatformAccountByUserId = async (userId: string) => {
   return await socialAccountModel.findOne({ userId });
 };
+
+export const updateTumblerDetails = async (userId: string, tumblrData: Partial<any>) => {
+  const socialAccount = await socialAccountModel.findOne({ userId });
+  if (!socialAccount) {
+    socialAccountModel.create({
+      userId,
+      tumblr: tumblrData,
+    });
+    return;
+  }
+  const res = await socialAccountModel.findOneAndUpdate(
+    { userId },
+    { tumblr: tumblrData },
+    { new: true },
+  );
+  logger.info(`Tumblr details updated: ${JSON.stringify(res)}`);
+  return;
+};
