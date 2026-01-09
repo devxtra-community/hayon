@@ -6,13 +6,15 @@ import { ErrorResponse, SuccessResponse } from "../../utils/responses";
 import logger from "../../utils/logger";
 import { Request, Response } from "express";
 import { updateTumblerDetails } from "../../repositories/platform.repository";
+import { ENV } from "../../config/env";
 
 export const connectTumblr = async (req: Request, res: Response) => {
+  const userId = req?.auth?.id as string;
   const requestData = {
     url: "https://www.tumblr.com/oauth/request_token",
     method: "POST",
     data: {
-      oauth_callback: "http://localhost:5000/api/platform/tumblr/callback",
+      oauth_callback: `http://localhost:5000/api/platform/tumblr/callback?state=${userId}`,
     },
   };
 
@@ -26,16 +28,25 @@ export const connectTumblr = async (req: Request, res: Response) => {
 
   setTempToken(oauthToken, oauthTokenSecret);
 
-  res.redirect(`https://www.tumblr.com/oauth/authorize?oauth_token=${oauthToken}`);
+  return new SuccessResponse("Tumblr request token obtained", {
+    data: {
+      authUrl: `https://www.tumblr.com/oauth/authorize?oauth_token=${oauthToken}&state=${userId}`,
+    },
+  }).send(res);
 };
 
 // Callbakc controller
 
 export const tumblrCallback = async (req: Request, res: Response) => {
-  const { oauth_token, oauth_verifier } = req.query as {
+  const { oauth_token, oauth_verifier, state } = req.query as {
     oauth_token: string;
     oauth_verifier: string;
+    state: string;
   };
+
+  const userId = req.query.state as string;
+
+  console.log("Tumblr callback received:", { oauth_token, oauth_verifier, state });
 
   // 1️⃣ Get request token secret
   const requestTokenSecret = getTempToken(oauth_token);
@@ -88,7 +99,7 @@ export const tumblrCallback = async (req: Request, res: Response) => {
   // 4️⃣ Build profile image (Tumblr uses primary blog avatar)
   const avatarUrl = `https://api.tumblr.com/v2/blog/${tumblrUsername}.tumblr.com/avatar/512`;
 
-  updateTumblerDetails(req?.auth?.id as string, {
+  await updateTumblerDetails(userId, {
     connected: true,
     auth: {
       accessToken,
@@ -100,9 +111,8 @@ export const tumblrCallback = async (req: Request, res: Response) => {
     },
   });
 
-  return new SuccessResponse("Tumblr connected successfully", {
-    data: { username: tumblrUsername, avatarUrl },
-  }).send(res);
+  res.redirect(`${ENV.APP.FRONTEND_URL}/settings`);
+  return new SuccessResponse("Tumblr connected successfully").send(res);
 };
 
 export const disconnectTumblr = async (req: Request, res: Response) => {
@@ -121,6 +131,7 @@ export const disconnectTumblr = async (req: Request, res: Response) => {
         avatar: null,
       },
     });
+
     return new SuccessResponse("Tumblr disconnected successfully").send(res);
   } catch (error) {
     logger.error(error);

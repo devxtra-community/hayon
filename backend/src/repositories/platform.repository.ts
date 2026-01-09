@@ -33,11 +33,5 @@ export const updateTumblerDetails = async (userId: string, tumblrData: Partial<a
     });
     return;
   }
-  const res = await socialAccountModel.findOneAndUpdate(
-    { userId },
-    { tumblr: tumblrData },
-    { new: true },
-  );
-  logger.info(`Tumblr details updated: ${JSON.stringify(res)}`);
-  return;
+  await socialAccountModel.findOneAndUpdate({ userId }, { tumblr: tumblrData }, { new: true });
 };

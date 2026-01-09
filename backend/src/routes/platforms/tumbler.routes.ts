@@ -4,12 +4,13 @@ import {
   tumblrCallback,
   disconnectTumblr,
 } from "../../controllers/platforms/tumblr.controller";
+import { authenticate } from "../../middleware/auth.middleware";
 
 const router = express.Router();
 
 // connection routes
-router.get("/tumblr/connect", connectTumblr);
-router.get("/tumblr/callback", tumblrCallback);
-router.delete("/tumblr/disconnect", disconnectTumblr);
+router.get("/connect", authenticate, connectTumblr);
+router.get("/callback", tumblrCallback);
+router.delete("/disconnect", authenticate, disconnectTumblr);
 
 export default router;

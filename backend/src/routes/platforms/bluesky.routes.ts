@@ -2,12 +2,12 @@ import express from "express";
 import { validate } from "../../middleware/validate.middleware";
 import { blueskyConnectSchema } from "@hayon/schemas";
 import { authenticate } from "../../middleware/auth.middleware";
-import { connectBluesky } from "../../controllers/platforms/bluesky.controller";
+import { connectBluesky, disconnectBluesky } from "../../controllers/platforms/bluesky.controller";
 
 const router = express.Router();
 
 // connection routes
-router.post("/bluesky/connect", authenticate, validate(blueskyConnectSchema), connectBluesky);
-router.delete("/bluesky/disconnect", authenticate);
+router.post("/connect", authenticate, validate(blueskyConnectSchema), connectBluesky);
+router.delete("/disconnect", authenticate, disconnectBluesky);
 
 export default router;

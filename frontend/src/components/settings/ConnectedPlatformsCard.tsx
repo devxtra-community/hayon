@@ -22,12 +22,13 @@ interface ConnectedPlatformsCardProps {
   onUpdate: () => void;
 }
 
-export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
+export const ConnectedPlatformsCard = ({
   connectedPlatforms,
   onUpdate,
-}) => {
+}: ConnectedPlatformsCardProps) => {
   const [isBlueskyModalOpen, setIsBlueskyModalOpen] = useState(false);
   const [isDisconnectAlertOpen, setIsDisconnectAlertOpen] = useState(false);
+  const [isTumblrDisconnectAlertOpen, setIsTumblrDisconnectAlertOpen] = useState(false);
   const { showToast } = useToast();
 
   const handleBlueskyDisconnect = async () => {
@@ -38,6 +39,30 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
     } catch (error) {
       console.error("Failed to disconnect Bluesky", error);
       showToast("error", "Disconnect Failed", "Could not disconnect Bluesky. Please try again.");
+    }
+  };
+
+  const handleTumblrConnect = () => {
+    api
+      .get("/platform/tumblr/connect")
+      .then((res) => {
+        const backendUrl = res.data.data.authUrl;
+        console.log(backendUrl);
+        window.location.href = backendUrl;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const handleTumblrDisconnect = async () => {
+    try {
+      await api.delete("/platform/tumblr/disconnect");
+      showToast("success", "Disconnected", "Tumblr account disconnected successfully");
+      onUpdate();
+    } catch (error) {
+      console.error("Failed to disconnect Tumblr", error);
+      showToast("error", "Disconnect Failed", "Could not disconnect Tumblr. Please try again.");
     }
   };
 
@@ -53,13 +78,38 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
       </svg>
     ),
     Mastodon: (
-      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-        <path d="M23.193 11.237c0-2.915-.555-4.606-.555-4.606C21.84 3.737 18.062 3.325 15.34 3.25c-1.802-.05-3.486-.063-5.174-.063-2.025 0-4.045.02-6.07.087-2.723.075-6.502.487-7.297 3.382 0 0-.555 1.691-.555 4.606-.118 6.037 1.05 11.968 6.94 13.111 2.659.516 5.567.575 7.82.072 2.875-.641 3.597-3.027 3.597-3.027l-.022-1.46c-1.571.494-3.454.685-5.266.425-3.085-.443-3.425-2.617-3.444-2.793.003 0 .007 0 .01.002 2.015.545 5.544.759 8.243-.637 1.135-.587 2.179-1.413 2.955-2.298.536-1.558.58-2.67.58-2.67l.006-.01.034-.582zM12.924 16.516h-1.849v-4.347c0-1.166-.46-1.751-1.381-1.751-.99 0-1.57.653-1.57 1.956v2.858H6.28V9.338c0-2.31 1.516-3.483 3.69-3.483 1.589 0 2.37.986 2.868 2.083.498-1.097 1.28-2.083 2.868-2.083 2.174 0 3.69 1.173 3.69 3.483v5.894h-1.844v-2.858c0-1.303-.58-1.956-1.57-1.956-.92 0-1.382.585-1.382 1.751v4.347z" />
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 511.476" className="w-5 h-5">
+        <defs>
+          <linearGradient
+            id="mastodon-gradient"
+            gradientUnits="userSpaceOnUse"
+            x1="235.378"
+            y1=".003"
+            x2="235.378"
+            y2="506.951"
+          >
+            <stop offset="0" stopColor="#6364FF" />
+            <stop offset="1" stopColor="#563ACC" />
+          </linearGradient>
+        </defs>
+        <g fillRule="nonzero">
+          <path
+            fill="url(#mastodon-gradient)"
+            d="M478.064 113.237c-7.393-54.954-55.29-98.266-112.071-106.656C356.413 5.163 320.121 0 236.045 0h-.628c-84.1 0-102.141 5.163-111.72 6.581C68.498 14.739 18.088 53.655 5.859 109.261c-5.883 27.385-6.51 57.747-5.416 85.596 1.555 39.939 1.859 79.806 5.487 119.581a562.694 562.694 0 0013.089 78.437c11.625 47.654 58.687 87.313 104.793 103.494a281.073 281.073 0 00153.316 8.09 224.345 224.345 0 0016.577-4.533c12.369-3.928 26.856-8.321 37.506-16.042.146-.107.265-.247.348-.407.086-.161.134-.339.14-.521v-38.543a1.187 1.187 0 00-.119-.491 1.122 1.122 0 00-.773-.604 1.139 1.139 0 00-.503 0 424.932 424.932 0 01-99.491 11.626c-57.664 0-73.171-27.361-77.611-38.752a120.09 120.09 0 01-6.745-30.546 1.123 1.123 0 01.877-1.152c.173-.035.349-.032.518.012a416.876 416.876 0 0097.864 11.623c7.929 0 15.834 0 23.763-.211 33.155-.928 68.103-2.626 100.722-8.997.815-.16 1.63-.3 2.326-.508 51.454-9.883 100.422-40.894 105.397-119.42.185-3.093.651-32.385.651-35.591.022-10.903 3.51-77.343-.511-118.165z"
+          />
+          <path
+            fill="#fff"
+            d="M396.545 174.981v136.53h-54.104V179.002c0-27.896-11.625-42.124-35.272-42.124-25.996 0-39.017 16.833-39.017 50.074v72.531h-53.777v-72.531c0-33.241-13.044-50.074-39.04-50.074-23.507 0-35.248 14.228-35.248 42.124v132.509H86.006v-136.53c0-27.896 7.123-50.059 21.366-66.488 14.695-16.387 33.97-24.803 57.896-24.803 27.691 0 48.617 10.647 62.568 31.917l13.464 22.597 13.484-22.597c13.951-21.27 34.877-31.917 62.521-31.917 23.902 0 43.177 8.416 57.919 24.803 14.231 16.414 21.336 38.577 21.321 66.488z"
+          />
+        </g>
       </svg>
     ),
     Tumblr: (
-      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-        <path d="M14.563 24c-5.093 0-7.031-3.756-7.031-6.411V9.747H5.116V6.648c3.606-1.319 4.541-4.93 4.697-6.65h3.359v5.93h3.71v4.544h-3.71v3.457c0 1.969 1.188 2.339 2.094 2.339 1.235 0 2.172-.516 2.172-.516v4.61s-1.016.638-2.875.638z" />
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" className="w-5 h-5">
+        <path
+          d="M 40 0 L 10 0 C 4.484375 0 0 4.484375 0 10 L 0 40 C 0 45.515625 4.484375 50 10 50 L 40 50 C 45.515625 50 50 45.515625 50 40 L 50 10 C 50 4.484375 45.515625 0 40 0 Z M 34 40.238281 C 34 40.363281 33.945313 40.480469 33.855469 40.5625 C 33.738281 40.664063 31.011719 43 24.742188 43 C 17.230469 43 17 34.617188 17 33.664063 L 17 23.011719 L 13.429688 23 C 13.191406 23 13 22.816406 13 22.578125 L 13 18.808594 C 13 18.632813 13.109375 18.472656 13.273438 18.40625 C 13.34375 18.382813 20.058594 15.773438 20.058594 9.429688 C 20.058594 9.191406 20.253906 9 20.492188 9 L 24.578125 9 C 24.816406 9 25.007813 9.191406 25.007813 9.429688 L 25 17 L 31.5625 17 C 31.800781 17 31.992188 17.207031 31.992188 17.445313 L 31.992188 22.554688 C 31.992188 22.789063 31.800781 23 31.5625 23 L 25 23 C 25 23 25 33.253906 25 33.503906 C 25 33.75 25.226563 36.765625 28.433594 36.765625 C 31.089844 36.765625 33.320313 35.398438 33.34375 35.382813 C 33.476563 35.296875 33.640625 35.292969 33.777344 35.371094 C 33.914063 35.445313 34 35.589844 34 35.746094 Z"
+          fill="#fff"
+        />
       </svg>
     ),
     Instagram: (
@@ -202,12 +252,31 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
                     Disconnect
                   </Button>
                 </>
+              ) : platform.name === "Tumblr" && platform.status === "connected" ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleTumblrConnect}
+                    className="rounded-full px-4 h-8 text-[11px] font-medium border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  >
+                    Reconnect
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsTumblrDisconnectAlertOpen(true)}
+                    className="rounded-full px-4 h-8 text-[11px] font-medium border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
+                  >
+                    Disconnect
+                  </Button>
+                </>
               ) : (
                 <Button
                   variant="outline"
                   onClick={() => {
                     if (platform.name === "Bluesky" && platform.status === "disconnected") {
                       setIsBlueskyModalOpen(true);
+                    } else if (platform.name === "Tumblr" && platform.status === "disconnected") {
+                      handleTumblrConnect();
                     }
                   }}
                   className={`rounded-full px-5 h-9 text-xs font-medium border transition-colors ${
@@ -250,7 +319,27 @@ export const ConnectedPlatformsCard: React.FC<ConnectedPlatformsCardProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={isTumblrDisconnectAlertOpen} onOpenChange={setIsTumblrDisconnectAlertOpen}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Tumblr?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to disconnect your Tumblr account? This will stop all automated
+              posts and tracking for this platform.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full border-gray-200">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleTumblrDisconnect}
+              className="rounded-full bg-red-600 hover:bg-red-700 text-white"
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
-    

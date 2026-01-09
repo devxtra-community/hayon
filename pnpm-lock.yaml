@@ -87,9 +87,6 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
-      express-session:
-        specifier: ^1.18.2
-        version: 1.18.2
       express-validator:
         specifier: ^7.3.0
         version: 7.3.1
@@ -114,6 +111,9 @@ importers:
       nodemailer:
         specifier: ^7.0.11
         version: 7.0.12
+      oauth-1.0a:
+        specifier: ^2.2.6
+        version: 2.2.6
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -123,9 +123,6 @@ importers:
       passport-google-oauth20:
         specifier: ^2.0.0
         version: 2.0.0
-      passport-tumblr:
-        specifier: github:jaredhanson/passport-tumblr
-        version: https://codeload.github.com/jaredhanson/passport-tumblr/tar.gz/30c1e275e16a5a1f8e42e777fde836a68bbb01c3
       stripe:
         specifier: ^19.3.1
         version: 19.3.1(@types/node@24.10.4)
@@ -2385,9 +2382,6 @@ packages:
   cookie-signature@1.0.6:
     resolution: {integrity: sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==}
 
-  cookie-signature@1.0.7:
-    resolution: {integrity: sha512-NXdYc3dLr47pBkpUCHtKSwIOQXLVn8dZEuywboCOJY/osA0wFSLlSawr3KN8qXJEyX66FcONTH8EIlVuK0yyFA==}
-
   cookie-signature@1.2.2:
     resolution: {integrity: sha512-D76uU73ulSXrD1UXF4KE2TMxVVwhsnCgfAyTg9k8P6KGZjlXKrOLe4dJQKI3Bxi5wjesZoFXJWElNWBjPZMbhg==}
     engines: {node: '>=6.6.0'}
@@ -2789,10 +2783,6 @@ packages:
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
-
-  express-session@1.18.2:
-    resolution: {integrity: sha512-SZjssGQC7TzTs9rpPDuUrR23GNZ9+2+IkA/+IJWmvQilTr5OSliEHGF+D9scbIpdC6yGtTI0/VhaHoVes2AN/A==}
-    engines: {node: '>= 0.8.0'}
 
   express-validator@7.3.1:
     resolution: {integrity: sha512-IGenaSf+DnWc69lKuqlRE9/i/2t5/16VpH5bXoqdxWz1aCpRvEdrBuu1y95i/iL5QP8ZYVATiwLFhwk3EDl5vg==}
@@ -3693,6 +3683,9 @@ packages:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
 
+  oauth-1.0a@2.2.6:
+    resolution: {integrity: sha512-6bkxv3N4Gu5lty4viIcIAnq5GbxECviMBeKR3WX/q87SPQ8E8aursPZUtsXDnxCs787af09WPRBLqYrf/lwoYQ==}
+
   oauth@0.10.2:
     resolution: {integrity: sha512-JtFnB+8nxDEXgNyniwz573xxbKSOu3R8D40xQKqcjwJ2CDkYqUDI53o6IuzDJBx60Z8VKCm271+t8iFjakrl8Q==}
 
@@ -3817,11 +3810,6 @@ packages:
     resolution: {integrity: sha512-bzgL91L3h50b8jxVN5S/ItyMuaWEtShbAzZpV63xVGnKcNzBRvpR40O82NSDd1QX2eTuzC0dEdfhlPortFE5pA==}
     engines: {node: '>= 0.4.0'}
 
-  passport-tumblr@https://codeload.github.com/jaredhanson/passport-tumblr/tar.gz/30c1e275e16a5a1f8e42e777fde836a68bbb01c3:
-    resolution: {tarball: https://codeload.github.com/jaredhanson/passport-tumblr/tar.gz/30c1e275e16a5a1f8e42e777fde836a68bbb01c3}
-    version: 0.1.2
-    engines: {node: '>= 0.4.0'}
-
   passport@0.1.18:
     resolution: {integrity: sha512-qteYojKG/qth7UBbbGU7aqhe5ndJs6YaUkH2B6+7FWQ0OeyYmWknzOATpMhdoSTDcLLliq9n4Fcy1mGs80iUMw==}
     engines: {node: '>= 0.4.0'}
@@ -3923,10 +3911,6 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
-
-  random-bytes@1.0.0:
-    resolution: {integrity: sha512-iv7LhNVO047HzYR3InF6pUcUsPQiHTM1Qal51DcGSuZFBil1aBBWG5eHPNek7bvILMaYJ/8RU1e8w1AMdHmLQQ==}
-    engines: {node: '>= 0.8'}
 
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
@@ -4431,10 +4415,6 @@ packages:
   ua-parser-js@2.0.7:
     resolution: {integrity: sha512-CFdHVHr+6YfbktNZegH3qbYvYgC7nRNEUm2tk7nSFXSODUu4tDBpaFpP1jdXBUOKKwapVlWRfTtS8bCPzsQ47w==}
     hasBin: true
-
-  uid-safe@2.1.5:
-    resolution: {integrity: sha512-KPHm4VL5dDXKz01UuEd88Df+KzynaohSL9fBh096KWAxSKZQDI2uBrVqtvRM4rwrIrRRKsdLNML/lnaaVSRioA==}
-    engines: {node: '>= 0.8'}
 
   uid2@0.0.4:
     resolution: {integrity: sha512-IevTus0SbGwQzYh3+fRsAMTVVPOoIVufzacXcHPmdlle1jUpq7BRL+mw3dgeLanvGZdwwbWhRV6XrcFNdBmjWA==}
@@ -7221,8 +7201,6 @@ snapshots:
 
   cookie-signature@1.0.6: {}
 
-  cookie-signature@1.0.7: {}
-
   cookie-signature@1.2.2: {}
 
   cookie@0.7.2: {}
@@ -7729,19 +7707,6 @@ snapshots:
   etag@1.8.1: {}
 
   eventemitter3@5.0.1: {}
-
-  express-session@1.18.2:
-    dependencies:
-      cookie: 0.7.2
-      cookie-signature: 1.0.7
-      debug: 2.6.9
-      depd: 2.0.0
-      on-headers: 1.1.0
-      parseurl: 1.3.3
-      safe-buffer: 5.2.1
-      uid-safe: 2.1.5
-    transitivePeerDependencies:
-      - supports-color
 
   express-validator@7.3.1:
     dependencies:
@@ -8614,6 +8579,8 @@ snapshots:
 
   normalize-path@3.0.0: {}
 
+  oauth-1.0a@2.2.6: {}
+
   oauth@0.10.2: {}
 
   oauth@0.9.15: {}
@@ -8757,11 +8724,6 @@ snapshots:
       passport-oauth: 0.1.15
       pkginfo: 0.2.3
 
-  passport-tumblr@https://codeload.github.com/jaredhanson/passport-tumblr/tar.gz/30c1e275e16a5a1f8e42e777fde836a68bbb01c3:
-    dependencies:
-      passport-oauth: 0.1.15
-      pkginfo: 0.2.3
-
   passport@0.1.18:
     dependencies:
       pause: 0.0.1
@@ -8837,8 +8799,6 @@ snapshots:
       side-channel: 1.1.0
 
   queue-microtask@1.2.3: {}
-
-  random-bytes@1.0.0: {}
 
   range-parser@1.2.1: {}
 
@@ -9428,10 +9388,6 @@ snapshots:
       detect-europe-js: 0.1.2
       is-standalone-pwa: 0.1.1
       ua-is-frozen: 0.1.2
-
-  uid-safe@2.1.5:
-    dependencies:
-      random-bytes: 1.0.0
 
   uid2@0.0.4: {}
 
