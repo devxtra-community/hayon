@@ -80,8 +80,13 @@ export const ENV = {
    *  META OAUTH
    *  ====================== */
   META: {
-    CLIENT_ID: required("META_APP_ID"),
-    CLIENT_SECRET: required("META_APP_SECRET"),
-    CALLBACK_URL: required("META_CALLBACK_URL"),
+    META_APP_ID: required("META_APP_ID"),
+    META_APP_SECRET: required("META_APP_SECRET"),
+    META_REDIRECT_URI: required("META_REDIRECT_URI"),
+  },
+
+  THREADS: {
+    THREADS_APP_ID: required("THREADS_APP_ID"),
+    THREADS_APP_SECRET: required("THREADS_APP_SECRET"),
   },
 } as const;

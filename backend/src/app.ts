@@ -12,6 +12,9 @@ import helmet from "helmet";
 import { SuccessResponse } from "./utils/responses";
 import morgan from "morgan";
 import logger from "./utils/logger";
+import https from "https";
+import fs from "fs";
+import path from "path";
 
 const expressInstance: Application = express();
 
@@ -48,6 +51,16 @@ appRouter.use("/profile", profileRoutes);
 expressInstance.use(notFoundHandler);
 expressInstance.use(serverErrorHandler);
 
-expressInstance.listen(ENV.APP.PORT, () => {
+// expressInstance.listen(ENV.APP.PORT, () => {
+//   logger.info(`🚀 Server running on port ${ENV.APP.PORT}`);
+// });
+
+const options = {
+  key: fs.readFileSync(path.join(process.cwd(), '../dev.hayon.site+2-key.pem')),
+  cert: fs.readFileSync(path.join(process.cwd(), '../dev.hayon.site+2.pem'))
+};
+
+https.createServer(options, expressInstance).listen(ENV.APP.PORT, () => {
+  console.log('Backend running at https://dev.hayon.site:5000');
   logger.info(`🚀 Server running on port ${ENV.APP.PORT}`);
 });
