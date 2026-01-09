@@ -88,7 +88,8 @@ interface ToastContainerProps {
 
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
   return (
-    <div className="fixed top-6 right-6 z-50 flex flex-col items-end">
+    // <div className="fixed top-6 right-6 z-50 flex flex-col items-end">
+    <div>
       <style jsx global>{`
         @keyframes slide-in {
           from {

@@ -31,8 +31,8 @@ import { ENV } from "../config/env";
 import logger from "../utils/logger";
 // import { Request, Response, NextFunction } from "express";
 // import { AuthenticateCallback } from "passport";
-import { connectBluesky } from "../controllers/blueSky.controller";
 import axios from "axios";
+// import { SuccessResponse } from "../utils/responses";
 // import { SuccessResponse } from "../utils/responses";
 
 // import { logoutAllService } from "../services/auth.service";
@@ -273,7 +273,5 @@ router.get('/threads/callback', async (req, res) => {
   }
 });
 
-
-router.post("/bluesky/connect", connectBluesky);
 
 export default router;

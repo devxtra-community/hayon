@@ -1,167 +1,197 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Model } from "mongoose";
 import {
-  ISocialAccount,
-  ISocialAuth,
-  ISocialHealth,
-  ISocialProfile,
-  IPlatformMetadata,
+  SocialAccount,
+  Profile,
+  Health,
+  Meta,
+  MetaAuth,
+  MetaIdentity,
+  Bluesky,
+  Mastodon,
+  Tumblr,
 } from "../interfaces/socialAccount.interface";
 
-// Profile Subdocument Schema
-
-const profileSchema = new Schema<ISocialProfile>(
+/* ---------- PROFILE ---------- */
+const profileSchema = new Schema<Profile>(
   {
-    handle: {
-      type: String,
-      required: true,
-    },
-    displayName: {
-      type: String,
-      required: true,
-    },
-    avatarUrl: {
-      type: String,
-      required: true,
-    },
-    profileUrl: {
-      type: String,
-      required: true,
-    },
+    handle: { type: String },
+    displayName: { type: String },
+    avatar: { type: String },
   },
   { _id: false },
 );
 
-// Platform Metadata Subdocument Schema
-
-const platformMetadataSchema = new Schema<IPlatformMetadata>(
-  {
-    instanceUrl: {
-      type: String,
-      default: null, // Mastodon Instance (e.g., https://mastodon.online)
-    },
-    blogHostname: {
-      type: String,
-      default: null, // Tumblr blog URL
-    },
-    did: {
-      type: String,
-      default: null, // Bluesky Decentralized Identifier
-    },
-    linkedPageId: {
-      type: String,
-      default: null, // Meta Page ID (required for FB/IG/Threads Insights)
-    },
-  },
-  { _id: false },
-);
-
-// Auth Subdocument Schema
-
-const authSchema = new Schema<ISocialAuth>(
-  {
-    accessToken: {
-      type: String,
-      required: true, // Encrypted
-    },
-    refreshToken: {
-      type: String,
-      default: null, // Encrypted
-    },
-    expiresAt: {
-      type: Date,
-      default: null,
-    },
-    scopes: {
-      type: [String], // Store scopes to know what you are allowed to poll
-      default: [],
-    },
-    dpopKeyPair: {
-      type: Schema.Types.Mixed, // REQUIRED for Bluesky OAuth security
-      default: null,
-    },
-  },
-  { _id: false },
-);
-
-// Health Subdocument Schema
-
-const healthSchema = new Schema<ISocialHealth>(
+/* ---------- HEALTH ---------- */
+const healthSchema = new Schema<Health>(
   {
     status: {
       type: String,
       enum: ["active", "expired", "revoked", "error"],
       default: "active",
     },
-    needsReconnection: {
-      type: Boolean,
-      default: false,
-    },
-    lastSuccessfulRefresh: {
-      type: Date,
-      default: null,
-    },
-    lastError: {
+    needsReconnection: { type: Boolean, default: false },
+    lastSuccessfulRefresh: { type: Date },
+    lastError: { type: String },
+    consecutiveFailures: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
+/* ---------- SHARED META AUTH ---------- */
+const metaAuthSchema = new Schema<MetaAuth>(
+  {
+    accessToken: {
       type: String,
-      default: null,
+      required: function (this: any) {
+        return this.parent()?.connected;
+      },
     },
-    consecutiveFailures: {
-      type: Number,
-      default: 0,
+    refreshToken: {
+      type: String,
+      required: function (this: any) {
+        return this.parent()?.connected;
+      },
+    },
+    expiresAt: { type: Date },
+    scopes: { type: [String], default: [] },
+  },
+  { _id: false },
+);
+
+/* ---------- META IDENTITY (NO AUTH HERE) ---------- */
+const metaIdentitySchema = new Schema<MetaIdentity>(
+  {
+    platformId: { type: String }, // Page ID / IG User ID / Threads User ID
+    profile: profileSchema,
+  },
+  { _id: false },
+);
+
+/* ---------- META ROOT ---------- */
+const metaSchema = new Schema<Meta>(
+  {
+    connected: { type: Boolean, default: false },
+
+    auth: metaAuthSchema,
+    health: healthSchema,
+
+    facebook: metaIdentitySchema,
+    instagram: metaIdentitySchema,
+    threads: metaIdentitySchema,
+
+    platformMetadata: {
+      linkedPageId: { type: String },
+      businessId: { type: String },
     },
   },
   { _id: false },
 );
 
-// Main Social Account Schema
+/* ============================================================
+   BLUESKY (AT PROTOCOL)
+============================================================ */
 
-const socialAccountSchema = new Schema<ISocialAccount>(
+const blueskySchema = new Schema<Bluesky>(
+  {
+    connected: { type: Boolean, default: false },
+
+    did: { type: String, sparse: true },
+    handle: { type: String },
+
+    profile: profileSchema,
+
+    auth: {
+      accessJwt: { type: String },
+      refreshJwt: { type: String },
+      expiresAt: { type: Date },
+
+      dpopKeyPair: { type: Schema.Types.Mixed },
+    },
+
+    repo: { type: String },
+
+    health: healthSchema,
+  },
+  { _id: false },
+);
+
+/* ============================================================
+   MASTODON (OAUTH + INSTANCE-BASED)
+============================================================ */
+
+const mastodonSchema = new Schema<Mastodon>(
+  {
+    connected: { type: Boolean, default: false },
+
+    instanceUrl: {
+      type: String,
+      required: function (this: { connected?: boolean }) {
+        return !!this.connected;
+      },
+    },
+
+    accountId: { type: String },
+
+    profile: profileSchema,
+
+    auth: {
+      accessToken: { type: String },
+      refreshToken: { type: String },
+      expiresAt: { type: Date },
+      scopes: { type: [String], default: [] },
+    },
+
+    health: healthSchema,
+  },
+  { _id: false },
+);
+
+/* ============================================================
+   TUMBLR (BLOG-CENTRIC)
+============================================================ */
+
+const tumblrSchema = new Schema<Tumblr>(
+  {
+    connected: { type: Boolean, default: false },
+
+    blogHostname: { type: String },
+
+    profile: profileSchema,
+
+    auth: {
+      oauthToken: { type: String },
+      oauthTokenSecret: { type: String },
+    },
+
+    health: healthSchema,
+  },
+  { _id: false },
+);
+
+/* ============================================================
+   ROOT SOCIAL ACCOUNT
+============================================================ */
+
+const socialAccountSchema = new Schema<SocialAccount>(
   {
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true, // ALWAYS REQUIRED: Links the account to your app's User
-    },
-
-    platform: {
-      type: String,
-      enum: ["mastodon", "tumblr", "bluesky", "facebook", "instagram", "threads"],
       required: true,
     },
 
-    platformId: {
-      type: String,
-      required: true, // Unique platform ID (DID for Bluesky, IGSID for Instagram)
-    },
+    meta: { type: metaSchema, default: () => ({}) },
 
-    profile: {
-      type: profileSchema,
-      required: true,
-    },
-
-    platformMetadata: {
-      type: platformMetadataSchema,
-      default: () => ({}),
-    },
-
-    auth: {
-      type: authSchema,
-      required: true,
-    },
-
-    health: {
-      type: healthSchema,
-      default: () => ({}),
-    },
+    bluesky: { type: blueskySchema, default: () => ({}) },
+    mastodon: { type: mastodonSchema, default: () => ({}) },
+    tumblr: { type: tumblrSchema, default: () => ({}) },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
-// Indexes
+const SocialAccountModel: Model<SocialAccount> = mongoose.model<SocialAccount>(
+  "SocialAccount",
+  socialAccountSchema,
+);
 
-socialAccountSchema.index({ userId: 1, platform: 1 }, { unique: true });
-
-socialAccountSchema.index({ platform: 1, platformId: 1 }, { unique: true });
-
-export default mongoose.model<ISocialAccount>("SocialAccount", socialAccountSchema);
+export default SocialAccountModel;

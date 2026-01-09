@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
+       {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
       {
         protocol: "https",
         hostname: "hayon-app-images.s3.amazonaws.com",

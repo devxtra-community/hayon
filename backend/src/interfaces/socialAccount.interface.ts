@@ -1,73 +1,117 @@
-import { Document, Types } from "mongoose";
-
-// Platform Types
-
-export type SocialPlatform =
-  | "mastodon"
-  | "tumblr"
-  | "bluesky"
-  | "facebook"
-  | "instagram"
-  | "threads";
-
-export type AccountHealthStatus = "active" | "expired" | "revoked" | "error";
-
-// Profile Subdocument
-
-export interface ISocialProfile {
-  handle: string;
-  displayName: string;
-  avatarUrl: string;
-  profileUrl: string;
+export interface Profile {
+  handle?: string;
+  displayName?: string;
+  avatar?: string;
 }
 
-// Platform Metadata Subdocument
+export type HealthStatus = "active" | "expired" | "revoked" | "error";
 
-export interface IPlatformMetadata {
-  instanceUrl: string | null; // Mastodon Instance (e.g., https://mastodon.online)
-  blogHostname: string | null; // Tumblr blog URL
-  did: string | null; // Bluesky Decentralized Identifier
-  linkedPageId: string | null; // Meta Page ID (required for FB/IG/Threads Insights)
+export interface Health {
+  status?: HealthStatus;
+  needsReconnection?: boolean;
+  lastSuccessfulRefresh?: Date;
+  lastError?: string;
+  consecutiveFailures?: number;
 }
 
-// Auth Subdocument
-
-export interface ISocialAuth {
-  accessToken: string; // Encrypted
-  refreshToken: string | null; // Encrypted
-  expiresAt: Date | null;
-  scopes: string[]; // Store scopes to know what you are allowed to poll
-  dpopKeyPair: Record<string, unknown> | null; // REQUIRED for Bluesky OAuth security
+export interface MetaAuth {
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+  scopes?: string[];
 }
 
-// Health Subdocument
-
-export interface ISocialHealth {
-  status: AccountHealthStatus;
-  needsReconnection: boolean;
-  lastSuccessfulRefresh: Date | null;
-  lastError: string | null;
-  consecutiveFailures: number;
+export interface MetaIdentity {
+  platformId?: string; // Page ID / IG User ID / Threads User ID
+  profile?: Profile;
 }
 
-// Main Social Account Interface
+export interface MetaPlatformMetadata {
+  linkedPageId?: string;
+  businessId?: string;
+}
 
-export interface ISocialAccount extends Document {
-  _id: Types.ObjectId;
+export interface Meta {
+  connected?: boolean;
 
-  userId: Types.ObjectId; // ALWAYS REQUIRED: Links the account to your app's User
+  auth?: MetaAuth;
+  health?: Health;
 
-  platform: SocialPlatform;
-  platformId: string; // Unique platform ID (DID for Bluesky, IGSID for Instagram)
+  facebook?: MetaIdentity;
+  instagram?: MetaIdentity;
+  threads?: MetaIdentity;
 
-  profile: ISocialProfile;
+  platformMetadata?: MetaPlatformMetadata;
+}
 
-  platformMetadata: IPlatformMetadata;
+export interface BlueskyAuth {
+  accessJwt?: string;
+  refreshJwt?: string;
+  expiresAt?: Date;
+  dpopKeyPair?: any; // you can replace `any` with a stricter type later
+}
 
-  auth: ISocialAuth;
+export interface Bluesky {
+  connected?: boolean;
 
-  health: ISocialHealth;
+  did?: string;
+  handle?: string;
 
-  createdAt: Date;
-  updatedAt: Date;
+  profile?: Profile;
+
+  auth?: BlueskyAuth;
+  repo?: string;
+
+  health?: Health;
+}
+
+export interface MastodonAuth {
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+  scopes?: string[];
+}
+
+export interface Mastodon {
+  connected?: boolean;
+
+  instanceUrl?: string;
+  accountId?: string;
+
+  profile?: Profile;
+
+  auth?: MastodonAuth;
+  health?: Health;
+}
+
+export interface TumblrAuth {
+  oauthToken?: string;
+  oauthTokenSecret?: string;
+}
+
+export interface Tumblr {
+  connected?: boolean;
+
+  blogHostname?: string;
+
+  profile?: Profile;
+
+  auth?: TumblrAuth;
+  health?: Health;
+}
+
+import { Types } from "mongoose";
+
+export interface SocialAccount {
+  _id?: Types.ObjectId;
+
+  userId: Types.ObjectId;
+
+  meta?: Meta;
+  bluesky?: Bluesky;
+  mastodon?: Mastodon;
+  tumblr?: Tumblr;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }

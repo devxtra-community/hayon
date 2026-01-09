@@ -8,12 +8,15 @@ export default function MetaConnectPage() {
     const handleFacebookConnect = () => {
         // Determine backend URL (fallback to dev.hayon.site if env variable is missing)
         const apiUrl = "https://dev.hayon.site:5000/api";
+        // const apiUrl = "http://localhost:5000/api";
         // Redirect to the backend auth endpoint
         window.location.href = `${apiUrl}/auth/facebook/connect`;
     };
 
     const handleThreadsConnect = () => {
         const apiUrl = "https://dev.hayon.site:5000/api";
+        // const apiUrl = "http://localhost:5000/api";
+
         window.location.href = `${apiUrl}/auth/threads/connect`;
     };
 
