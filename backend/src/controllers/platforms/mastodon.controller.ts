@@ -25,7 +25,7 @@ export const connectMastodon = (req: Request, res: Response) => {
 export const mastodonCallback = async (req: Request, res: Response) => {
   try {
     const { code, state } = req.query as { code: string; state: string };
-    const userId = state; // We used state to pass userId
+    const userId = state;
 
     if (!code) {
       return new ErrorResponse("Authorization code missing", { status: 400 }).send(res);
@@ -40,10 +40,9 @@ export const mastodonCallback = async (req: Request, res: Response) => {
       accountId: profile.id,
       auth: {
         accessToken: accessToken,
-        // scopes: ["read", "write", "push"], // Implicit or we can save if returned
       },
       profile: {
-        handle: profile.username, // or acct (username@instance)
+        handle: profile.username,
         displayName: profile.display_name,
         avatar: profile.avatar,
       },

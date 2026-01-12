@@ -12,7 +12,6 @@ import {
   Tumblr,
 } from "../interfaces/socialAccount.interface";
 
-/* ---------- PROFILE ---------- */
 const profileSchema = new Schema<Profile>(
   {
     handle: { type: String },
@@ -22,7 +21,6 @@ const profileSchema = new Schema<Profile>(
   { _id: false },
 );
 
-/* ---------- HEALTH ---------- */
 const healthSchema = new Schema<Health>(
   {
     status: {
@@ -38,7 +36,6 @@ const healthSchema = new Schema<Health>(
   { _id: false },
 );
 
-/* ---------- SHARED META AUTH ---------- */
 const metaAuthSchema = new Schema<MetaAuth>(
   {
     accessToken: {
@@ -58,7 +55,6 @@ const metaAuthSchema = new Schema<MetaAuth>(
   { _id: false },
 );
 
-/* ---------- FACEBOOK SCHEMA ---------- */
 const facebookSchema = new Schema<Facebook>(
   {
     connected: { type: Boolean, default: false },
@@ -70,7 +66,6 @@ const facebookSchema = new Schema<Facebook>(
   { _id: false },
 );
 
-/* ---------- INSTAGRAM SCHEMA ---------- */
 const instagramSchema = new Schema<Instagram>(
   {
     connected: { type: Boolean, default: false },
@@ -85,7 +80,6 @@ const instagramSchema = new Schema<Instagram>(
   { _id: false },
 );
 
-/* ---------- THREADS SCHEMA ---------- */
 const threadsSchema = new Schema<Threads>(
   {
     connected: { type: Boolean, default: false },
@@ -96,10 +90,6 @@ const threadsSchema = new Schema<Threads>(
   },
   { _id: false },
 );
-
-/* ============================================================
-   BLUESKY (AT PROTOCOL)
-============================================================ */
 
 const blueskySchema = new Schema<Bluesky>(
   {
@@ -124,10 +114,6 @@ const blueskySchema = new Schema<Bluesky>(
   },
   { _id: false },
 );
-
-/* ============================================================
-   MASTODON (OAUTH + INSTANCE-BASED)
-============================================================ */
 
 const mastodonSchema = new Schema<Mastodon>(
   {
@@ -156,10 +142,6 @@ const mastodonSchema = new Schema<Mastodon>(
   { _id: false },
 );
 
-/* ============================================================
-   TUMBLR (BLOG-CENTRIC)
-============================================================ */
-
 const tumblrSchema = new Schema<Tumblr>(
   {
     connected: { type: Boolean, default: false },
@@ -178,10 +160,6 @@ const tumblrSchema = new Schema<Tumblr>(
   { _id: false },
 );
 
-/* ============================================================
-   ROOT SOCIAL ACCOUNT
-============================================================ */
-
 const socialAccountSchema = new Schema<SocialAccount>(
   {
     userId: {
@@ -190,7 +168,6 @@ const socialAccountSchema = new Schema<SocialAccount>(
       required: true,
     },
 
-    // Flattened Meta Platforms
     facebook: { type: facebookSchema, default: () => ({}) },
     instagram: { type: instagramSchema, default: () => ({}) },
     threads: { type: threadsSchema, default: () => ({}) },

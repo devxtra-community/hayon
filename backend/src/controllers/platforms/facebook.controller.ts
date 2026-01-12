@@ -209,7 +209,6 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
       }
     }
 
-    // Final Update for Facebook
     await updateFacebookDetails(userId, {
       connected: true,
       platformId: fbPlatformId,

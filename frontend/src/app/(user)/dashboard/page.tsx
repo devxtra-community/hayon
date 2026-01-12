@@ -143,13 +143,6 @@ export default function DashboardPage() {
               <div className="lg:col-span-2">
                 <ImpressionsChart />
               </div>
-
-              {/* Pie Chart / Platform Performance in the image looks like it corresponds to this slot */}
-              {/* In the image, Pie chart is prominent. Let's assume PlatformPerformanceCard is the one or we use another component. 
-                     The current codebase has PlatformPerformanceCard. The image shows a Pie Chart. 
-                     I will place PlatformPerformanceCard here if it resembles the logic, or BestPostCard.
-                     In code, BestPostCard was next. 
-                  */}
               <div className="lg:hidden">
                 {/* On mobile, stack order: Chart -> Platform Performance (Pie) -> Best Post */}
                 <PlatformPerformanceCard />
@@ -171,10 +164,6 @@ export default function DashboardPage() {
               {/* Connected Platforms */}
               <ConnectedPlatformsCard />
 
-              {/* Platform Performance - hidden on mobile here if we moved it up? 
-                    Actually, let's keep the desktop grid structure but allow mobile to just flow naturally 
-                    if we use grid-cols-1.
-                */}
               <div className="hidden lg:block">
                 <PlatformPerformanceCard />
               </div>

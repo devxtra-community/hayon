@@ -10,7 +10,6 @@ import {
 
 const router = express.Router();
 
-// connection routes
 router.post("/connect", authenticate, validate(blueskyConnectSchema), connectBluesky);
 router.get("/refresh", authenticate, refreshBlueskyProfile);
 router.delete("/disconnect", authenticate, disconnectBluesky);

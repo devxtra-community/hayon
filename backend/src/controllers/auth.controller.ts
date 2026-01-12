@@ -58,7 +58,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     new SuccessResponse("Account created successfully", {
       status: 201,
       data: {
-        accessToken, // client stores in memory
+        accessToken,
         user: {
           id: user._id,
           email: user.email,
@@ -93,7 +93,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     new SuccessResponse("Login successful", {
       data: {
-        accessToken, // client keeps in memory
+        accessToken,
         user: {
           id: user._id,
           email: user.email,
@@ -106,7 +106,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }).send(res);
   } catch (err: any) {
     logger.error(`Login error: ${err.message}`);
-    // Determine status code based on error message
     const status =
       err.message === "User not found" || err.message === "Invalid password" ? 401 : 500;
 
@@ -135,7 +134,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
 
     new SuccessResponse("Login successful", {
       data: {
-        accessToken, // client keeps in memory
+        accessToken,
         user: {
           id: user._id,
           email: user.email,
@@ -207,7 +206,6 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     await logoutService(refreshToken);
   }
 
-  // Clear cookie with SAME path as set
   res.clearCookie("refreshToken", {
     path: "/api/auth",
     httpOnly: true,
@@ -227,7 +225,6 @@ export const logoutAll = async (req: Request, res: Response): Promise<void> => {
 
     await logoutAllService(req.auth.id);
 
-    // Clear current refresh token cookie
     res.clearCookie("refreshToken", {
       path: "/api/auth",
       httpOnly: true,
@@ -243,13 +240,10 @@ export const logoutAll = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-//  reset password controller to be implemented
-
 export const sendRsetPasswordEmail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email } = req.body;
 
-    // Call the service to send reset password email
     await sendResetPasswordEmailService(email);
     new SuccessResponse("Password reset email sent successfully").send(res);
   } catch (err: any) {

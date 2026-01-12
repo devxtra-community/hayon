@@ -1,7 +1,5 @@
 import { Document, Types } from "mongoose";
 
-// User Types
-
 export type UserRole = "user" | "admin";
 export type AuthProvider = "email" | "google";
 export type SubscriptionPlan = "free" | "pro";

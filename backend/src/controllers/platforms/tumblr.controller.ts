@@ -22,8 +22,6 @@ export const connectTumblr = async (req: Request, res: Response) => {
   }
 };
 
-// Callbakc controller
-
 export const tumblrCallback = async (req: Request, res: Response) => {
   try {
     const { oauth_token, oauth_verifier, state } = req.query as {
@@ -36,13 +34,11 @@ export const tumblrCallback = async (req: Request, res: Response) => {
 
     console.log("Tumblr callback received:", { oauth_token, oauth_verifier, state });
 
-    // 1️⃣ Exchange request token → access token
     const { accessToken, accessSecret } = await tumblrService.getAccessToken(
       oauth_token,
       oauth_verifier,
     );
 
-    // 2️⃣ Fetch user info
     const { handle, avatar } = await tumblrService.getUserInfo(accessToken, accessSecret);
 
     await updateTumblerDetails(userId, {
@@ -58,7 +54,6 @@ export const tumblrCallback = async (req: Request, res: Response) => {
     });
 
     return res.redirect(`${ENV.APP.FRONTEND_URL}/settings`);
-    // return new SuccessResponse("Tumblr connected successfully").send(res); // Redirect happens before this
   } catch (error: any) {
     logger.error(error);
     if (error.message === "Tumblr OAuth session expired") {

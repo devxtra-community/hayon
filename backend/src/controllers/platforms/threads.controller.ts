@@ -112,7 +112,7 @@ export const refreshThreadsProfile = async (req: Request, res: Response) => {
 
     await updateThreadsDetails(userId, {
       connected: true,
-      platformId: socialAccount.threads.platformId, // Retain ID or should come from profile if possible but profile usually returns ID too
+      platformId: socialAccount.threads.platformId,
       profile: {
         handle: profile.username,
         displayName: profile.name || profile.username,

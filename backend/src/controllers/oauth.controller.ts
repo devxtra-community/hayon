@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from "uuid";
 import { createRefreshToken } from "../repositories/refreshToken.repository";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { setRefreshTokenCookie } from "../utils/setAuthCookies";
-// import { SuccessResponse, ErrorResponse } from "../utils/responses";
 
 export const googleOAuthCallback = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -37,10 +36,7 @@ export const googleOAuthCallback = async (req: Request, res: Response): Promise<
 
     setRefreshTokenCookie(res, refreshToken);
 
-    //   Used  fragment
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback#accessToken=${accessToken}`);
-
-    // res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=true`);
   } catch {
     res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
   }

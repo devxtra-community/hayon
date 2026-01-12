@@ -1,5 +1,4 @@
 import socialAccountModel from "../models/socialAccount.model";
-// import logger from "../utils/logger";
 
 export const updateBlueskyDetails = async (userId: string, blueskyData: any) => {
   const update: any = {};

@@ -44,15 +44,12 @@ router.get("/me", authenticate, getCurrentUser);
 router.post("/send-reset-email", validate(sendResetEmailSchema), sendRsetPasswordEmail);
 router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
 
-// Logout user
 router.delete("/logout", logout);
 router.delete("/logout/all", authenticate, logoutAll);
 
-// Device management
 router.get("/devices", authenticate, getDevices);
 router.delete("/devices/:tokenId", authenticate, logoutDevice);
 
-// Google OAuth Routes
 router.get(
   "/google",
   passport.authenticate("google", {
@@ -65,14 +62,12 @@ router.get(
   "/google/callback",
   (req, res, next) => {
     passport.authenticate("google", { session: false }, (err, user, info) => {
-      // ✅ Custom callback to handle errors
       if (err) {
         logger.error("Google OAuth error:", err);
         return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`);
       }
 
       if (!user) {
-        // ✅ Handle specific error messages
         const errorMessage = info?.message || "google_auth_failed";
         return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=${errorMessage}`);
       }

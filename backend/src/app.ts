@@ -23,7 +23,6 @@ connectDB();
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
     if (origin === ENV.APP.FRONTEND_URL || origin === "http://localhost:3000") {
@@ -35,8 +34,6 @@ const corsOptions = {
   },
   credentials: true,
 };
-
-// TODO: use windston and morgan.
 
 expressInstance.use(morgan("dev"));
 expressInstance.use(cors(corsOptions));

@@ -1,22 +1,18 @@
 // app/(admin)/layout.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { api, getAccessToken, setAccessToken } from '@/lib/axios';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, getAccessToken, setAccessToken } from "@/lib/axios";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
 }
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,29 +22,28 @@ export default function AdminLayout({
       const token = getAccessToken();
       if (!token) {
         try {
-          const { data } = await api.post('/auth/refresh');
+          const { data } = await api.post("/auth/refresh");
           setAccessToken(data.data.accessToken);
         } catch (error) {
           console.log(error);
-          router.push('/login');
+          router.push("/login");
           return;
         }
       }
 
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get("/auth/me");
         const user: User = data.data.user;
-        
-        // Check if user is admin
-        if (user.role !== 'admin') {
-          router.push('/dashboard'); // Redirect non-admin to user dashboard
+
+        if (user.role !== "admin") {
+          router.push("/dashboard");
           return;
         }
-        
+
         setIsAuthenticated(true);
       } catch (error) {
         console.log(error);
-        router.push('/login');
+        router.push("/login");
       } finally {
         setIsLoading(false);
       }

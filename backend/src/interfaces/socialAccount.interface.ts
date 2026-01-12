@@ -49,10 +49,6 @@ export interface Threads {
   health?: Health;
 }
 
-// ----------------------
-// OTHER PLATFORMS
-// ----------------------
-
 export interface BlueskyAuth {
   accessJwt?: string;
   refreshJwt?: string;

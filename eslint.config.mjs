@@ -1,29 +1,11 @@
-// eslint.config.mjs
-
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 import next from "@next/eslint-plugin-next";
-
-/**
- * ESLint v9 Flat Config
- * - NO legacy configs
- * - NO FlatCompat
- * - NO eslint-config-next
- * - This is the ONLY stable setup right now
- */
-
 export default [
-  /* -------------------------------------------------- */
-  /* Base JS / TS                                       */
-  /* -------------------------------------------------- */
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier,
-
-  /* -------------------------------------------------- */
-  /* Backend (Node)                                     */
-  /* -------------------------------------------------- */
   {
     files: ["backend/src/**/*.ts"],
     languageOptions: {
@@ -42,9 +24,6 @@ export default [
     },
   },
 
-  /* -------------------------------------------------- */
-  /* Frontend (Next.js — FLAT NATIVE)                    */
-  /* -------------------------------------------------- */
   {
     files: ["frontend/**/*.{js,jsx,ts,tsx}"],
     plugins: {
@@ -62,9 +41,6 @@ export default [
     },
   },
 
-  /* -------------------------------------------------- */
-  /* Global ignores                                     */
-  /* -------------------------------------------------- */
   {
     ignores: [
       "**/node_modules/**",

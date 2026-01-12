@@ -13,7 +13,6 @@ router.use("/bluesky", blueskyRoutes);
 
 router.get("/find", authenticate, findPlatformAccounts);
 
-// Use sub-routers
 router.use("/facebook", facebookRoutes);
 router.use("/threads", threadsRoutes);
 router.use("/mastodon", mastodonRoutes);

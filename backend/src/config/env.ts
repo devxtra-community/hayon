@@ -82,6 +82,10 @@ export const ENV = {
     REDIRECT_URI: required("META_REDIRECT_URI"),
   },
 
+  /** ======================
+   *  THREADS OAUTH
+   *  ====================== */
+
   THREADS: {
     APP_ID: required("THREADS_APP_ID"),
     APP_SECRET: required("THREADS_APP_SECRET"),
@@ -104,6 +108,6 @@ export const ENV = {
     CLIENT_KEY: required("MASTODON_CLIENT_KEY"),
     CLIENT_SECRET: required("MASTODON_CLIENT_SECRET"),
     CALLBACK_URL: required("MASTODON_CALLBACK_URL"),
-    INSTANCE_URL: "https://mastodon.social",
+    INSTANCE_URL: required("MASTODON_INSTANCE_URL"),
   },
 } as const;
