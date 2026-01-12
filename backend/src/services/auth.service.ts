@@ -26,7 +26,6 @@ import { sendResetPasswordEmail } from "../utils/nodemailer";
 import logger from "../utils/logger";
 
 export const requestOtpService = async (email: string) => {
-
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw new Error("Email already registered");
@@ -58,7 +57,6 @@ export const requestOtpService = async (email: string) => {
 };
 
 export const verifyOtpService = async (email: string, otp: string) => {
-
   const pending = await findPendingByEmail(email);
   if (!pending) {
     throw new Error("OTP not found or expired");
@@ -153,7 +151,7 @@ export const loginService = async (data: any, ipAddress?: string, userAgent?: st
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new Error("Invalid email or password");
+    throw new Error("User not found");
   }
 
   if (user.role !== "user") {
@@ -167,7 +165,7 @@ export const loginService = async (data: any, ipAddress?: string, userAgent?: st
   const isPasswordValid = await bcrypt.compare(password, user.auth.passwordHash);
 
   if (!isPasswordValid) {
-    throw new Error("Invalid email or password");
+    throw new Error("Invalid password");
   }
 
   // Optional but recommended

@@ -1,10 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-/**
- * Enforce required env vars
- **/
-
 const required = (key: string): string => {
   const value = process.env[key];
   if (!value) {
@@ -21,6 +17,7 @@ export const ENV = {
     NODE_ENV: process.env.NODE_ENV ?? "development",
     PORT: Number(process.env.PORT ?? 5000),
     FRONTEND_URL: required("FRONTEND_URL"),
+    BACKEND_URL: required("BACKEND_URL"),
   },
 
   /** ======================
@@ -91,7 +88,6 @@ export const ENV = {
     REDIRECT_URI: required("THREADS_REDIRECT_URI"),
   },
 
-
   /** ======================
    *  TUMBLR OAUTH
    *  ====================== */
@@ -99,6 +95,15 @@ export const ENV = {
   TUMBLR: {
     CONSUMER_KEY: required("TUMBLR_CONSUMER_KEY"),
     CONSUMER_SECRET: required("TUMBLR_CONSUMER_SECRET"),
-  },  
+  },
 
+  /** ======================
+   *  MASTODON OAUTH (mastodon.social)
+   *  ====================== */
+  MASTODON: {
+    CLIENT_KEY: required("MASTODON_CLIENT_KEY"),
+    CLIENT_SECRET: required("MASTODON_CLIENT_SECRET"),
+    CALLBACK_URL: required("MASTODON_CALLBACK_URL"),
+    INSTANCE_URL: "https://mastodon.social",
+  },
 } as const;

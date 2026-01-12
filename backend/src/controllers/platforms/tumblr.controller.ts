@@ -2,7 +2,10 @@ import { tumblrService } from "../../services/platforms/tumblr.service";
 import { ErrorResponse, SuccessResponse } from "../../utils/responses";
 import logger from "../../utils/logger";
 import { Request, Response } from "express";
-import { updateTumblerDetails } from "../../repositories/platform.repository";
+import {
+  updateTumblerDetails,
+  findPlatformAccountByUserId,
+} from "../../repositories/platform.repository";
 import { ENV } from "../../config/env";
 
 export const connectTumblr = async (req: Request, res: Response) => {
@@ -34,7 +37,10 @@ export const tumblrCallback = async (req: Request, res: Response) => {
     console.log("Tumblr callback received:", { oauth_token, oauth_verifier, state });
 
     // 1️⃣ Exchange request token → access token
-    const { accessToken, accessSecret } = await tumblrService.getAccessToken(oauth_token, oauth_verifier);
+    const { accessToken, accessSecret } = await tumblrService.getAccessToken(
+      oauth_token,
+      oauth_verifier,
+    );
 
     // 2️⃣ Fetch user info
     const { handle, avatar } = await tumblrService.getUserInfo(accessToken, accessSecret);
@@ -51,7 +57,7 @@ export const tumblrCallback = async (req: Request, res: Response) => {
       },
     });
 
-    res.redirect(`${ENV.APP.FRONTEND_URL}/settings`);
+    return res.redirect(`${ENV.APP.FRONTEND_URL}/settings`);
     // return new SuccessResponse("Tumblr connected successfully").send(res); // Redirect happens before this
   } catch (error: any) {
     logger.error(error);
@@ -83,5 +89,42 @@ export const disconnectTumblr = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(error);
     return new ErrorResponse("Failed to disconnect from Tumblr", { status: 500 }).send(res);
+  }
+};
+
+export const refreshTumblrProfile = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    }
+
+    const userId = req.auth.id;
+    const socialAccount = await findPlatformAccountByUserId(userId);
+
+    const tumblrAuth = socialAccount?.tumblr?.auth as any;
+    if (
+      !socialAccount ||
+      !socialAccount.tumblr?.connected ||
+      !tumblrAuth?.oauthToken ||
+      !tumblrAuth?.oauthTokenSecret
+    ) {
+      return new ErrorResponse("Tumblr account not connected", { status: 400 }).send(res);
+    }
+
+    const { oauthToken, oauthTokenSecret } = tumblrAuth;
+    const { handle, avatar } = await tumblrService.getUserInfo(oauthToken, oauthTokenSecret);
+
+    await updateTumblerDetails(userId, {
+      connected: true,
+      profile: {
+        handle,
+        avatar,
+      },
+    });
+
+    return new SuccessResponse("Tumblr profile refreshed", { data: { handle, avatar } }).send(res);
+  } catch (error) {
+    logger.error("Failed to refresh Tumblr profile", error);
+    return new ErrorResponse("Failed to refresh Tumblr profile", { status: 500 }).send(res);
   }
 };

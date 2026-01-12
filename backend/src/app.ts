@@ -22,7 +22,17 @@ const expressInstance: Application = express();
 connectDB();
 
 const corsOptions = {
-  origin: ENV.APP.FRONTEND_URL,
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (origin === ENV.APP.FRONTEND_URL || origin === "http://localhost:3000") {
+      return callback(null, true);
+    } else {
+      logger.warn(`Blocked CORS request from origin: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 };
 
@@ -58,11 +68,11 @@ expressInstance.use(serverErrorHandler);
 // });
 
 const options = {
-  key: fs.readFileSync(path.join(process.cwd(), '../dev.hayon.site+2-key.pem')),
-  cert: fs.readFileSync(path.join(process.cwd(), '../dev.hayon.site+2.pem'))
+  key: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2-key.pem")),
+  cert: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2.pem")),
 };
 
 https.createServer(options, expressInstance).listen(ENV.APP.PORT, () => {
-  console.log('Backend running at https://dev.hayon.site:5000');
+  console.log("Backend running at https://dev.hayon.site:5000");
   logger.info(`🚀 Server running on port ${ENV.APP.PORT}`);
 });

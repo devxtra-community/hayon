@@ -1,62 +1,78 @@
 import socialAccountModel from "../models/socialAccount.model";
-import logger from "../utils/logger";
+// import logger from "../utils/logger";
 
-export const updateBlueskyDetails = async (userId: string, blueskyData: Partial<any>) => {
-  const socialAccount = await socialAccountModel.findOne({ userId });
-  if (!socialAccount) {
-    socialAccountModel.create({
-      userId,
-      bluesky: blueskyData,
-    });
-    return;
+export const updateBlueskyDetails = async (userId: string, blueskyData: any) => {
+  const update: any = {};
+  for (const key in blueskyData) {
+    update[`bluesky.${key}`] = blueskyData[key];
   }
-
-  const res = await socialAccountModel.findOneAndUpdate(
+  return await socialAccountModel.findOneAndUpdate(
     { userId },
-    { bluesky: blueskyData },
-    { new: true },
+    { $set: update },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
   );
-  logger.info(`Bluesky details updated: ${JSON.stringify(res)}`);
-  return;
 };
 
 export const findPlatformAccountByUserId = async (userId: string) => {
   return await socialAccountModel.findOne({ userId });
 };
 
-
-export const updateFacebookDetails = async (userId: string, data: Partial<any>) => {
+export const updateFacebookDetails = async (userId: string, data: any) => {
+  const update: any = {};
+  for (const key in data) {
+    update[`facebook.${key}`] = data[key];
+  }
   return await socialAccountModel.findOneAndUpdate(
     { userId },
-    { $set: { facebook: data } },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { $set: update },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
   );
 };
 
-export const updateInstagramDetails = async (userId: string, data: Partial<any>) => {
+export const updateInstagramDetails = async (userId: string, data: any) => {
+  const update: any = {};
+  for (const key in data) {
+    update[`instagram.${key}`] = data[key];
+  }
   return await socialAccountModel.findOneAndUpdate(
     { userId },
-    { $set: { instagram: data } },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { $set: update },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
   );
 };
 
-export const updateThreadsDetails = async (userId: string, data: Partial<any>) => {
+export const updateThreadsDetails = async (userId: string, data: any) => {
+  const update: any = {};
+  for (const key in data) {
+    update[`threads.${key}`] = data[key];
+  }
   return await socialAccountModel.findOneAndUpdate(
     { userId },
-    { $set: { threads: data } },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { $set: update },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
   );
 };
 
 export const updateTumblerDetails = async (userId: string, tumblrData: Partial<any>) => {
-  const socialAccount = await socialAccountModel.findOne({ userId });
-  if (!socialAccount) {
-    socialAccountModel.create({
-      userId,
-      tumblr: tumblrData,
-    });
-    return;
+  const update: any = {};
+  for (const key in tumblrData) {
+    update[`tumblr.${key}`] = tumblrData[key];
   }
-  await socialAccountModel.findOneAndUpdate({ userId }, { tumblr: tumblrData }, { new: true });
+  return await socialAccountModel.findOneAndUpdate(
+    { userId },
+    { $set: update },
+    { new: true, upsert: true },
+  );
+};
+
+export const updateMastodonDetails = async (userId: string, data: any) => {
+  const update: any = {};
+  for (const key in data) {
+    update[`mastodon.${key}`] = data[key];
+  }
+  return await socialAccountModel.findOneAndUpdate(
+    { userId },
+    { $set: update },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
+  );
 };

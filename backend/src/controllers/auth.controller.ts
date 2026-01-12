@@ -105,8 +105,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       },
     }).send(res);
   } catch (err: any) {
+    logger.error(`Login error: ${err.message}`);
+    // Determine status code based on error message
+    const status =
+      err.message === "User not found" || err.message === "Invalid password" ? 401 : 500;
+
     new ErrorResponse(err.message || "Login failed", {
-      status: 401,
+      status,
     }).send(res);
   }
 };
