@@ -1,6 +1,9 @@
 import express from "express";
-import passport from "../config/passport";
-import { googleOAuthCallback } from "../controllers/oauth.controller";
+import {
+  googleOAuthCallback,
+  initiateGoogleLogin,
+  handleGoogleCallback,
+} from "../controllers/oauth.controller";
 import {
   signup,
   login,
@@ -28,8 +31,6 @@ import {
   sendResetEmailSchema,
   resetPasswordSchema,
 } from "@hayon/schemas";
-import { ENV } from "../config/env";
-import logger from "../utils/logger";
 
 const router = express.Router();
 
@@ -50,33 +51,8 @@ router.delete("/logout/all", authenticate, logoutAll);
 router.get("/devices", authenticate, getDevices);
 router.delete("/devices/:tokenId", authenticate, logoutDevice);
 
-router.get(
-  "/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-    session: false,
-  }),
-);
+router.get("/google", initiateGoogleLogin);
 
-router.get(
-  "/google/callback",
-  (req, res, next) => {
-    passport.authenticate("google", { session: false }, (err, user, info) => {
-      if (err) {
-        logger.error("Google OAuth error:", err);
-        return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`);
-      }
-
-      if (!user) {
-        const errorMessage = info?.message || "google_auth_failed";
-        return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=${errorMessage}`);
-      }
-
-      req.user = user;
-      return next();
-    })(req, res, next);
-  },
-  googleOAuthCallback,
-);
+router.get("/google/callback", handleGoogleCallback, googleOAuthCallback);
 
 export default router;

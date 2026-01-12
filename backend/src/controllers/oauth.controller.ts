@@ -1,8 +1,33 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { createRefreshToken } from "../repositories/refreshToken.repository";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { setRefreshTokenCookie } from "../utils/setAuthCookies";
+import passport from "../config/passport";
+import { ENV } from "../config/env";
+import logger from "../utils/logger";
+
+export const initiateGoogleLogin = passport.authenticate("google", {
+  scope: ["profile", "email"],
+  session: false,
+});
+
+export const handleGoogleCallback = (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate("google", { session: false }, (err, user, info) => {
+    if (err) {
+      logger.error("Google OAuth error:", err);
+      return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`);
+    }
+
+    if (!user) {
+      const errorMessage = info?.message || "google_auth_failed";
+      return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=${errorMessage}`);
+    }
+
+    req.user = user;
+    return next();
+  })(req, res, next);
+};
 
 export const googleOAuthCallback = async (req: Request, res: Response): Promise<void> => {
   try {
