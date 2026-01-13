@@ -8,7 +8,9 @@ export const findUserByEmail = async (email: string) => {
   return User.findOne({ email });
 };
 
-export const createUser = async (data: any) => {
+import { IUser } from "../interfaces/user.interface";
+
+export const createUser = async (data: Partial<IUser>) => {
   return User.create(data);
 };
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowUpRight, HelpCircle, ExternalLink, RefreshCw } from "lucide-react";
+import Image from "next/image";
 import { api } from "@/lib/axios";
 import { SocialAccount } from "../../../../backend/src/interfaces/socialAccount.interface";
 import { ConnectionTutorialModal } from "@/components/settings/ConnectionTutorialModal";
@@ -160,10 +161,11 @@ export default function ConnectedPlatformsCard() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-200 shadow-sm transition-transform group-hover:scale-105">
                     {account.avatar ? (
-                      <img
+                      <Image
                         src={account.avatar}
                         alt={account.platform}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     ) : (
                       <span className="text-xs font-bold text-gray-500">{account.platform[0]}</span>

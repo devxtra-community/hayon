@@ -6,7 +6,7 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "npx eslint .",
     "format": "prettier --write .",
     "test": "echo \"No tests yet\" && exit 0"
   },

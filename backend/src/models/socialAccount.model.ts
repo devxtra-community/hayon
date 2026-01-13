@@ -40,7 +40,7 @@ const metaAuthSchema = new Schema<MetaAuth>(
   {
     accessToken: {
       type: String,
-      required: function (this: any) {
+      required: function (this: { parent: () => { connected?: boolean } }) {
         return this.parent()?.connected;
       },
     },

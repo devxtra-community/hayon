@@ -4,6 +4,7 @@ import { createRefreshToken } from "../repositories/refreshToken.repository";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { setRefreshTokenCookie } from "../utils/setAuthCookies";
 import passport from "../config/passport";
+import { Types } from "mongoose";
 import { ENV } from "../config/env";
 import logger from "../utils/logger";
 
@@ -45,7 +46,7 @@ export const googleOAuthCallback = async (req: Request, res: Response): Promise<
 
     await createRefreshToken({
       tokenId,
-      userId: oauthUser.userId as any,
+      userId: new Types.ObjectId(oauthUser.userId),
       expiresAt,
     });
 

@@ -2,6 +2,7 @@
 
 import { Search, Bell, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 
 interface HeaderProps {
   userName: string;
@@ -45,10 +46,11 @@ export default function Header({ userName, userEmail, userAvatar, onMenuClick }:
         {/* User Profile */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-200">
-            <img
+            <Image
               src={userAvatar || "/default-avatar.png"}
               alt={userName}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           </div>
           <div className="text-left hidden sm:block">

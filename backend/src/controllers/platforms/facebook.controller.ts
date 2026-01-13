@@ -10,7 +10,7 @@ import {
 } from "../../repositories/platform.repository";
 
 export const connectFacebook = (req: Request, res: Response) => {
-  if (!req.auth) return res.status(401).send("Unauthorized");
+  if (!req.auth) return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
 
   const fbScopes = [
     "instagram_basic",
@@ -51,8 +51,8 @@ export const facebookCallback = async (req: Request, res: Response) => {
     const pages = await facebookService.getFacebookPages(longToken);
     let linkedPageId = "";
     let linkedIgId = "";
-    let fbProfile: any = {};
-    let igProfile: any = {};
+    let fbProfile: Record<string, unknown> = {};
+    let igProfile: Record<string, unknown> = {};
 
     const fbUser = await facebookService.getFacebookUserProfile(longToken);
     fbProfile = {
@@ -117,7 +117,7 @@ export const facebookCallback = async (req: Request, res: Response) => {
     }
 
     return res.redirect(`${ENV.APP.FRONTEND_URL}/settings`);
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error("Facebook Connect Error", error);
     return res.redirect(`${ENV.APP.FRONTEND_URL}/settings?error=facebook_connect_failed`);
   }
@@ -142,7 +142,7 @@ export const disconnectFacebook = async (req: Request, res: Response) => {
     });
 
     return new SuccessResponse("Facebook disconnected successfully").send(res);
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error("Disconnect Facebook Error", error);
     return new ErrorResponse("Failed to disconnect").send(res);
   }
@@ -216,7 +216,7 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
     });
 
     return new SuccessResponse("Facebook & Instagram profiles refreshed").send(res);
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error("Refresh Facebook Error", error);
     return new ErrorResponse("Failed to refresh Facebook profile", { status: 500 }).send(res);
   }

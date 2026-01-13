@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { findUserByEmail, createUser, findUserByIdSafe } from "../repositories/user.repository";
+import { Types } from "mongoose";
 import {
   findPendingByEmail,
   deletePendingByEmail,
@@ -24,6 +25,18 @@ import {
 } from "../repositories/user.repository";
 import { sendResetPasswordEmail } from "../utils/nodemailer";
 import logger from "../utils/logger";
+
+interface SignupData {
+  email: string;
+  password: string;
+  name: string;
+  avatar: string;
+}
+
+interface LoginData {
+  email: string;
+  password: string;
+}
 
 export const requestOtpService = async (email: string) => {
   const existingUser = await findUserByEmail(email);
@@ -79,18 +92,15 @@ export const verifyOtpService = async (email: string, otp: string) => {
   };
 };
 
-export const signupService = async (
-  data: any,
-  userId: any,
-  ipAddress?: string,
-  userAgent?: string,
-) => {
+export const signupService = async (data: SignupData, ipAddress?: string, userAgent?: string) => {
   const { email, password, name, avatar } = data;
 
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw new Error("Email already registered");
   }
+
+  const userId = new Types.ObjectId();
 
   const { buffer } = parseBase64Image(avatar);
   const uploadResult = await s3Service.uploadFile(
@@ -102,6 +112,7 @@ export const signupService = async (
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await createUser({
+    _id: userId,
     email: email,
     avatar: uploadResult.location,
     name,
@@ -109,6 +120,8 @@ export const signupService = async (
     auth: {
       provider: "email",
       passwordHash: passwordHash,
+      googleId: null,
+      passwordResetToken: null,
     },
   });
 
@@ -140,7 +153,7 @@ export const signupService = async (
   };
 };
 
-export const loginService = async (data: any, ipAddress?: string, userAgent?: string) => {
+export const loginService = async (data: LoginData, ipAddress?: string, userAgent?: string) => {
   const { email, password } = data;
 
   const user = await findUserByEmail(email);
@@ -194,7 +207,11 @@ export const loginService = async (data: any, ipAddress?: string, userAgent?: st
   };
 };
 
-export const adminLoginService = async (data: any, ipAddress?: string, userAgent?: string) => {
+export const adminLoginService = async (
+  data: LoginData,
+  ipAddress?: string,
+  userAgent?: string,
+) => {
   const { email, password } = data;
 
   const user = await findUserByEmail(email);

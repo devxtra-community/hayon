@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -434,10 +435,11 @@ export const ConnectedPlatformsCard = ({
                 <div className="flex items-center gap-2 mt-1.5">
                   {platform.status === "connected" && platform.userAvatar && (
                     <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 shrink-0 shadow-sm">
-                      <img
+                      <Image
                         src={platform.userAvatar}
-                        alt={platform.displayName || platform.handle}
-                        className="w-full h-full object-cover"
+                        alt={platform.displayName || platform.handle || "Avatar"}
+                        fill
+                        className="object-cover"
                       />
                     </div>
                   )}

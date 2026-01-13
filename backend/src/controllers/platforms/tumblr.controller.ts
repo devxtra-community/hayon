@@ -7,6 +7,7 @@ import {
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
 import { ENV } from "../../config/env";
+import { getErrorMessage } from "../../utils/errorHandler";
 
 export const connectTumblr = async (req: Request, res: Response) => {
   try {
@@ -16,7 +17,7 @@ export const connectTumblr = async (req: Request, res: Response) => {
     return new SuccessResponse("Tumblr request token obtained", {
       data: { authUrl },
     }).send(res);
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error(error);
     return new ErrorResponse("Failed to connect to Tumblr", { status: 500 }).send(res);
   }
@@ -54,9 +55,10 @@ export const tumblrCallback = async (req: Request, res: Response) => {
     });
 
     return res.redirect(`${ENV.APP.FRONTEND_URL}/settings`);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
     logger.error(error);
-    if (error.message === "Tumblr OAuth session expired") {
+    if (message === "Tumblr OAuth session expired") {
       return res.status(400).send("Tumblr OAuth session expired");
     }
     return new ErrorResponse("Failed to process Tumblr callback", { status: 500 }).send(res);
@@ -81,7 +83,7 @@ export const disconnectTumblr = async (req: Request, res: Response) => {
     });
 
     return new SuccessResponse("Tumblr disconnected successfully").send(res);
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error(error);
     return new ErrorResponse("Failed to disconnect from Tumblr", { status: 500 }).send(res);
   }
@@ -96,7 +98,7 @@ export const refreshTumblrProfile = async (req: Request, res: Response) => {
     const userId = req.auth.id;
     const socialAccount = await findPlatformAccountByUserId(userId);
 
-    const tumblrAuth = socialAccount?.tumblr?.auth as any;
+    const tumblrAuth = socialAccount?.tumblr?.auth;
     if (
       !socialAccount ||
       !socialAccount.tumblr?.connected ||
@@ -118,7 +120,7 @@ export const refreshTumblrProfile = async (req: Request, res: Response) => {
     });
 
     return new SuccessResponse("Tumblr profile refreshed", { data: { handle, avatar } }).send(res);
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error("Failed to refresh Tumblr profile", error);
     return new ErrorResponse("Failed to refresh Tumblr profile", { status: 500 }).send(res);
   }

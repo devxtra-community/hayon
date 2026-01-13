@@ -1,14 +1,14 @@
 import { Response } from "express";
 
 interface SuccessOptions {
-  data?: any;
+  data?: unknown;
   status?: number;
 }
 
 export class SuccessResponse {
   constructor(
     private message: string,
-    private options: SuccessOptions = {}
+    private options: SuccessOptions = {},
   ) {}
 
   send(res: Response) {
@@ -22,18 +22,15 @@ export class SuccessResponse {
   }
 }
 
-
-
-
 interface ErrorOptions {
-  data?: any;
+  data?: unknown;
   status?: number;
 }
 
 export class ErrorResponse {
   constructor(
     private message: string,
-    private options: ErrorOptions = {}
+    private options: ErrorOptions = {},
   ) {}
 
   send(res: Response) {

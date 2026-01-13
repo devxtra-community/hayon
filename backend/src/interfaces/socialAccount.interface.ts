@@ -53,7 +53,7 @@ export interface BlueskyAuth {
   accessJwt?: string;
   refreshJwt?: string;
   expiresAt?: Date;
-  dpopKeyPair?: any;
+  dpopKeyPair?: unknown;
 }
 
 export interface Bluesky {

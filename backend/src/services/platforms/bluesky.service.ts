@@ -1,4 +1,8 @@
-import { AtpAgent } from "@atproto/api";
+import { AtpAgent, AtpSessionData } from "@atproto/api";
+
+interface BlueskySession extends AtpSessionData {
+  did: string;
+}
 
 export class BlueskyService {
   private createAgent() {
@@ -24,7 +28,7 @@ export class BlueskyService {
       profile: profileRes.data,
     };
   }
-  async getProfile(session: any) {
+  async getProfile(session: BlueskySession) {
     const agent = this.createAgent();
     await agent.resumeSession(session);
 
@@ -35,7 +39,7 @@ export class BlueskyService {
     return profileRes.data;
   }
 
-  async resumeSession(sessionData: any) {
+  async resumeSession(sessionData: BlueskySession) {
     const agent = this.createAgent();
     await agent.resumeSession(sessionData);
 

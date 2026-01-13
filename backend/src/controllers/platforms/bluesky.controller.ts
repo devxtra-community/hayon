@@ -84,7 +84,9 @@ export const refreshBlueskyProfile = async (req: Request, res: Response) => {
     if (
       !socialAccount ||
       !socialAccount.bluesky?.connected ||
-      !socialAccount.bluesky.auth?.refreshJwt
+      !socialAccount.bluesky.auth?.refreshJwt ||
+      !socialAccount.bluesky.did ||
+      !socialAccount.bluesky.handle
     ) {
       return new ErrorResponse("Bluesky account not connected or session missing", {
         status: 400,
@@ -94,7 +96,11 @@ export const refreshBlueskyProfile = async (req: Request, res: Response) => {
     const sessionData = {
       did: socialAccount.bluesky.did,
       handle: socialAccount.bluesky.handle,
-      ...socialAccount.bluesky.auth,
+      email: undefined,
+      emailConfirmed: undefined,
+      active: true,
+      refreshJwt: socialAccount.bluesky.auth!.refreshJwt!,
+      accessJwt: socialAccount.bluesky.auth?.accessJwt || "",
     };
 
     const { session, profile } = await blueskyService.resumeSession(sessionData);

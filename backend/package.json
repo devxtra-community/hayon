@@ -8,7 +8,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "worker": "ts-node src/workers/post.worker.ts",
-    "lint": "eslint . --ext .ts",
+    "lint": "npx eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
     "test": "echo \"No tests yet\" && exit 0"
