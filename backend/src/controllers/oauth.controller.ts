@@ -1,9 +1,34 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { createRefreshToken } from "../repositories/refreshToken.repository";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { setRefreshTokenCookie } from "../utils/setAuthCookies";
-// import { SuccessResponse, ErrorResponse } from "../utils/responses";
+import passport from "../config/passport";
+import { Types } from "mongoose";
+import { ENV } from "../config/env";
+import logger from "../utils/logger";
+
+export const initiateGoogleLogin = passport.authenticate("google", {
+  scope: ["profile", "email"],
+  session: false,
+});
+
+export const handleGoogleCallback = (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate("google", { session: false }, (err, user, info) => {
+    if (err) {
+      logger.error("Google OAuth error:", err);
+      return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=google_auth_failed`);
+    }
+
+    if (!user) {
+      const errorMessage = info?.message || "google_auth_failed";
+      return res.redirect(`${ENV.APP.FRONTEND_URL}/login?error=${errorMessage}`);
+    }
+
+    req.user = user;
+    return next();
+  })(req, res, next);
+};
 
 export const googleOAuthCallback = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -21,7 +46,7 @@ export const googleOAuthCallback = async (req: Request, res: Response): Promise<
 
     await createRefreshToken({
       tokenId,
-      userId: oauthUser.userId as any,
+      userId: new Types.ObjectId(oauthUser.userId),
       expiresAt,
     });
 
@@ -37,10 +62,7 @@ export const googleOAuthCallback = async (req: Request, res: Response): Promise<
 
     setRefreshTokenCookie(res, refreshToken);
 
-    //   Used  fragment
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback#accessToken=${accessToken}`);
-
-    // res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=true`);
   } catch {
     res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
   }

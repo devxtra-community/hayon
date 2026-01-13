@@ -1,10 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-/**
- * Enforce required env vars
- **/
-
 const required = (key: string): string => {
   const value = process.env[key];
   if (!value) {
@@ -18,9 +14,10 @@ export const ENV = {
    *  APP / CORE
    *  ====================== */
   APP: {
-    NODE_ENV: process.env.NODE_ENV ?? "development",
+    NODE_ENV: required("NODE_ENV"),
     PORT: Number(process.env.PORT ?? 5000),
     FRONTEND_URL: required("FRONTEND_URL"),
+    BACKEND_URL: required("BACKEND_URL"),
   },
 
   /** ======================
@@ -74,5 +71,43 @@ export const ENV = {
     SECRET_ACCESS_KEY: required("AWS_SECRET_ACCESS_KEY"),
     REGION: required("AWS_REGION"),
     S3_BUCKET_NAME: required("AWS_S3_BUCKET_NAME"),
+  },
+
+  /** ======================
+   *  META OAUTH
+   *  ====================== */
+  META: {
+    APP_ID: required("META_APP_ID"),
+    APP_SECRET: required("META_APP_SECRET"),
+    REDIRECT_URI: required("META_REDIRECT_URI"),
+  },
+
+  /** ======================
+   *  THREADS OAUTH
+   *  ====================== */
+
+  THREADS: {
+    APP_ID: required("THREADS_APP_ID"),
+    APP_SECRET: required("THREADS_APP_SECRET"),
+    REDIRECT_URI: required("THREADS_REDIRECT_URI"),
+  },
+
+  /** ======================
+   *  TUMBLR OAUTH
+   *  ====================== */
+
+  TUMBLR: {
+    CONSUMER_KEY: required("TUMBLR_CONSUMER_KEY"),
+    CONSUMER_SECRET: required("TUMBLR_CONSUMER_SECRET"),
+  },
+
+  /** ======================
+   *  MASTODON OAUTH (mastodon.social)
+   *  ====================== */
+  MASTODON: {
+    CLIENT_KEY: required("MASTODON_CLIENT_KEY"),
+    CLIENT_SECRET: required("MASTODON_CLIENT_SECRET"),
+    CALLBACK_URL: required("MASTODON_CALLBACK_URL"),
+    INSTANCE_URL: required("MASTODON_INSTANCE_URL"),
   },
 } as const;

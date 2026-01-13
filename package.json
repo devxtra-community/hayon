@@ -20,12 +20,18 @@
     "typescript-eslint": "^8.51.0"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint": "pnpm -r run lint",
+    "lint:fix": "pnpm -r run lint:fix",
+    "format": "pnpm -r run format"
   },
   "lint-staged": {
     "*.{js,ts,tsx}": [
       "prettier --write",
       "eslint --fix"
     ]
+  },
+  "dependencies": {
+    "passport-tumblr": "^0.1.2"
   }
 }

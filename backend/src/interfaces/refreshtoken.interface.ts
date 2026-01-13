@@ -1,4 +1,3 @@
-// src/types/refresh-token.ts
 import { Types } from "mongoose";
 
 export interface IRefreshToken {

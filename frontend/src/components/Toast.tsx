@@ -59,7 +59,7 @@ export const Toast: React.FC<ToastProps> = ({ id, type, title, message, onClose 
   const style = styles[type];
 
   return (
-    <div className="bg-white rounded-full shadow-lg pl-4 pr-6 py-3 mb-3 min-w-96 max-w-md animate-slide-in flex items-center gap-4">
+    <div className="bg-white rounded-full shadow-lg pl-4 pr-6 py-3 mb-3 min-w-96 max-w-md animate-toast-in flex items-center gap-4 border border-gray-100">
       <div
         className={`${style.iconBg} ${style.iconColor} rounded-full p-3 flex items-center justify-center flex-shrink-0`}
       >
@@ -88,22 +88,7 @@ interface ToastContainerProps {
 
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
   return (
-    <div className="fixed top-6 right-6 z-50 flex flex-col items-end">
-      <style jsx global>{`
-        @keyframes slide-in {
-          from {
-            transform: translateX(400px);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in {
-          animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-      `}</style>
+    <div className="toast-container">
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} onClose={onClose} />
       ))}

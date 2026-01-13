@@ -32,14 +32,11 @@ function ResetPasswordContent() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   const validateForm = (): boolean => {
-    // First check if token and email exist
     if (!token || !email) {
       setErrorMessage("Invalid reset link. Missing token or email.");
       return false;
     }
 
-    // Check password confirmation manually before Zod validation
-    // (resetPasswordSchema doesn't have confirmPassword field)
     if (password !== confirmPassword) {
       setFormErrors({ password: "Passwords do not match" });
       return false;

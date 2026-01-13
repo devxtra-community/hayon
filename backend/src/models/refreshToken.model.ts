@@ -1,4 +1,3 @@
-// src/models/refresh-token.model.ts
 import mongoose, { Schema } from "mongoose";
 import { IRefreshToken } from "../interfaces/refreshtoken.interface";
 

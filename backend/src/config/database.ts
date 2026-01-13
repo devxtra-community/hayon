@@ -2,15 +2,17 @@ import mongoose from "mongoose";
 import { ENV } from "./env";
 import logger from "../utils/logger";
 
-const connectDB =async (): Promise<void> => {
+const connectDB = async (): Promise<void> => {
   try {
     logger.info("MongoDB connection with retry");
 
-    await mongoose.connect(ENV.DB.MONGODB_URI as string);
+    await mongoose.connect(ENV.DB.MONGODB_URI as string, {
+      autoIndex: false,
+    });
 
     logger.info("MongoDB is connected");
   } catch (error) {
-    logger.error("MongoDB connection failed. Retrying in 5 seconds...");
+    logger.error("MongoDB connection failed. Retrying in 5 seconds...", error);
     setTimeout(connectDB, 5000);
   }
 };
@@ -24,8 +26,4 @@ mongoose.connection.on("disconnected", () => {
   setTimeout(connectDB, 5000);
 });
 
-
 export default connectDB;
-
-
-

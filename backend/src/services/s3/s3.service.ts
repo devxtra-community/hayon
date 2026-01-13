@@ -40,7 +40,6 @@ class S3Service {
     }
   }
 
-  // update file
   async updateFile(
     key: string,
     fileBuffer: Buffer,
@@ -53,7 +52,7 @@ class S3Service {
         Key: key,
         Body: fileBuffer,
         ContentType: fileType,
-        Metadata: metadata, // Add custom metadata if needed
+        Metadata: metadata,
       });
 
       const result = await this.s3Client.send(command);
@@ -69,7 +68,6 @@ class S3Service {
     }
   }
 
-  // delete file
   async deleteFile(key: string): Promise<void> {
     try {
       const command = new DeleteObjectCommand({

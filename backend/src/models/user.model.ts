@@ -1,8 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { IUser, IUserAuth, IUserSubscription } from "../interfaces/user.interface";
 
-// Auth Subdocument Schema
-
 const authSchema = new Schema<IUserAuth>(
   {
     provider: {
@@ -33,8 +31,6 @@ const authSchema = new Schema<IUserAuth>(
 
   { _id: false },
 );
-
-// Subscription Subdocument Schema
 
 const subscriptionSchema = new Schema<IUserSubscription>(
   {
@@ -71,8 +67,6 @@ const subscriptionSchema = new Schema<IUserSubscription>(
   },
   { _id: false },
 );
-
-// Main User Schema
 
 const userSchema = new Schema<IUser>(
   {
@@ -122,8 +116,6 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
   },
 );
-
-// Indexes
 
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ "auth.googleId": 1 }, { sparse: true });

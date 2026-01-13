@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { findUserByEmail, createUser, findUserByIdSafe } from "../repositories/user.repository";
+import { Types } from "mongoose";
 import {
   findPendingByEmail,
   deletePendingByEmail,
@@ -25,9 +26,19 @@ import {
 import { sendResetPasswordEmail } from "../utils/nodemailer";
 import logger from "../utils/logger";
 
-export const requestOtpService = async (email: string) => {
-  // Email is already validated and normalized by Zod schema
+interface SignupData {
+  email: string;
+  password: string;
+  name: string;
+  avatar: string;
+}
 
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+export const requestOtpService = async (email: string) => {
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw new Error("Email already registered");
@@ -38,7 +49,6 @@ export const requestOtpService = async (email: string) => {
     throw new Error("Too many Requests");
   }
 
-  //  Generate 6-digit OTP
   const otp = crypto.randomInt(100000, 999999).toString();
   const otpHash = await bcrypt.hash(otp, 10);
 
@@ -59,8 +69,6 @@ export const requestOtpService = async (email: string) => {
 };
 
 export const verifyOtpService = async (email: string, otp: string) => {
-  // Email and OTP are already validated by Zod schema
-
   const pending = await findPendingByEmail(email);
   if (!pending) {
     throw new Error("OTP not found or expired");
@@ -77,7 +85,6 @@ export const verifyOtpService = async (email: string, otp: string) => {
     throw new Error("Invalid OTP");
   }
 
-  //need to delete pending after verification ?,  yes need to delete
   await deletePendingByEmail(email);
 
   return {
@@ -85,22 +92,15 @@ export const verifyOtpService = async (email: string, otp: string) => {
   };
 };
 
-// Signup service - validation is handled by Zod schema
-export const signupService = async (
-  data: any,
-  userId: any,
-  ipAddress?: string,
-  userAgent?: string,
-) => {
+export const signupService = async (data: SignupData, ipAddress?: string, userAgent?: string) => {
   const { email, password, name, avatar } = data;
 
-  // confirmPassword already validated to match password by Zod schema
-
-  // Email is already normalized by Zod schema
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw new Error("Email already registered");
   }
+
+  const userId = new Types.ObjectId();
 
   const { buffer } = parseBase64Image(avatar);
   const uploadResult = await s3Service.uploadFile(
@@ -112,6 +112,7 @@ export const signupService = async (
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await createUser({
+    _id: userId,
     email: email,
     avatar: uploadResult.location,
     name,
@@ -119,10 +120,11 @@ export const signupService = async (
     auth: {
       provider: "email",
       passwordHash: passwordHash,
+      googleId: null,
+      passwordResetToken: null,
     },
   });
 
-  // 🔐 Create refresh token session
   const tokenId = uuidv4();
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -151,15 +153,13 @@ export const signupService = async (
   };
 };
 
-export const loginService = async (data: any, ipAddress?: string, userAgent?: string) => {
+export const loginService = async (data: LoginData, ipAddress?: string, userAgent?: string) => {
   const { email, password } = data;
-  // Email and password are already validated by Zod schema
-  // Email is already normalized (lowercase, trimmed) by Zod
 
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new Error("Invalid email or password");
+    throw new Error("User not found");
   }
 
   if (user.role !== "user") {
@@ -173,14 +173,12 @@ export const loginService = async (data: any, ipAddress?: string, userAgent?: st
   const isPasswordValid = await bcrypt.compare(password, user.auth.passwordHash);
 
   if (!isPasswordValid) {
-    throw new Error("Invalid email or password");
+    throw new Error("Invalid password");
   }
 
-  // Optional but recommended
   user.lastLogin = new Date();
   await user.save();
 
-  // 🔐 Create refresh token session
   const tokenId = uuidv4();
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -209,10 +207,12 @@ export const loginService = async (data: any, ipAddress?: string, userAgent?: st
   };
 };
 
-export const adminLoginService = async (data: any, ipAddress?: string, userAgent?: string) => {
+export const adminLoginService = async (
+  data: LoginData,
+  ipAddress?: string,
+  userAgent?: string,
+) => {
   const { email, password } = data;
-  // Email and password are already validated by Zod schema
-  // Email is already normalized (lowercase, trimmed) by Zod
 
   const user = await findUserByEmail(email);
 
@@ -234,11 +234,9 @@ export const adminLoginService = async (data: any, ipAddress?: string, userAgent
     throw new Error("Invalid email or password");
   }
 
-  // Optional but recommended
   user.lastLogin = new Date();
   await user.save();
 
-  // 🔐 Create refresh token session
   const tokenId = uuidv4();
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -267,17 +265,13 @@ export const adminLoginService = async (data: any, ipAddress?: string, userAgent
   };
 };
 
-// check if needed to change to controller.
-
 export const refreshService = async (
   refreshTokenJwt: string,
   ipAddress?: string,
   userAgent?: string,
 ) => {
-  // 1. Verify JWT signature
   const payload = verifyRefreshToken(refreshTokenJwt);
 
-  // 2. Fetch DB record
   const existingToken = await RefreshToken.findOne({
     tokenId: payload.tokenId,
   });
@@ -286,10 +280,7 @@ export const refreshService = async (
     throw new Error("Invalid refresh token");
   }
 
-  // 3. Token Reuse Detection
   if (existingToken.revoked) {
-    // 🚨 Security Alert: Attempt to use a revoked token!
-    // This implies the token was stolen. Invalidate ALL sessions for this user.
     await logoutAllService(existingToken.userId.toString());
     throw new Error("Security alert: Token reuse detected. All sessions have been terminated.");
   }
@@ -298,11 +289,9 @@ export const refreshService = async (
     throw new Error("Invalid refresh token");
   }
 
-  // 4. Revoke old token (rotation)
   existingToken.revoked = true;
   await existingToken.save();
 
-  // 5. Create new refresh token
   const newTokenId = uuidv4();
   const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -314,7 +303,6 @@ export const refreshService = async (
     userAgent: userAgent || existingToken.userAgent,
   });
 
-  // 6. Issue new tokens
   const accessToken = generateAccessToken({
     sub: existingToken.userId.toString(),
     role: "user", // or fetch role if needed
@@ -349,7 +337,6 @@ export const logoutAllService = async (userId: string) => {
 };
 
 export const sendResetPasswordEmailService = async (email: string) => {
-  // Implementation for sending reset password email
   const resetToken = await setPasswordResetToken(email);
   logger.info(`Sending password reset email to ${email} , token ${resetToken}`);
   await sendResetPasswordEmail(email, resetToken);
@@ -381,7 +368,7 @@ export const getDevicesService = async (userId: string, currentRefreshTokenJwt?:
       const payload = verifyRefreshToken(currentRefreshTokenJwt);
       currentTokenId = payload.tokenId;
     } catch {
-      // Ignore invalid token here, just won't mark as current
+      // Ignore invalid token
     }
   }
 

@@ -5,7 +5,6 @@ import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { AdminSidebar, AdminHeader, UsersTable } from "@/components/admin";
 
-// Define user type
 interface User {
   id: string;
   name: string;
@@ -14,7 +13,6 @@ interface User {
   avatar: string;
 }
 
-// User in the admin table
 interface ManagedUser {
   id: string;
   name: string;
@@ -27,7 +25,6 @@ interface ManagedUser {
   lastLogin?: string;
 }
 
-// Mock data for demonstration - replace with actual API calls
 const mockUsers: ManagedUser[] = [
   {
     id: "1",
