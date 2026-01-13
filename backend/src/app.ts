@@ -64,12 +64,21 @@ expressInstance.use(serverErrorHandler);
 //   logger.info(`🚀 Server running on port ${ENV.APP.PORT}`);
 // });
 
-const options = {
-  key: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2-key.pem")),
-  cert: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2.pem")),
-};
+if (ENV.APP.NODE_ENV === "production") {
+  expressInstance.enable("trust proxy");
 
-https.createServer(options, expressInstance).listen(ENV.APP.PORT, () => {
-  console.log("Backend running at https://dev.hayon.site:5000");
-  logger.info(`🚀 Server running on port ${ENV.APP.PORT}`);
-});
+  expressInstance.listen(ENV.APP.PORT, () => {
+    logger.info(`🚀 Production Server running on port ${ENV.APP.PORT}`);
+    console.log(`Backend running at ${ENV.APP.FRONTEND_URL}`);
+  });
+} else {
+  const options = {
+    key: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2-key.pem")),
+    cert: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2.pem")),
+  };
+
+  https.createServer(options, expressInstance).listen(ENV.APP.PORT, () => {
+    console.log(`Backend running at https://dev.hayon.site:5000`);
+    logger.info(`🚀 Development Server running on port ${ENV.APP.PORT}`);
+  });
+}
