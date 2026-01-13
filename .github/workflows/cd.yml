@@ -58,7 +58,7 @@ jobs:
           # Copy compiled backend code and package files
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            backend/dist backend/package.json backend/pnpm-lock.yaml \
+            backend/dist backend/package.json \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/backend/
           
           # Deploy schemas (needed for workspace)
