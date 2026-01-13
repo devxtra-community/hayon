@@ -45,7 +45,7 @@ export default function Header({ userName, userEmail, userAvatar, onMenuClick }:
 
         {/* User Profile */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-200">
+          <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-200">
             <Image
               src={userAvatar || "/default-avatar.png"}
               alt={userName}

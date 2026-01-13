@@ -159,7 +159,7 @@ export default function ConnectedPlatformsCard() {
                 className="flex items-center justify-between group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-200 shadow-sm transition-transform group-hover:scale-105">
+                  <div className="relative w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-200 shadow-sm transition-transform group-hover:scale-105">
                     {account.avatar ? (
                       <Image
                         src={account.avatar}
