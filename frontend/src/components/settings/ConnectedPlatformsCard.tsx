@@ -16,7 +16,7 @@ import {
 import { BlueskyConnectModal } from "@/components/dashboard";
 import { api } from "@/lib/axios";
 import { useToast } from "@/context/ToastContext";
-import { SocialAccount } from "../../../../backend/src/interfaces/socialAccount.interface";
+import { SocialAccount } from "@hayon/schemas";
 import { ConnectionTutorialModal } from "./ConnectionTutorialModal";
 import { HelpCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";

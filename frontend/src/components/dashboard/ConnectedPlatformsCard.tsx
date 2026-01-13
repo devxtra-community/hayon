@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, HelpCircle, ExternalLink, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import { api } from "@/lib/axios";
-import { SocialAccount } from "../../../../backend/src/interfaces/socialAccount.interface";
+import { SocialAccount } from "@hayon/schemas";
 import { ConnectionTutorialModal } from "@/components/settings/ConnectionTutorialModal";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";

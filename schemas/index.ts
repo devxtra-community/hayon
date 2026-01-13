@@ -1,10 +1,3 @@
-// =============================================================================
-// Shared Validation Schemas
-// =============================================================================
-// This package contains pure Zod schemas that can be used by both
-// frontend and backend. No runtime-specific imports allowed.
-// =============================================================================
-
 export {
   // Base schemas
   emailSchema,
@@ -36,3 +29,5 @@ export {
 
 // Re-export zod for convenience
 export { z } from "zod";
+
+export * from "./types";

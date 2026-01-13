@@ -12,10 +12,6 @@ export const connectBluesky = async (req: Request, res: Response) => {
     const { identifier, appPassword } = req.body;
     logger.info(`Connecting to Bluesky for identifier: ${identifier}, appPassword: ${appPassword}`);
 
-    if (!identifier || !appPassword) {
-      return new ErrorResponse("Missing identifier or app password", { status: 400 }).send(res);
-    }
-
     const { session, profile } = await blueskyService.login(identifier, appPassword);
 
     if (!req.auth) {
