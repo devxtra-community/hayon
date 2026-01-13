@@ -434,7 +434,7 @@ export const ConnectedPlatformsCard = ({
                 </span>
                 <div className="flex items-center gap-2 mt-1.5">
                   {platform.status === "connected" && platform.userAvatar && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 shrink-0 shadow-sm">
+                    <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-200 shrink-0 shadow-sm">
                       <Image
                         src={platform.userAvatar}
                         alt={platform.displayName || platform.handle || "Avatar"}

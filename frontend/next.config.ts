@@ -6,10 +6,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
-       {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-        pathname: '/**',
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
       },
       {
         protocol: "https",
@@ -30,6 +30,30 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "api.dicebear.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.fbcdn.net",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cdninstagram.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.tumblr.com",
+      },
+      {
+        protocol: "https",
+        hostname: "mastodon.social",
+      },
+      {
+        protocol: "https",
+        hostname: "files.mastodon.social",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.bsky.app",
       },
     ],
     dangerouslyAllowSVG: true,
