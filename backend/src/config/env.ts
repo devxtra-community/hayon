@@ -14,7 +14,7 @@ export const ENV = {
    *  APP / CORE
    *  ====================== */
   APP: {
-    NODE_ENV: process.env.NODE_ENV ?? "development",
+    NODE_ENV: required("NODE_ENV"),
     PORT: Number(process.env.PORT ?? 5000),
     FRONTEND_URL: required("FRONTEND_URL"),
     BACKEND_URL: required("BACKEND_URL"),

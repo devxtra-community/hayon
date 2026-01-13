@@ -10,7 +10,7 @@ export class TumblrService {
       url: "https://www.tumblr.com/oauth/request_token",
       method: "POST",
       data: {
-        oauth_callback: `https://${ENV.APP.BACKEND_URL}/api/platform/tumblr/callback?state=${userId}`,
+        oauth_callback: `${ENV.APP.BACKEND_URL}/api/platform/tumblr/callback?state=${userId}`,
       },
     };
 
