@@ -113,7 +113,7 @@ export default function DashboardPage() {
                   Manage Devices
                 </Button>
               </Link>
-              <Link href="/create-post" className="hidden lg:block">
+              <Link href="/dashboard/create-post" className="hidden lg:block">
                 <Button variant="default" className="gap-2">
                   Create a post
                   <Plus size={18} />
@@ -176,7 +176,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Floating Action Button (Mobile Only) */}
-      <Link href="/create-post" className="fixed bottom-6 right-6 lg:hidden z-40">
+      <Link href="/dashboard/create-post" className="fixed bottom-6 right-6 lg:hidden z-40">
         <Button
           size="icon"
           className="h-14 w-14 rounded-full bg-[#318D62] hover:bg-[#287350] text-white shadow-lg shadow-green-900/20"
