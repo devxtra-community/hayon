@@ -1,7 +1,6 @@
 import nodemailer from "nodemailer";
 import { ENV } from "./env";
 
-
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -9,4 +8,3 @@ export const transporter = nodemailer.createTransport({
     pass: ENV.EMAIL.PASS,
   },
 });
-

@@ -9,8 +9,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "typeRoots": ["./src/types","./src/@types", "./node_modules/@types"],
-    "resolveJsonModule": true,  
+    "typeRoots": ["./src/types", "./src/@types", "./node_modules/@types"],
+    "resolveJsonModule": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true
   },

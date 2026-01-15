@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/user.model";
-import { ENV } from './env';
+import { ENV } from "./env";
 
 passport.use(
   new GoogleStrategy(
@@ -51,8 +51,8 @@ passport.use(
       } catch (error) {
         return done(error as Error, false);
       }
-    }
-  )
+    },
+  ),
 );
 
 export default passport;

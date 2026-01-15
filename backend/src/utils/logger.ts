@@ -10,9 +10,9 @@ const logFormat = printf(({ level, message, timestamp, stack }) => {
 const dailyRotateTransport = new DailyRotateFile({
   filename: "logs/app-%DATE%.log",
   datePattern: "YYYY-MM-DD",
-  zippedArchive: true,     // compress old logs
-  maxSize: "20m",          // rotate if file > 20MB
-  maxFiles: "14d",         // keep logs for 14 days
+  zippedArchive: true, // compress old logs
+  maxSize: "20m", // rotate if file > 20MB
+  maxFiles: "14d", // keep logs for 14 days
 });
 
 const errorRotateTransport = new DailyRotateFile({
@@ -26,11 +26,7 @@ const errorRotateTransport = new DailyRotateFile({
 
 const logger = winston.createLogger({
   level: "info",
-  format: combine(
-    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-    errors({ stack: true }),
-    logFormat
-  ),
+  format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), errors({ stack: true }), logFormat),
   transports: [
     dailyRotateTransport,
     errorRotateTransport,

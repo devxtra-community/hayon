@@ -1,10 +1,7 @@
 import { transporter } from "../config/mailer";
 import { ENV } from "../config/env";
 
-export const sendOtpMail = async (
-  email: string,
-  otp: string
-): Promise<void> => {
+export const sendOtpMail = async (email: string, otp: string): Promise<void> => {
   await transporter.sendMail({
     from: `"Hayon" <${ENV.EMAIL.USER}>`,
     to: email,
@@ -92,13 +89,9 @@ export const sendOtpMail = async (
   });
 };
 
-
-export const sendResetPasswordEmail = async (
-  email: string,
-  resetToken: string 
-): Promise<void> => {
-  const resetLink = `${ENV.APP.FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;    
-    await transporter.sendMail({
+export const sendResetPasswordEmail = async (email: string, resetToken: string): Promise<void> => {
+  const resetLink = `${ENV.APP.FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+  await transporter.sendMail({
     from: `"Hayon" <${ENV.EMAIL.USER}>`,
     to: email,
     subject: "Hayon Password Reset",
@@ -119,4 +112,4 @@ export const sendResetPasswordEmail = async (
     </div>
     `,
   });
-}
+};
