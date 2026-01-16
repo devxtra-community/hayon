@@ -254,7 +254,7 @@ export function PostPreview({
   timeZone,
 }: PostPreviewProps) {
   return (
-    <div className="flex-1 flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col h-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Preview Header */}
       <div className="flex items-center gap-4 mb-8">
         <Button
@@ -272,7 +272,7 @@ export function PostPreview({
       </div>
 
       {/* Previews Grid */}
-      <div className="flex-1 overflow-y-auto min-h-[400px] mb-8 pr-2">
+      <div className=" h-auto mb-8 pr-2">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 pb-10">
           {availablePlatforms
             .filter((p) => selectedPlatforms.includes(p.id))
@@ -306,7 +306,7 @@ export function PostPreview({
       </div>
 
       {/* Bottom Action Bar (Preview Mode) */}
-      <div className="pt-6 border-t border-gray-200 mt-auto">
+      <div className="pt-6 border-t border-gray-200">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <Button
             variant="outline"
