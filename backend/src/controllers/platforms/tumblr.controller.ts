@@ -45,8 +45,8 @@ export const tumblrCallback = async (req: Request, res: Response) => {
     await updateTumblerDetails(userId, {
       connected: true,
       auth: {
-        accessToken,
-        accessTokenSecret: accessSecret,
+        oauthToken: accessToken,
+        oauthTokenSecret: accessSecret,
       },
       profile: {
         handle,
@@ -73,8 +73,8 @@ export const disconnectTumblr = async (req: Request, res: Response) => {
     await updateTumblerDetails(req.auth.id, {
       connected: false,
       auth: {
-        accessToken: null,
-        accessTokenSecret: null,
+        oauthToken: null,
+        oauthTokenSecret: null,
       },
       profile: {
         handle: null,

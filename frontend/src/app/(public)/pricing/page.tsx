@@ -1,12 +1,5 @@
-
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Zap, Crown, Sparkles } from "lucide-react";
 import { BackButton } from "@/components/BackButton";
@@ -39,12 +32,9 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-
       <BackButton />
       <section className="p-4 pb-10 relative">
-
         <div className="gradient rounded-xl relative py-10 px-4 md:px-8">
-
           <div className="relative z-10 flex flex-col items-center text-center max-w-2xl mx-auto">
             <Badge className="mb-4 bg-white/90 text-black px-3 py-1">
               <Sparkles className="w-3 h-3 mr-1" />
@@ -62,7 +52,6 @@ export default function PricingPage() {
 
           {/* Pricing Cards */}
           <div className="mt-10 max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4">
-
             {/* --- Free Plan --- */}
             <Card className="relative hover:shadow-md transition-all bg-card flex flex-col p-4 py-6">
               <CardHeader className="space-y-2">
@@ -107,9 +96,7 @@ export default function PricingPage() {
                       )}
                       <span
                         className={
-                          f.included
-                            ? "text-sm"
-                            : "text-sm text-muted-foreground/60 line-through"
+                          f.included ? "text-sm" : "text-sm text-muted-foreground/60 line-through"
                         }
                       >
                         {f.name}
@@ -120,10 +107,7 @@ export default function PricingPage() {
               </CardContent>
 
               <CardFooter>
-                <Button
-                  variant="outline"
-                  className="w-full h-10 text-sm font-medium"
-                >
+                <Button variant="outline" className="w-full h-10 text-sm font-medium">
                   Current Plan
                 </Button>
               </CardFooter>
@@ -182,16 +166,13 @@ export default function PricingPage() {
                 </Button>
               </CardFooter>
             </Card>
-
           </div>
         </div>
       </section>
 
       <section className="px-4 pb-10">
         <div className="max-w-3xl mx-auto text-center bg-muted/30 rounded-xl p-6">
-          <h2 className="text-xl md:text-2xl font-bold mb-2">
-            Still have questions?
-          </h2>
+          <h2 className="text-xl md:text-2xl font-bold mb-2">Still have questions?</h2>
 
           <p className="text-sm text-muted-foreground mb-6 max-w-xl mx-auto">
             Our support team is here to help you choose the right plan for your needs.
