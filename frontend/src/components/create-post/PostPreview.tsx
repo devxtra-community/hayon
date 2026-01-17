@@ -97,13 +97,32 @@ const FacebookPreview = ({
         </p>
       )}
       {filePreviews.length > 0 && (
-        <div className="w-full border-t border-b border-gray-100 bg-gray-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={filePreviews[0]}
-            alt="Post"
-            className="w-full h-auto max-h-[600px] object-contain mx-auto"
-          />
+        <div className={cn(
+          "w-full border-t border-b border-gray-100 bg-gray-50 grid",
+          filePreviews.length === 1 ? "grid-cols-1" :
+            filePreviews.length === 2 ? "grid-cols-2 gap-[2px]" :
+              filePreviews.length === 3 ? "grid-cols-2 gap-[2px]" :
+                "grid-cols-2 gap-[2px]"
+        )}>
+          {filePreviews.slice(0, 4).map((src, idx) => (
+            <div key={idx} className={cn(
+              "relative bg-gray-100 overflow-hidden",
+              filePreviews.length === 3 && idx === 0 ? "row-span-2 h-[400px]" : "h-[200px]",
+              filePreviews.length === 1 ? "h-auto max-h-[600px]" : ""
+            )}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`Post ${idx + 1}`}
+                className="w-full h-full object-cover mx-auto"
+              />
+              {idx === 3 && filePreviews.length > 4 && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-2xl font-bold">
+                  +{filePreviews.length - 4}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -167,16 +186,42 @@ const InstagramPreview = ({
       <MoreHorizontal size={20} className="text-gray-600" />
     </div>
 
-    {/* Image Content */}
-    {/* Image Content */}
-    <div className="w-full bg-gray-50 border-t border-b border-gray-100">
+    {/* Image Content - Instagram Carousel */}
+    <div className="relative w-full bg-gray-50 border-t border-b border-gray-100">
       {filePreviews.length > 0 ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={filePreviews[0]}
-          alt="Post"
-          className="w-full h-auto max-h-[650px] object-contain mx-auto"
-        />
+        <div className="relative group">
+          <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide aspect-square">
+            {filePreviews.map((src, idx) => (
+              <div key={idx} className="flex-shrink-0 w-full h-full snap-center relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`Post ${idx + 1}`}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Dots Indicator */}
+          {filePreviews.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 px-2 py-1.5 bg-black/10 backdrop-blur-sm rounded-full">
+              {filePreviews.map((_, idx) => (
+                <div key={idx} className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-all",
+                  idx === 0 ? "bg-blue-500 scale-110" : "bg-white/60"
+                )} />
+              ))}
+            </div>
+          )}
+
+          {/* Carousel Numbering (Instagram Style) */}
+          {filePreviews.length > 1 && (
+            <div className="absolute top-4 right-4 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+              1/{filePreviews.length}
+            </div>
+          )}
+        </div>
       ) : (
         <div className="w-full aspect-square flex items-center justify-center text-gray-300">
           <ImageIcon size={48} />
@@ -247,19 +292,22 @@ const ThreadsPreview = ({
       <div className="text-[15px] text-black leading-snug whitespace-pre-wrap">{postText}</div>
     )}
 
-    {/* Image / Media */}
-    {/* Image / Media */}
+    {/* Image / Media - Threads Horizontal Scroll */}
     {filePreviews.length > 0 && (
-      <div className="relative w-full rounded-xl overflow-hidden border border-gray-100 group bg-gray-50">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={filePreviews[0]}
-          alt="Post"
-          className="w-full h-auto max-h-[600px] object-contain mx-auto"
-        />
-        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
-          Alt
-        </div>
+      <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-2">
+        {filePreviews.map((src, idx) => (
+          <div key={idx} className="relative flex-shrink-0 w-10/12 aspect-[4/5] rounded-xl overflow-hidden border border-gray-100 snap-center bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt={`Post ${idx + 1}`}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
+              Alt
+            </div>
+          </div>
+        ))}
       </div>
     )}
 
@@ -331,16 +379,23 @@ const MastodonPreview = ({
         </p>
       )}
       {filePreviews.length > 0 && (
-        <div className="relative w-full rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={filePreviews[0]}
-            alt="Post"
-            className="w-full h-auto max-h-[600px] object-contain mx-auto"
-          />
-          <div className="absolute bottom-2 left-2 bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
-            ALT
-          </div>
+        <div className={cn(
+          "relative w-full rounded-lg overflow-hidden border border-gray-100 bg-gray-50 grid gap-[1px]",
+          filePreviews.length === 1 ? "grid-cols-1" : "grid-cols-2"
+        )}>
+          {filePreviews.slice(0, 4).map((src, idx) => (
+            <div key={idx} className="relative aspect-square">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`Post ${idx + 1}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
+                ALT
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -410,16 +465,23 @@ const BlueskyPreview = ({
         </p>
       )}
       {filePreviews.length > 0 && (
-        <div className="relative w-full rounded-xl overflow-hidden border border-gray-100 mt-2 bg-gray-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={filePreviews[0]}
-            alt="Post"
-            className="w-full h-auto max-h-[600px] object-contain mx-auto"
-          />
-          <div className="absolute bottom-3 right-3 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
-            ALT
-          </div>
+        <div className={cn(
+          "relative w-full rounded-xl overflow-hidden border border-gray-100 mt-2 bg-gray-50 grid gap-[1px]",
+          filePreviews.length === 1 ? "grid-cols-1" : "grid-cols-2"
+        )}>
+          {filePreviews.slice(0, 4).map((src, idx) => (
+            <div key={idx} className="relative aspect-square">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`Post ${idx + 1}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-3 right-3 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
+                ALT
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -483,13 +545,17 @@ const GenericPreview = ({
       <div className="space-y-3">
         {postText && <p className="text-sm whitespace-pre-wrap">{postText}</p>}
         {filePreviews.length > 0 && (
-          <div className="relative rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={filePreviews[0]}
-              alt="Post"
-              className="w-full h-auto max-h-[400px] object-contain mx-auto"
-            />
+          <div className="grid grid-cols-2 gap-2">
+            {filePreviews.map((src, idx) => (
+              <div key={idx} className="relative rounded-lg overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`Post ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -550,7 +616,7 @@ export function PostPreview({
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let profile: any = null;
-                 
+
                 let platformHandle = "";
 
                 switch (pid) {

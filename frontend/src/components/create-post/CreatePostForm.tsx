@@ -11,6 +11,9 @@ interface CreatePostFormProps {
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   filePreviews: string[];
   removeFile: (index: number) => void;
+  errors: string[];
+  selectedPlatforms: string[];
+  availablePlatforms: any[];
 }
 
 const LLM_MODELS = [
@@ -45,6 +48,9 @@ export function CreatePostForm({
   handleFileChange,
   filePreviews,
   removeFile,
+  errors,
+  selectedPlatforms,
+  availablePlatforms,
 }: CreatePostFormProps) {
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -72,6 +78,18 @@ export function CreatePostForm({
         <h1 className="text-2xl font-bold text-gray-800">Create Post</h1>
         <div className="text-sm text-gray-500">Drafts saved automatically</div>
       </div>
+
+      {/* Validation Errors */}
+      {errors.length > 0 && (
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex flex-col gap-2">
+          {errors.map((error, idx) => (
+            <div key={idx} className="flex items-center gap-2 text-red-600 text-sm">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0" />
+              {error}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Upload Area */}
       <div className="bg-white rounded-3xl p-8 border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors cursor-pointer group relative">
@@ -238,7 +256,30 @@ export function CreatePostForm({
               )}
             </Button>
           </div>
-          <span className="text-xs text-gray-400">{postText.length} chars</span>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <span className={cn("text-xs font-medium", postText.length > 280 ? "text-orange-500" : "text-gray-400")}>
+            {postText.length} characters
+          </span>
+          {selectedPlatforms.length > 0 && (
+            <div className="flex gap-2 items-center">
+              {selectedPlatforms.map((id) => {
+                const p = availablePlatforms.find((plat) => plat.id === id);
+                if (!p?.constraints) return null;
+                const isOver = postText.length > p.constraints.maxChars;
+                return (
+                  <div
+                    key={id}
+                    title={`${p.name}: max ${p.constraints.maxChars}`}
+                    className={cn(
+                      "w-2 h-2 rounded-full",
+                      isOver ? "bg-red-500 animate-pulse" : "bg-gray-200"
+                    )}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

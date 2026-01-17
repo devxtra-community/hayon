@@ -42,6 +42,8 @@ export default function CreatePostPage() {
     handlePostNow,
     handleScheduleConfirm,
     connectedAccounts,
+    errors,
+    setErrors,
   } = useCreatePost();
 
   if (!user) {
@@ -122,6 +124,9 @@ export default function CreatePostPage() {
                 handleFileChange={handleFileChange}
                 filePreviews={filePreviews}
                 removeFile={removeFile}
+                errors={errors}
+                selectedPlatforms={selectedPlatforms}
+                availablePlatforms={availablePlatforms}
               />
 
               {/* Right Column: Platform Selection */}

@@ -26,15 +26,19 @@ export const TumblrPreview = ({ user, postText, filePreviews }: TumblrPreviewPro
         <MoreHorizontal size={20} className="text-gray-600" />
       </div>
 
-      {/* Image Content */}
+      {/* Image Content - Tumblr Photoset (Vertical Stack) */}
       {filePreviews.length > 0 && (
-        <div className="w-full relative bg-gray-50 border-t border-b border-gray-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={filePreviews[0]}
-            alt="Post"
-            className="w-full h-auto max-h-[600px] object-contain mx-auto"
-          />
+        <div className="w-full flex flex-col gap-[2px] bg-gray-50 border-t border-b border-gray-100">
+          {filePreviews.map((src, idx) => (
+            <div key={idx} className="relative w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`Post ${idx + 1}`}
+                className="w-full h-auto object-contain mx-auto"
+              />
+            </div>
+          ))}
         </div>
       )}
 

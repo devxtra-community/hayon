@@ -33,20 +33,62 @@ export function useCreatePost() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [timeZone, setTimeZone] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   // --- Configurations ---
+  const PLATFORM_CONSTRAINTS: Record<string, Platform["constraints"]> = {
+    facebook: {
+      maxImages: 10,
+      maxChars: 63206,
+      requiresImage: false,
+      previewType: "grid",
+    },
+    instagram: {
+      maxImages: 10,
+      maxChars: 2200,
+      requiresImage: true,
+      previewType: "carousel",
+    },
+    threads: {
+      maxImages: 20,
+      maxChars: 500,
+      requiresImage: false,
+      previewType: "scroll",
+    },
+    bluesky: {
+      maxImages: 4,
+      maxChars: 300,
+      requiresImage: false,
+      previewType: "grid",
+    },
+    mastodon: {
+      maxImages: 4,
+      maxChars: 500,
+      requiresImage: false,
+      previewType: "grid",
+    },
+    tumblr: {
+      maxImages: 10,
+      maxChars: 4096,
+      requiresImage: false,
+      previewType: "column",
+    },
+  };
+
   const ALL_SUPPORTED_PLATFORMS = [
     {
       id: "facebook",
       name: "Facebook",
       icon: React.createElement(Facebook, { className: "w-5 h-5" }),
       color: "bg-blue-600",
+      constraints: PLATFORM_CONSTRAINTS.facebook,
     },
     {
       id: "instagram",
       name: "Instagram",
       icon: React.createElement(Instagram, { className: "w-5 h-5" }),
       color: "bg-pink-600",
+      constraints: PLATFORM_CONSTRAINTS.instagram,
     },
     {
       id: "threads",
@@ -62,6 +104,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
+      constraints: PLATFORM_CONSTRAINTS.threads,
     },
     {
       id: "bluesky",
@@ -77,6 +120,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
+      constraints: PLATFORM_CONSTRAINTS.bluesky,
     },
     {
       id: "tumblr",
@@ -92,6 +136,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
+      constraints: PLATFORM_CONSTRAINTS.tumblr,
     },
     {
       id: "mastodon",
@@ -107,6 +152,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
+      constraints: PLATFORM_CONSTRAINTS.mastodon,
     },
   ];
 
@@ -151,10 +197,26 @@ export function useCreatePost() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setMediaFiles((prev) => [...prev, ...newFiles]);
 
+      // Edge Case: Max images limit (e.g., 20 globally for threads, but we stick to a reasonable max)
+      const MAX_GLOBAL_IMAGES = 20;
+      if (mediaFiles.length + newFiles.length > MAX_GLOBAL_IMAGES) {
+        setErrors((prev) => [...prev, `Maximum of ${MAX_GLOBAL_IMAGES} images allowed across all platforms.`]);
+        return;
+      }
+
+      // Edge Case: File size check (e.g., 10MB)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      const oversizedFiles = newFiles.filter((f) => f.size > MAX_FILE_SIZE);
+      if (oversizedFiles.length > 0) {
+        setErrors((prev) => [...prev, "Some files are too large (max 10MB)."]);
+        return;
+      }
+
+      setMediaFiles((prev) => [...prev, ...newFiles]);
       const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
       setFilePreviews((prev) => [...prev, ...newPreviews]);
+      setErrors([]); // Clear errors on success
     }
   };
 
@@ -170,8 +232,39 @@ export function useCreatePost() {
     );
   };
 
+  const validatePost = () => {
+    const newErrors: string[] = [];
+
+    selectedPlatforms.forEach((platformId) => {
+      const platform = ALL_SUPPORTED_PLATFORMS.find((p) => p.id === platformId);
+      if (!platform || !platform.constraints) return;
+
+      const { maxChars, maxImages, requiresImage } = platform.constraints;
+
+      // Character Count Validation
+      if (postText.length > maxChars) {
+        newErrors.push(`${platform.name} allows maximum ${maxChars} characters.`);
+      }
+
+      // Image Count Validation
+      if (mediaFiles.length > maxImages) {
+        newErrors.push(`${platform.name} allows maximum ${maxImages} images.`);
+      }
+
+      // Required Image Validation (Instagram)
+      if (requiresImage && mediaFiles.length === 0) {
+        newErrors.push(`${platform.name} requires at least one image/video.`);
+      }
+    });
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  };
+
   const handleGeneratePosts = async () => {
     if (selectedPlatforms.length === 0) return;
+    if (!validatePost()) return;
+
     setIsGenerating(true);
     // Simulate generation delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -231,5 +324,7 @@ export function useCreatePost() {
     handlePostNow,
     handleScheduleConfirm,
     connectedAccounts,
+    errors,
+    setErrors,
   };
 }
