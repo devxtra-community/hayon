@@ -41,6 +41,7 @@ export default function CreatePostPage() {
     handleGeneratePosts,
     handlePostNow,
     handleScheduleConfirm,
+    connectedAccounts,
   } = useCreatePost();
 
   if (!user) {
@@ -153,6 +154,7 @@ export default function CreatePostPage() {
               setScheduleTime={setScheduleTime}
               handleScheduleConfirm={handleScheduleConfirm}
               timeZone={timeZone}
+              connectedAccounts={connectedAccounts}
             />
           )}
         </main>

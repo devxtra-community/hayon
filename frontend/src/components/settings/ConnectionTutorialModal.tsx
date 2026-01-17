@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Facebook, Instagram, Twitter, Command, Rss, LucideIcon } from "lucide-react";
+import { Facebook } from "lucide-react";
+import Image from "next/image";
+import React from "react";
 
 interface ConnectionTutorialModalProps {
   isOpen: boolean;
@@ -90,7 +92,16 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
             <TabsContent value="threads" className="mt-0 space-y-6">
               <Section
                 title="Threads"
-                icon={Instagram}
+                icon={
+                  <div className="relative w-full h-full scale-[0.6]">
+                    <Image
+                      src="/images/logos/threads.png"
+                      alt="Threads"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                }
                 color="text-black"
                 content="Connect your Threads profile to publish content directly from Hayon."
               />
@@ -109,7 +120,16 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
             <TabsContent value="mastodon" className="mt-0 space-y-6">
               <Section
                 title="Mastodon"
-                icon={Rss}
+                icon={
+                  <div className="relative w-full h-full scale-[0.7]">
+                    <Image
+                      src="/images/logos/mastodon.png"
+                      alt="Mastodon"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                }
                 color="text-purple-600"
                 content="Currently, we specifically support the main 'mastodon.social' instance."
               />
@@ -131,7 +151,16 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
             <TabsContent value="bluesky" className="mt-0 space-y-6">
               <Section
                 title="Bluesky"
-                icon={Twitter}
+                icon={
+                  <div className="relative w-full h-full scale-[0.7]">
+                    <Image
+                      src="/images/logos/bluesky.png"
+                      alt="Bluesky"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                }
                 color="text-blue-500"
                 content="Connect using your Bluesky handle and an App Password."
               />
@@ -150,7 +179,16 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
             <TabsContent value="tumblr" className="mt-0 space-y-6">
               <Section
                 title="Tumblr"
-                icon={Command}
+                icon={
+                  <div className="relative w-full h-full scale-[0.55]">
+                    <Image
+                      src="/images/logos/tumblr.png"
+                      alt="Tumblr"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                }
                 color="text-blue-900"
                 content="Link your Tumblr blog to cross-post seamlessly."
               />
@@ -175,14 +213,27 @@ function Section({
   content,
 }: {
   title: string;
-  icon: LucideIcon;
+  icon: React.ElementType | React.ReactNode;
   color: string;
   content: string;
 }) {
+  const renderIcon = () => {
+    if (React.isValidElement(Icon)) {
+      return Icon;
+    }
+    if (typeof Icon === "function" || (typeof Icon === "object" && Icon !== null)) {
+      const IconComponent = Icon as React.ElementType;
+      return <IconComponent size={24} />;
+    }
+    return null;
+  };
+
   return (
     <div className="flex gap-4 items-start">
-      <div className={`p-3 rounded-xl bg-gray-50 ${color}`}>
-        <Icon size={24} />
+      <div
+        className={`p-3 rounded-xl bg-white border border-gray-100 ${color} flex-shrink-0 shadow-sm`}
+      >
+        {renderIcon()}
       </div>
       <div>
         <h4 className="text-lg font-semibold text-gray-900">{title}</h4>

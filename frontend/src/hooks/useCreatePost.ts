@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/axios";
-import { Facebook, Instagram, Globe, AtSign } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
+import Image from "next/image";
 import { Platform, User, ViewMode } from "@/types/create-post";
+import { SocialAccount } from "@hayon/schemas";
 import React from "react";
 
 export function useCreatePost() {
@@ -19,6 +21,7 @@ export function useCreatePost() {
   // Platforms & Generation
   const [availablePlatforms, setAvailablePlatforms] = useState<Platform[]>([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<SocialAccount | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Schedule State
@@ -48,26 +51,62 @@ export function useCreatePost() {
     {
       id: "threads",
       name: "Threads",
-      icon: React.createElement(AtSign, { className: "w-5 h-5" }),
-      color: "bg-black",
+      icon: React.createElement(
+        "div",
+        { className: "relative w-full h-full scale-[0.6]" },
+        React.createElement(Image, {
+          src: "/images/logos/threads.png",
+          alt: "Threads",
+          fill: true,
+          className: "object-contain",
+        }),
+      ),
+      color: "bg-white border border-gray-100",
     },
     {
       id: "bluesky",
       name: "Blue Sky",
-      icon: React.createElement(Globe, { className: "w-5 h-5" }),
-      color: "bg-blue-500",
+      icon: React.createElement(
+        "div",
+        { className: "relative w-full h-full scale-[0.7]" },
+        React.createElement(Image, {
+          src: "/images/logos/bluesky.png",
+          alt: "Bluesky",
+          fill: true,
+          className: "object-contain",
+        }),
+      ),
+      color: "bg-white border border-gray-100",
     },
     {
       id: "tumblr",
       name: "Tumblr",
-      icon: React.createElement("span", { className: "font-bold text-lg leading-none" }, "t"),
-      color: "bg-black",
+      icon: React.createElement(
+        "div",
+        { className: "relative w-full h-full scale-[0.55]" },
+        React.createElement(Image, {
+          src: "/images/logos/tumblr.png",
+          alt: "Tumblr",
+          fill: true,
+          className: "object-contain",
+        }),
+      ),
+      color: "bg-white border border-gray-100",
     },
     {
       id: "mastodon",
       name: "Mastodon",
-      icon: React.createElement("span", { className: "font-bold text-lg leading-none" }, "m"),
-      color: "bg-purple-600",
+      icon: React.createElement(
+        "div",
+        { className: "relative w-full h-full scale-[0.7]" },
+        React.createElement(Image, {
+          src: "/images/logos/mastodon.png",
+          alt: "Mastodon",
+          fill: true,
+          className: "object-contain",
+        }),
+      ),
+      color: "bg-white border border-gray-100",
     },
   ];
 
@@ -83,6 +122,7 @@ export function useCreatePost() {
         // Fetch Platforms
         const platformRes = await api.get("/platform/find");
         const data = platformRes.data.data;
+        setConnectedAccounts(data);
 
         // Merge static config with dynamic connection status
         const platforms: Platform[] = ALL_SUPPORTED_PLATFORMS.map((p) => {
@@ -190,5 +230,6 @@ export function useCreatePost() {
     handleGeneratePosts,
     handlePostNow,
     handleScheduleConfirm,
+    connectedAccounts,
   };
 }
