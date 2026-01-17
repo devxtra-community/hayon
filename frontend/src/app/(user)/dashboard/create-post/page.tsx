@@ -43,7 +43,9 @@ export default function CreatePostPage() {
     handleScheduleConfirm,
     connectedAccounts,
     errors,
-    setErrors,
+    platformPosts,
+    updatePlatformPost,
+    refinePlatformPostWithLLM,
   } = useCreatePost();
 
   if (!user) {
@@ -160,6 +162,10 @@ export default function CreatePostPage() {
               handleScheduleConfirm={handleScheduleConfirm}
               timeZone={timeZone}
               connectedAccounts={connectedAccounts}
+              platformPosts={platformPosts}
+              updatePlatformPost={updatePlatformPost}
+              refinePlatformPostWithLLM={refinePlatformPostWithLLM}
+              isGenerating={isGenerating}
             />
           )}
         </main>

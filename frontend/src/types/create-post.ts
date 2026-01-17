@@ -24,4 +24,10 @@ export interface Platform {
   constraints?: PlatformConstraints;
 }
 
+export interface PlatformPost {
+  text: string;
+  mediaFiles: File[];
+  filePreviews: string[];
+}
+
 export type ViewMode = "create" | "preview";

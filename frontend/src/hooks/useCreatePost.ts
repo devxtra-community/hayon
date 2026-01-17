@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/axios";
 import { Facebook, Instagram } from "lucide-react";
 import Image from "next/image";
-import { Platform, User, ViewMode } from "@/types/create-post";
+import { Platform, User, ViewMode, PlatformPost } from "@/types/create-post";
 import { SocialAccount } from "@hayon/schemas";
 import React from "react";
 
@@ -23,6 +23,7 @@ export function useCreatePost() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [connectedAccounts, setConnectedAccounts] = useState<SocialAccount | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [platformPosts, setPlatformPosts] = useState<Record<string, PlatformPost>>({});
 
   // Schedule State
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
@@ -201,7 +202,10 @@ export function useCreatePost() {
       // Edge Case: Max images limit (e.g., 20 globally for threads, but we stick to a reasonable max)
       const MAX_GLOBAL_IMAGES = 20;
       if (mediaFiles.length + newFiles.length > MAX_GLOBAL_IMAGES) {
-        setErrors((prev) => [...prev, `Maximum of ${MAX_GLOBAL_IMAGES} images allowed across all platforms.`]);
+        setErrors((prev) => [
+          ...prev,
+          `Maximum of ${MAX_GLOBAL_IMAGES} images allowed across all platforms.`,
+        ]);
         return;
       }
 
@@ -266,10 +270,55 @@ export function useCreatePost() {
     if (!validatePost()) return;
 
     setIsGenerating(true);
+
+    // Initialize platform-specific posts with current global data
+    const initialPlatformPosts: Record<string, PlatformPost> = {};
+    selectedPlatforms.forEach((id) => {
+      initialPlatformPosts[id] = {
+        text: postText,
+        mediaFiles: [...mediaFiles],
+        filePreviews: [...filePreviews],
+      };
+    });
+    setPlatformPosts(initialPlatformPosts);
+
     // Simulate generation delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsGenerating(false);
     setViewMode("preview");
+  };
+
+  const updatePlatformPost = (id: string, updates: Partial<PlatformPost>) => {
+    setPlatformPosts((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        ...updates,
+      },
+    }));
+    // Clear global errors as we are now in per-platform edit mode
+    setErrors([]);
+  };
+
+  const refinePlatformPostWithLLM = async (id: string, prompt: string) => {
+    const currentPost = platformPosts[id];
+    if (!currentPost) return;
+
+    setIsGenerating(true);
+    try {
+      // Simulate LLM Call - In a real app, this would call your backend
+      // and use the prompt to refine currentPost.text for specific platform
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const platformName = ALL_SUPPORTED_PLATFORMS.find((p) => p.id === id)?.name || id;
+      const refinedText = `${currentPost.text}\n\n[AI Refined for ${platformName} using prompt: "${prompt}"]`;
+
+      updatePlatformPost(id, { text: refinedText });
+    } catch (error) {
+      console.error("LLM Refinement failed", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handlePostNow = async () => {
@@ -286,6 +335,7 @@ export function useCreatePost() {
       setPostText("");
       setMediaFiles([]);
       setFilePreviews([]);
+      setPlatformPosts({});
     }, 2000);
   };
 
@@ -326,5 +376,8 @@ export function useCreatePost() {
     connectedAccounts,
     errors,
     setErrors,
+    platformPosts,
+    updatePlatformPost,
+    refinePlatformPostWithLLM,
   };
 }

@@ -1,6 +1,7 @@
 import { MessageCircle, Repeat, Heart, MoreHorizontal, Share } from "lucide-react";
 import Image from "next/image";
 import { User } from "@/types/create-post";
+import { ReadMoreText } from "./ReadMoreText";
 
 interface TumblrPreviewProps {
   user: User | null;
@@ -57,10 +58,9 @@ export const TumblrPreview = ({ user, postText, filePreviews }: TumblrPreviewPro
               {/* Actually reference uses a standard sans-serif for username but content looks like it could be anything.
                    Let's stick to standard san-serif for now, maybe specific sizing.
                 */}
-              <span className="font-normal not-italic font-sans text-[20px] mb-2 block">
-                {postText.split("\n")[0]}{" "}
-                {/* Treat first line as potentially title-ish if we wanted, but let's just dump text */}
-              </span>
+              <div className="font-normal not-italic font-sans text-[20px] mb-2 block">
+                <ReadMoreText text={postText} />
+              </div>
             </p>
             {/* Hashtags are often blue or grey in Tumblr. Reference shows greyish/black tags */}
             <div className="flex flex-wrap gap-2 text-gray-500 text-[15px]">
