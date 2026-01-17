@@ -87,4 +87,6 @@ export class TumblrService {
   }
 }
 
+export const createPostServiceTumbler = () => {};
+
 export const tumblrService = new TumblrService();

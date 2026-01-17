@@ -54,4 +54,6 @@ export class BlueskyService {
   }
 }
 
+export const createPostServiceBluesky = () => {};
+
 export const blueskyService = new BlueskyService();

@@ -39,4 +39,6 @@ export class MastodonService {
   }
 }
 
+export const createPostServiceMastodon = () => {};
+
 export const mastodonService = new MastodonService();

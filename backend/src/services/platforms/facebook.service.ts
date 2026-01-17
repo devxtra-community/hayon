@@ -66,4 +66,6 @@ export class FacebookService {
   }
 }
 
+export const createPostServiceFacebook = () => {};
+
 export const facebookService = new FacebookService();
