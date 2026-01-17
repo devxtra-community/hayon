@@ -1,65 +1,54 @@
-// src/lib/queue/producer.ts
-import { getChannel } from "../config/rabbitmq";
-import { PostQueueMessage, EXCHANGES, ROUTING_KEYS } from "../lib/queues/types";
-import { v4 as uuidv4 } from "uuid";
+// src/workers/index.ts
+import "dotenv/config"; // Load environment variables
+import { connectRabbitMQ, getChannel, closeRabbitMQ } from "../config/rabbitmq";
+import { PostWorker } from "./post.worker";
+import { QUEUES, EXCHANGES } from "../lib/queues/types";
 
-export class Producer {
-  /**
-   * Publish a message to an exchange with a routing key
-   */
-  static async publish(
-    exchange: string,
-    routingKey: string,
-    payload: object,
-    options?: { delay?: number }, // delay in milliseconds for scheduled posts
-  ): Promise<void> {
+async function startWorker(): Promise<void> {
+  console.log("🚀 Starting Worker Process...");
+
+  try {
+    // 1. Connect to RabbitMQ
+    await connectRabbitMQ();
     const channel = getChannel();
 
-    // Ensure the exchange exists
-    await channel.assertExchange(exchange, "topic", { durable: true });
+    // 2. Setup exchanges and queues
+    await channel.assertExchange(EXCHANGES.POST_EXCHANGE, "topic", { durable: true });
+    await channel.assertQueue(QUEUES.SOCIAL_POSTS, {
+      durable: true,
+      deadLetterExchange: "dlx_exchange", // Failed messages go here
+    });
 
-    const messageBuffer = Buffer.from(JSON.stringify(payload));
+    // 3. Bind queue to exchange with routing pattern
+    await channel.bindQueue(
+      QUEUES.SOCIAL_POSTS,
+      EXCHANGES.POST_EXCHANGE,
+      "post.create.*", // Matches post.create.facebook, post.create.twitter, etc.
+    );
 
-    const publishOptions: any = {
-      persistent: true, // Message survives RabbitMQ restart
-      contentType: "application/json",
-    };
+    // 4. Set prefetch (process one message at a time)
+    await channel.prefetch(1);
 
-    // Add delay header for scheduled posts
-    if (options?.delay) {
-      publishOptions.headers = { "x-delay": options.delay };
-    }
+    // 5. Start consuming messages
+    console.log(`👂 Listening on queue: ${QUEUES.SOCIAL_POSTS}`);
 
-    channel.publish(exchange, routingKey, messageBuffer, publishOptions);
+    channel.consume(QUEUES.SOCIAL_POSTS, async (msg) => {
+      if (msg) {
+        await PostWorker.processMessage(msg, channel);
+      }
+    });
 
-    console.log(`📤 Published to ${exchange}/${routingKey}`);
-  }
-
-  /**
-   * Convenience method for posting to social media
-   */
-  static async queueSocialPost(
-    data: Omit<PostQueueMessage, "timestamp" | "correlationId">,
-  ): Promise<string> {
-    const correlationId = uuidv4();
-
-    const message: PostQueueMessage = {
-      ...data,
-      timestamp: new Date(),
-      correlationId,
-    };
-
-    // Calculate delay if scheduled
-    let delay: number | undefined;
-    if (data.scheduledAt) {
-      delay = new Date(data.scheduledAt).getTime() - Date.now();
-      if (delay < 0) delay = 0; // Post immediately if time has passed
-    }
-
-    const exchange = delay ? EXCHANGES.POST_DELAYED_EXCHANGE : EXCHANGES.POST_EXCHANGE;
-
-    await this.publish(exchange, ROUTING_KEYS.POST_CREATE, message, { delay });
-
-    return correlationId;
+    // 6. Graceful shutdown
+    process.on("SIGINT", async () => {
+      console.log("🛑 Shutting down worker...");
+      await closeRabbitMQ();
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error("❌ Worker failed to start:", error);
+    process.exit(1);
   }
 }
+
+// Start the worker
+startWorker();
