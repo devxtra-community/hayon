@@ -1,4 +1,9 @@
-// src/lib/queue/types.ts
+// ============================================================================
+// QUEUE TYPES - UPDATED FOR DELAYED MESSAGE EXCHANGE PLUGIN
+// ============================================================================
+// File: src/lib/queues/types.ts
+// Purpose: Define message interfaces and queue/exchange constants
+// ============================================================================
 
 // Base interface for all queue messages
 export interface BaseQueueMessage {
@@ -26,18 +31,65 @@ export interface PostResultMessage {
   error?: string;
 }
 
-// Exchange and Queue names (constants)
+// ============================================================================
+// EXCHANGE AND QUEUE CONSTANTS
+// ============================================================================
+
 export const EXCHANGES = {
+  // Main exchange for IMMEDIATE posts (topic type)
   POST_EXCHANGE: "post_exchange",
+
+  // Delayed exchange for SCHEDULED posts (x-delayed-message type)
+  // Requires: rabbitmq_delayed_message_exchange plugin
   POST_DELAYED_EXCHANGE: "post_delayed_exchange",
+
+  // Dead letter exchange for failed messages
+  DLX_EXCHANGE: "dlx_exchange",
 } as const;
 
 export const QUEUES = {
+  // Main queue for post processing
   SOCIAL_POSTS: "hayon_social_posts",
-  WAITING_ROOM: "hayon_waiting_room",
+
+  // REMOVED: WAITING_ROOM - no longer needed with delayed plugin
+
+  // Retry queue (messages waiting for retry with TTL)
+  RETRY_QUEUE: "hayon_retry_queue",
+
+  // Parking lot for permanently failed messages
+  PARKING_LOT: "hayon_parking_lot",
+
+  // Dead letter queue for inspection
+  DEAD_LETTERS: "hayon_dead_letters",
 } as const;
 
 export const ROUTING_KEYS = {
   POST_CREATE: "post.create",
   POST_CREATE_BLUESKY: "post.create.bluesky",
+  POST_CREATE_INSTAGRAM: "post.create.instagram",
+  POST_CREATE_THREADS: "post.create.threads",
+  POST_CREATE_FACEBOOK: "post.create.facebook",
+  POST_CREATE_MASTODON: "post.create.mastodon",
+  POST_CREATE_TUMBLR: "post.create.tumblr",
 } as const;
+
+// ============================================================================
+// PLUGIN INSTALLATION REMINDER
+// ============================================================================
+
+/*
+ * The Delayed Message Exchange Plugin must be installed on RabbitMQ:
+ * 
+ * DOCKER:
+ *   1. Download plugin: https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases
+ *   2. Copy to container: docker cp rabbitmq_delayed_message_exchange-3.12.0.ez rabbitmq:/plugins/
+ *   3. Enable: docker exec rabbitmq rabbitmq-plugins enable rabbitmq_delayed_message_exchange
+ *   4. Restart: docker restart rabbitmq
+ * 
+ * LOCAL INSTALL:
+ *   rabbitmq-plugins enable rabbitmq_delayed_message_exchange
+ * 
+ * VERIFY:
+ *   rabbitmq-plugins list | grep delayed
+ *   Should show: [E*] rabbitmq_delayed_message_exchange
+ */
