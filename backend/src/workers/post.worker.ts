@@ -15,7 +15,7 @@ export class PostWorker {
 
       switch (payload.platform) {
         case "bluesky":
-          await createPostServiceBluesky();
+          await createPostServiceBluesky(payload);
           break;
 
         default:

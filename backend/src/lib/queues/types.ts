@@ -34,10 +34,10 @@ export const EXCHANGES = {
 
 export const QUEUES = {
   SOCIAL_POSTS: "hayon_social_posts",
+  WAITING_ROOM: "hayon_waiting_room",
 } as const;
 
 export const ROUTING_KEYS = {
   POST_CREATE: "post.create",
-  POST_CREATE_FACEBOOK: "post.create.facebook",
-  POST_CREATE_TWITTER: "post.create.twitter",
+  POST_CREATE_BLUESKY: "post.create.bluesky",
 } as const;

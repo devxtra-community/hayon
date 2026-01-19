@@ -1,4 +1,3 @@
-// src/workers/index.ts
 import "dotenv/config"; // Load environment variables
 import { connectRabbitMQ, getChannel, closeRabbitMQ } from "../config/rabbitmq";
 import { PostWorker } from "./post.worker";
@@ -19,11 +18,11 @@ async function startWorker(): Promise<void> {
       deadLetterExchange: "dlx_exchange", // Failed messages go here
     });
 
-    // 3. Bind queue to exchange with routing pattern
+    // 3. Bind queue to exchange with routing patternd
     await channel.bindQueue(
       QUEUES.SOCIAL_POSTS,
       EXCHANGES.POST_EXCHANGE,
-      "post.create.*", // Matches post.create.facebook, post.create.twitter, etc.
+      "post.create.*", // Matches post.create.bluesky, etc.
     );
 
     // 4. Set prefetch (process one message at a time)

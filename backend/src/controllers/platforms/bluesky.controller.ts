@@ -6,6 +6,7 @@ import {
   updateBlueskyDetails,
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
+import { Producer } from "../../lib/queues/producer";
 
 export const connectBluesky = async (req: Request, res: Response) => {
   try {
@@ -124,5 +125,29 @@ export const refreshBlueskyProfile = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Failed to refresh Bluesky profile", error);
     return new ErrorResponse("Failed to refresh Bluesky profile", { status: 500 }).send(res);
+  }
+};
+
+export const postToBluesky = async (req: Request, res: Response) => {
+  try {
+    // if (!req.auth) {
+    //   return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    // }
+
+    const { text, scheduledAt } = req.body;
+    console.log("Received request to post to Bluesky:", { text, scheduledAt });
+
+    const correlationId = await Producer.queueSocialPost({
+      postId: "some-db-id", //  database ID
+      userId: "javadde-id", // from req.auth.id
+      platform: "bluesky", // Or whatever platform
+      content: { text },
+      scheduledAt: scheduledAt, // Optional: If provided,  Class handles the delay!
+    });
+
+    return new SuccessResponse(correlationId).send(res);
+  } catch (error) {
+    logger.error("Failed to post to Bluesky", error);
+    return new ErrorResponse("Failed to post to Bluesky", { status: 500 }).send(res);
   }
 };

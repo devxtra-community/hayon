@@ -1,64 +1,70 @@
-// src/lib/queue/producer.ts
 import { getChannel } from "../../config/rabbitmq";
-import { PostQueueMessage, EXCHANGES, ROUTING_KEYS } from "./types";
+import { PostQueueMessage, EXCHANGES, QUEUES } from "./types";
 import { v4 as uuidv4 } from "uuid";
 
 export class Producer {
-  /**
-   * Publish a message to an exchange with a routing key
-   */
   static async publish(
     exchange: string,
     routingKey: string,
     payload: object,
-    options?: { delay?: number }, // delay in milliseconds for scheduled posts
+    options?: { delay?: number },
   ): Promise<void> {
     const channel = getChannel();
-
-    // Ensure the exchange exists
     await channel.assertExchange(exchange, "topic", { durable: true });
 
     const messageBuffer = Buffer.from(JSON.stringify(payload));
-
     const publishOptions: any = {
-      persistent: true, // Message survives RabbitMQ restart
+      persistent: true,
       contentType: "application/json",
     };
 
-    // Add delay header for scheduled posts
-    if (options?.delay) {
-      publishOptions.headers = { "x-delay": options.delay };
+    // 🛠️ Standard Delay: Using message expiration (TTL)
+    if (options?.delay && options.delay > 0) {
+      publishOptions.expiration = options.delay.toString();
+      console.log(`⏳ Message will wait for ${options.delay}ms`);
     }
 
     channel.publish(exchange, routingKey, messageBuffer, publishOptions);
-
     console.log(`📤 Published to ${exchange}/${routingKey}`);
   }
 
-  /**
-   * Convenience method for posting to social media
-   */
   static async queueSocialPost(
     data: Omit<PostQueueMessage, "timestamp" | "correlationId">,
   ): Promise<string> {
     const correlationId = uuidv4();
+    const message = { ...data, timestamp: new Date(), correlationId };
 
-    const message: PostQueueMessage = {
-      ...data,
-      timestamp: new Date(),
-      correlationId,
-    };
-
-    // Calculate delay if scheduled
-    let delay: number | undefined;
+    let delay = 0;
     if (data.scheduledAt) {
       delay = new Date(data.scheduledAt).getTime() - Date.now();
-      if (delay < 0) delay = 0; // Post immediately if time has passed
+      if (delay < 0) delay = 0;
     }
 
-    const exchange = delay ? EXCHANGES.POST_DELAYED_EXCHANGE : EXCHANGES.POST_EXCHANGE;
+    if (delay > 0) {
+      // 1. Setup the "Waiting Room" queue
+      await (
+        await getChannel()
+      ).assertQueue(QUEUES.WAITING_ROOM, {
+        durable: true,
+        arguments: {
+          // When message expires, send it to the main exchange
+          "x-dead-letter-exchange": EXCHANGES.POST_EXCHANGE,
+          "x-dead-letter-routing-key": `post.create.${data.platform}`,
+        },
+      });
 
-    await this.publish(exchange, ROUTING_KEYS.POST_CREATE, message, { delay });
+      // 2. Publish directly to the waiting queue (Default exchange "")
+      const buffer = Buffer.from(JSON.stringify(message));
+      (await getChannel()).sendToQueue(QUEUES.WAITING_ROOM, buffer, {
+        expiration: delay.toString(),
+        persistent: true,
+      });
+
+      console.log(`🛌 Message moved to Waiting Room for ${delay}ms`);
+    } else {
+      // Post immediately
+      await this.publish(EXCHANGES.POST_EXCHANGE, `post.create.${data.platform}`, message);
+    }
 
     return correlationId;
   }

@@ -54,6 +54,10 @@ export class BlueskyService {
   }
 }
 
-export const createPostServiceBluesky = () => {};
+export const createPostServiceBluesky = (payload: any) => {
+  console.log("Creating post on Bluesky...");
+
+  console.log(`Post content: ${JSON.stringify(payload.content)}`);
+};
 
 export const blueskyService = new BlueskyService();

@@ -16,11 +16,13 @@ import https from "https";
 import fs from "fs";
 import path from "path";
 import platformRoutes from "./routes/platform.routes";
+import { connectRabbitMQ } from "./config/rabbitmq";
 
 const expressInstance: Application = express();
 
 const bootstrap = async () => {
   await connectDB();
+  await connectRabbitMQ();
 
   const corsOptions = {
     origin: (
