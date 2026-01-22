@@ -1,68 +1,105 @@
-// ============================================================================
-// POST REPOSITORY - SKELETON WITH TODO COMMENTS
-// ============================================================================
-// File: src/repositories/post.repository.ts
-// Purpose: Database operations for Post model
-// ============================================================================
-
 import PostModel from "../models/post.model";
 import { Types } from "mongoose";
-// TODO: Import interfaces once created
-// import { Post, PostStatus, PlatformType, PlatformStatus } from "../interfaces/post.interface";
+import { Post, PostStatus, PlatformType, PlatformStatus } from "../interfaces/post.interface";
 
-// ============================================================================
-// CREATE
-// ============================================================================
-
-/*
- * TODO: createPost
- * 
- * Creates a new post document with initial platform statuses.
- * 
- * Parameters:
- * - data: Partial<Post> (everything except _id, createdAt, updatedAt)
- * 
- * Logic:
- * 1. Initialize platformStatuses from selectedPlatforms
- * 2. Set initial status based on scheduledAt
- * 3. Create and return document
- * 
- * Example:
- * const post = await createPost({
- *   userId: new Types.ObjectId(userId),
- *   content: { text, mediaItems },
- *   selectedPlatforms: ["bluesky", "facebook"],
- *   scheduledAt: new Date("2024-12-25T10:00:00Z"),
- *   timezone: "Asia/Kolkata"
- * });
- */
-
-export const createPost = async (data: any) => {
-    // TODO: Implement
-    // const post = new PostModel({
-    //   ...data,
-    //   platformStatuses: data.selectedPlatforms.map(platform => ({
-    //     platform,
-    //     status: "pending",
-    //     attemptCount: 0
-    //   }))
-    // });
-    // return await post.save();
+export const createPost = async (data: Omit<Post, "_id" | "createdAt" | "updatedAt">) => {
+  const post = await PostModel.create(data);
+  return post;
 };
 
-// ============================================================================
-// FIND BY ID
-// ============================================================================
-
-/*
- * TODO: findById
- * 
- * Fetches a single post by ID.
- * Optionally populate user info.
- */
-
 export const findById = async (postId: string) => {
-    // return await PostModel.findById(postId);
+  const post = await PostModel.findById(postId);
+  if (!post) {
+    throw new Error("Post not found");
+  }
+  return post;
+};
+
+export const updatePlatformStatus = async (
+  postId: string,
+  platform: PlatformType,
+  statusUpdate: {
+    status: "pending" | "processing" | "completed" | "failed";
+    platformPostId?: string;
+    platformPostUrl?: string;
+    error?: string;
+    lastAttemptAt?: Date;
+    completedAt?: Date;
+  }
+) => {
+  if (!Types.ObjectId.isValid(postId)) {
+    return null;
+  }
+
+  await PostModel.findOneAndUpdate(
+    { _id: postId, "platformStatuses.platform": platform },
+    {
+      $set: {
+        "platformStatuses.$.status": statusUpdate.status,
+        "platformStatuses.$.platformPostId": statusUpdate.platformPostId,
+        "platformStatuses.$.platformPostUrl": statusUpdate.platformPostUrl,
+        "platformStatuses.$.error": statusUpdate.error,
+        "platformStatuses.$.lastAttemptAt": statusUpdate.lastAttemptAt,
+        "platformStatuses.$.completedAt": statusUpdate.completedAt
+      },
+      $inc: {
+        "platformStatuses.$.attemptCount": 1
+      }
+    }
+  );
+
+  // Recalculate global status AFTER platform update
+  await updateOverallStatus(postId);
+};
+
+export const updateOverallStatus = async (postId: string) => {
+  if (!Types.ObjectId.isValid(postId)) {
+    return null;
+  }
+
+  const post = await PostModel.findById(postId);
+  if (!post) {
+    return null;
+  }
+
+  const statuses = post.platformStatuses.map(p => p.status);
+
+  let newStatus: PostStatus | null = null;
+
+  if (statuses.includes("processing")) {
+    newStatus = "PROCESSING";
+  } else if (statuses.every(s => s === "completed")) {
+    newStatus = "COMPLETED";
+  } else if (
+    statuses.some(s => s === "completed") &&
+    statuses.some(s => s === "failed")
+  ) {
+    newStatus = "PARTIAL_SUCCESS";
+  } else if (statuses.every(s => s === "failed")) {
+    newStatus = "FAILED";
+  }
+
+  if (newStatus && post.status !== newStatus) {
+    post.status = newStatus;
+    await post.save();
+  }
+
+  return newStatus;
+};
+export const cancelPost = async (postId: string, userId: string) => {
+  if (!Types.ObjectId.isValid(postId)) {
+    return null;
+  }
+
+  return await PostModel.findOneAndUpdate(
+    {
+      _id: postId,
+      userId: new Types.ObjectId(userId),
+      status: { $in: ["PENDING", "SCHEDULED"] }
+    },
+    { status: "CANCELLED" },
+    { new: true }
+  );
 };
 
 // ============================================================================
@@ -150,64 +187,6 @@ export const updatePostStatus = async (postId: string, status: string) => {
     // );
 };
 
-// ============================================================================
-// UPDATE PLATFORM STATUS
-// ============================================================================
-
-/*
- * TODO: updatePlatformStatus
- * 
- * Updates status for a specific platform within a post.
- * This is called by the worker after attempting to post.
- * 
- * Parameters:
- * - postId: string
- * - platform: PlatformType
- * - statusUpdate: Partial<PlatformPostStatus>
- * 
- * Example:
- * await updatePlatformStatus(postId, "bluesky", {
- *   status: "completed",
- *   platformPostId: "abc123",
- *   platformPostUrl: "https://bsky.app/...",
- *   completedAt: new Date()
- * });
- * 
- * Or for failure:
- * await updatePlatformStatus(postId, "facebook", {
- *   status: "failed",
- *   error: "Token expired",
- *   lastAttemptAt: new Date()
- * });
- * 
- * Also updates attemptCount and recalculates overall status.
- */
-
-export const updatePlatformStatus = async (
-    postId: string,
-    platform: string,
-    statusUpdate: any
-) => {
-    // TODO: Implement using MongoDB's positional operator
-    // 
-    // await PostModel.findOneAndUpdate(
-    //   { _id: postId, "platformStatuses.platform": platform },
-    //   {
-    //     $set: {
-    //       "platformStatuses.$.status": statusUpdate.status,
-    //       "platformStatuses.$.platformPostId": statusUpdate.platformPostId,
-    //       "platformStatuses.$.platformPostUrl": statusUpdate.platformPostUrl,
-    //       "platformStatuses.$.error": statusUpdate.error,
-    //       "platformStatuses.$.lastAttemptAt": statusUpdate.lastAttemptAt,
-    //       "platformStatuses.$.completedAt": statusUpdate.completedAt
-    //     },
-    //     $inc: { "platformStatuses.$.attemptCount": 1 }
-    //   }
-    // );
-    //
-    // After updating platform status, recalculate overall post status:
-    // await recalculatePostStatus(postId);
-};
 
 // ============================================================================
 // RECALCULATE POST STATUS
@@ -285,27 +264,4 @@ export const findPostsWithFailedPlatforms = async (maxAttempts: number = 3) => {
     //   "platformStatuses.status": "failed",
     //   "platformStatuses.attemptCount": { $lt: maxAttempts }
     // });
-};
-
-// ============================================================================
-// MARK POST AS CANCELLED
-// ============================================================================
-
-/*
- * TODO: cancelPost
- * 
- * Marks a post as cancelled.
- * Only allowed for PENDING or SCHEDULED posts.
- */
-
-export const cancelPost = async (postId: string, userId: string) => {
-    // return await PostModel.findOneAndUpdate(
-    //   {
-    //     _id: postId,
-    //     userId: new Types.ObjectId(userId),
-    //     status: { $in: ["PENDING", "SCHEDULED"] }
-    //   },
-    //   { status: "CANCELLED" },
-    //   { new: true }
-    // );
 };

@@ -126,3 +126,29 @@ export const refreshThreadsProfile = async (req: Request, res: Response) => {
     return new ErrorResponse("Failed to refresh Threads profile", { status: 500 }).send(res);
   }
 };
+
+export const postToThreads = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    }
+
+    const { text, scheduledAt } = req.body;
+    const userId = req.auth.id;
+
+    const { Producer } = await import("../../lib/queues/producer");
+
+    const correlationId = await Producer.queueSocialPost({
+      postId: `threads-${Date.now()}`,
+      userId,
+      platform: "threads",
+      content: { text },
+      scheduledAt,
+    });
+
+    return new SuccessResponse("Post queued successfully", { data: { correlationId } }).send(res);
+  } catch (error) {
+    logger.error("Failed to post to Threads", error);
+    return new ErrorResponse("Failed to post to Threads", { status: 500 }).send(res);
+  }
+};

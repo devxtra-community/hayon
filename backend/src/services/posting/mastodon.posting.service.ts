@@ -7,6 +7,7 @@
 
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
+import axios from "axios";
 
 // ============================================================================
 // MASTODON API SPECIFICS
@@ -51,14 +52,14 @@ export class MastodonPostingService extends BasePostingService {
     }
 
     async validateContent(payload: PostQueueMessage): Promise<string | null> {
-        // if (payload.content.text.length > MASTODON_CONSTRAINTS.MAX_CHARS) {
-        //   return `Text exceeds ${MASTODON_CONSTRAINTS.MAX_CHARS} characters`;
-        // }
-        // 
-        // const mediaCount = payload.content.mediaUrls?.length || 0;
-        // if (mediaCount > MASTODON_CONSTRAINTS.MAX_MEDIA) {
-        //   return `Maximum ${MASTODON_CONSTRAINTS.MAX_MEDIA} media attachments allowed`;
-        // }
+        if (payload.content.text.length > MASTODON_CONSTRAINTS.MAX_CHARS) {
+            return `Text exceeds ${MASTODON_CONSTRAINTS.MAX_CHARS} characters`;
+        }
+
+        const mediaCount = payload.content.mediaUrls?.length || 0;
+        if (mediaCount > MASTODON_CONSTRAINTS.MAX_MEDIA) {
+            return `Maximum ${MASTODON_CONSTRAINTS.MAX_MEDIA} media attachments allowed`;
+        }
 
         return null;
     }
@@ -88,39 +89,34 @@ export class MastodonPostingService extends BasePostingService {
     async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
         // TODO: Implement
 
-        // const { instanceUrl, accessToken } = credentials;
-        // const mediaIds: string[] = [];
-        // 
-        // for (const url of mediaUrls) {
-        //   // Download from S3
-        //   const response = await axios.get(url, { responseType: "arraybuffer" });
-        //   const buffer = Buffer.from(response.data);
-        //   
-        //   // Create form data
-        //   const formData = new FormData();
-        //   formData.append("file", buffer, {
-        //     filename: "media",
-        //     contentType: response.headers["content-type"]
-        //   });
-        //   
-        //   // Upload to Mastodon
-        //   const uploadRes = await axios.post(
-        //     `${instanceUrl}/api/v2/media`,
-        //     formData,
-        //     {
-        //       headers: {
-        //         Authorization: `Bearer ${accessToken}`,
-        //         ...formData.getHeaders()
-        //       }
-        //     }
-        //   );
-        //   
-        //   mediaIds.push(uploadRes.data.id);
-        // }
-        // 
-        // return mediaIds;
+const { instanceUrl, auth: { accessToken } } = credentials;
+        const mediaIds: string[] = [];
 
-        return [];
+        for (const url of mediaUrls) {
+            // Download from S3
+            const response = await axios.get(url, { responseType: "arraybuffer" });
+            const buffer = Buffer.from(response.data);
+
+            // Create form data
+            const formData = new FormData();
+            const blob = new Blob([buffer], { type: response.headers["content-type"] as string });
+            formData.append("file", blob, "media");
+
+            // Upload to Mastodon
+            const uploadRes = await axios.post(
+                `${instanceUrl}/api/v2/media`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+
+            mediaIds.push(uploadRes.data.id);
+        }
+
+        return mediaIds;
     }
 
     // ============================================================================
@@ -153,36 +149,30 @@ export class MastodonPostingService extends BasePostingService {
         credentials: any,
         mediaIds: string[]
     ): Promise<PostResult> {
-        // TODO: Implement
-
-        // const { instanceUrl, accessToken } = credentials;
-        // 
-        // try {
-        //   const response = await axios.post(
-        //     `${instanceUrl}/api/v1/statuses`,
-        //     {
-        //       status: payload.content.text,
-        //       media_ids: mediaIds.length > 0 ? mediaIds : undefined,
-        //       visibility: "public"  // Could be configurable
-        //     },
-        //     {
-        //       headers: {
-        //         Authorization: `Bearer ${accessToken}`
-        //       }
-        //     }
-        //   );
-        //   
-        //   return {
-        //     success: true,
-        //     platformPostId: response.data.id,
-        //     platformPostUrl: response.data.url
-        //   };
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
-
-        console.log(`[STUB] Would post to Mastodon: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+const { instanceUrl, auth: { accessToken } } = credentials;
+        try {
+          const response = await axios.post(
+            `${instanceUrl}/api/v1/statuses`,
+            {
+              status: payload.content.text,
+              media_ids: mediaIds.length > 0 ? mediaIds : undefined,
+              visibility: "public"
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`
+              }
+            }
+          );
+          
+          return {
+            success: true,
+            platformPostId: response.data.id,
+            platformPostUrl: response.data.url
+          };
+        } catch (error: any) {
+          return this.handleError(error);
+        }
     }
 }
 

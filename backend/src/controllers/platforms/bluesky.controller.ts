@@ -130,22 +130,22 @@ export const refreshBlueskyProfile = async (req: Request, res: Response) => {
 
 export const postToBluesky = async (req: Request, res: Response) => {
   try {
-    // if (!req.auth) {
-    //   return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
-    // }
+    if (!req.auth) {
+      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    }
 
     const { text, scheduledAt } = req.body;
-    console.log("Received request to post to Bluesky:", { text, scheduledAt });
+    const userId = req.auth.id;
 
     const correlationId = await Producer.queueSocialPost({
-      postId: "some-db-id", //  database ID
-      userId: "javadde-id", // from req.auth.id
-      platform: "bluesky", // Or whatever platform
+      postId: `bluesky-${Date.now()}`,
+      userId,
+      platform: "bluesky",
       content: { text },
-      scheduledAt: scheduledAt, // Optional: If provided,  Class handles the delay!
+      scheduledAt,
     });
 
-    return new SuccessResponse(correlationId).send(res);
+    return new SuccessResponse("Post queued successfully", { data: { correlationId } }).send(res);
   } catch (error) {
     logger.error("Failed to post to Bluesky", error);
     return new ErrorResponse("Failed to post to Bluesky", { status: 500 }).send(res);

@@ -1,16 +1,9 @@
-// ============================================================================
-// POST WORKER - ENHANCED WITH TODO COMMENTS
-// ============================================================================
-// File: src/workers/post.worker.ts
-// Purpose: Process queue messages and post to social platforms
-// ============================================================================
-
 import { Channel, ConsumeMessage } from "amqplib";
 import { PostQueueMessage } from "../lib/queues/types";
 import { handleDeadLetter } from "../lib/queues/dlx.setup";
 // TODO: Uncomment when implemented
-// import { getPostingService, getCredentialsForPlatform, validateCredentials } from "../services/posting";
-// import * as postRepository from "../repositories/post.repository";
+import { getPostingService, getCredentialsForPlatform, validateCredentials } from "../services/posting";
+import * as postRepository from "../repositories/post.repository";
 
 // ============================================================================
 // WORKER FLOW OVERVIEW
@@ -51,170 +44,193 @@ import { handleDeadLetter } from "../lib/queues/dlx.setup";
  *    - Retryable failure → DLX handling
  */
 
+
+const isRetryableError = (error: any): boolean => {
+  if (!error) return false;
+
+  // Explicit retry signals
+  if (error.rateLimited) return true;
+  if (error.retryAfter) return true;
+
+  // Network / temporary errors
+  if (
+    error.message?.includes("timeout") ||
+    error.message?.includes("ECONNRESET") ||
+    error.message?.includes("ENOTFOUND")
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 export class PostWorker {
   static async processMessage(msg: ConsumeMessage, channel: Channel): Promise<void> {
     const startTime = Date.now();
 
+    const payload: PostQueueMessage = JSON.parse(msg.content.toString());
     try {
-      const payload: PostQueueMessage = JSON.parse(msg.content.toString());
       console.log(`📥 Processing: ${payload.postId} for ${payload.platform}`);
 
       // ============================================================================
       // TODO: STEP 1 - Check if post was cancelled
       // ============================================================================
 
+
+      const post = await postRepository.findById(payload.postId);
+      if (!post) {
+        console.log(`⚠️ Post ${payload.postId} not found, skipping`);
+        channel.ack(msg);
+        return;
+      }
+
+      if (post.status === "CANCELLED") {
+        console.log(`⏭️ Post ${payload.postId} was cancelled, skipping`);
+        channel.ack(msg);
+        return;
+      }
+
+      // ============================================================================
+      // STEP 1.5 - Idempotency check (VERY IMPORTANT)
+      // ============================================================================
       /*
-       * const post = await postRepository.findById(payload.postId);
-       * if (!post) {
-       *   console.log(`⚠️ Post ${payload.postId} not found, skipping`);
-       *   channel.ack(msg);
-       *   return;
-       * }
-       * 
-       * if (post.status === "CANCELLED") {
-       *   console.log(`⏭️ Post ${payload.postId} was cancelled, skipping`);
-       *   channel.ack(msg);
-       *   return;
-       * }
+       * RabbitMQ is at-least-once delivery.
+       * If worker crashes or ACK is delayed, message may be redelivered.
+       * If this platform is already completed, skip safely.
        */
+
+      const platformStatus = post.platformStatuses.find(
+        (p) => p.platform === payload.platform
+      );
+
+      if (platformStatus?.status === "completed") {
+        console.log(
+          `🔁 Duplicate message detected for ${payload.postId} / ${payload.platform}, skipping`
+        );
+        channel.ack(msg);
+        return;
+      }
+
 
       // ============================================================================
       // TODO: STEP 2 - Validate credentials
       // ============================================================================
 
-      /*
-       * const credentialCheck = await validateCredentials(payload.userId, payload.platform);
-       * if (!credentialCheck.valid) {
-       *   console.log(`❌ Credentials invalid: ${credentialCheck.error}`);
-       *   await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
-       *     status: "failed",
-       *     error: credentialCheck.error,
-       *     lastAttemptAt: new Date()
-       *   });
-       *   channel.ack(msg);  // Don't retry - user action needed
-       *   return;
-       * }
-       */
+      const credentialCheck = await validateCredentials(
+        payload.userId,
+        payload.platform
+      );
+
+      if (!credentialCheck.valid) {
+        console.log(`❌ Credentials invalid: ${credentialCheck.error}`);
+
+        await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+          status: "failed",
+          error: credentialCheck.error,
+          lastAttemptAt: new Date()
+        });
+
+        // Permanent failure → do NOT retry
+        channel.ack(msg);
+        return;
+      }
 
       // ============================================================================
       // TODO: STEP 3 - Update status to processing
       // ============================================================================
 
-      /*
-       * await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
-       *   status: "processing",
-       *   lastAttemptAt: new Date()
-       * });
-       */
+      await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+        status: "processing",
+        lastAttemptAt: new Date()
+      });
 
       // ============================================================================
       // TODO: STEP 4 - Get credentials and posting service
       // ============================================================================
 
-      /*
-       * const credentials = await getCredentialsForPlatform(payload.userId, payload.platform);
-       * const service = getPostingService(payload.platform);
-       */
+
+      const credentials = await getCredentialsForPlatform(payload.userId, payload.platform);
+      const service = getPostingService(payload.platform);
+
 
       // ============================================================================
       // TODO: STEP 5 - Execute the post
       // ============================================================================
 
-      /*
-       * const result = await service.execute(payload, credentials);
-       * 
-       * if (result.success) {
-       *   await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
-       *     status: "completed",
-       *     platformPostId: result.platformPostId,
-       *     platformPostUrl: result.platformPostUrl,
-       *     completedAt: new Date()
-       *   });
-       *   console.log(`✅ Posted to ${payload.platform}: ${result.platformPostUrl}`);
-       * } else {
-       *   // Check if retryable
-       *   if (result.rateLimited) {
-       *     // Rate limited - retry after delay
-       *     throw new Error(`Rate limited, retry after ${result.retryAfter}s`);
-       *   }
-       *   
-       *   await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
-       *     status: "failed",
-       *     error: result.error,
-       *     lastAttemptAt: new Date()
-       *   });
-       * }
-       */
 
-      // ============================================================================
-      // ⚠️ TEST MODE - SIMPLE LOGGING ⚠️
-      // Replace with actual implementation when ready
-      // ============================================================================
+      const result = await service.execute(payload, credentials);
 
-      console.log("═══════════════════════════════════════════════════════════════");
-      console.log("📨 MESSAGE RECEIVED FROM QUEUE");
-      console.log("═══════════════════════════════════════════════════════════════");
-      console.log(`   Post ID:        ${payload.postId}`);
-      console.log(`   Platform:       ${payload.platform}`);
-      console.log(`   User ID:        ${payload.userId}`);
-      console.log(`   Content:        ${payload.content.text?.substring(0, 50)}...`);
-      console.log(`   Correlation ID: ${payload.correlationId}`);
-      console.log(`   Was Scheduled:  ${payload.scheduledAt ? "YES - " + payload.scheduledAt : "NO - Immediate"}`);
-      console.log(`   Timestamp:      ${payload.timestamp}`);
-      console.log("═══════════════════════════════════════════════════════════════");
+      if (result.success) {
+        await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+          status: "completed",
+          platformPostId: result.platformPostId,
+          platformPostUrl: result.platformPostUrl,
+          completedAt: new Date()
+        });
 
-      // Simulate platform posting (just log for now)
-      switch (payload.platform) {
-        case "bluesky":
-          console.log("🦋 [TEST] Would post to Bluesky");
-          break;
-        case "instagram":
-          console.log("📷 [TEST] Would post to Instagram");
-          break;
-        case "threads":
-          console.log("🧵 [TEST] Would post to Threads");
-          break;
-        case "facebook":
-          console.log("📘 [TEST] Would post to Facebook");
-          break;
-        case "mastodon":
-          console.log("🐘 [TEST] Would post to Mastodon");
-          break;
-        case "tumblr":
-          console.log("📓 [TEST] Would post to Tumblr");
-          break;
-        default:
-          console.log(`❓ [TEST] Unknown platform: ${payload.platform}`);
+        channel.ack(msg);
+        console.log(`✅ [ACK] Finished: ${payload.postId} for ${payload.platform} in ${Date.now() - startTime}ms`);
+        return;
+      } else {
+        if (result.rateLimited) {
+          throw new Error(`Rate limited, retry after ${result.retryAfter}s`);
+        }
+
+        await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+          status: "failed",
+          error: result.error,
+          lastAttemptAt: new Date()
+        });
+
+        // Permanent failure - ACK so it leaves the queue
+        channel.ack(msg);
+        console.log(`🪦 [ACK] Permanent failure for ${payload.postId} / ${payload.platform}: ${result.error}`);
+        return;
       }
-
-      console.log("✅ Message processed successfully!");
-      console.log("═══════════════════════════════════════════════════════════════\n");
-
-      channel.ack(msg);
-      console.log(`✅ Completed: ${payload.postId} in ${Date.now() - startTime}ms`);
     } catch (error: any) {
       console.error(`❌ Failed to process message:`, error.message);
 
-      // ============================================================================
-      // TODO: STEP 6 - Handle failure with DLX
-      // ============================================================================
+      // Fetch post again to get latest attemptCount
+      const post = await postRepository.findById(payload.postId);
 
-      /*
-       * Instead of simple NACK, use DLX for retry:
-       * 
-       * await handleDeadLetter({
-       *   channel,
-       *   originalMessage: msg.content,
-       *   routingKey: msg.fields.routingKey,
-       *   error,
-       *   headers: msg.properties.headers
-       * });
-       * 
-       * channel.ack(msg);  // ACK so RabbitMQ doesn't auto-requeue
-       */
+      const platformStatus = post?.platformStatuses.find(
+        (p) => p.platform === payload.platform
+      );
 
-      // TEMP: Current implementation - message is lost! REPLACE with DLX
-      channel.nack(msg, false, false);
+      const attempts = platformStatus?.attemptCount ?? 0;
+
+      const shouldRetry =
+        attempts < 3 && isRetryableError(error);
+
+      if (shouldRetry) {
+        console.log(
+          `🔁 Retrying ${payload.postId} / ${payload.platform} (attempt ${attempts + 1})`
+        );
+
+        await handleDeadLetter({
+          channel,
+          originalMessage: msg.content,
+          routingKey: msg.fields.routingKey,
+          error,
+          headers: msg.properties.headers
+        });
+
+        channel.ack(msg);
+        return;
+      }
+
+      // Permanent failure
+      console.log(
+        `🪦 Permanent failure for ${payload.postId} / ${payload.platform}`
+      );
+
+      await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+        status: "failed",
+        error: error.message,
+        lastAttemptAt: new Date()
+      });
+
+      channel.ack(msg);
     }
   }
 }

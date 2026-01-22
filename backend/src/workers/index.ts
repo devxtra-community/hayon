@@ -1,23 +1,19 @@
-// ============================================================================
-// WORKER ENTRY POINT - DELAYED MESSAGE EXCHANGE PLUGIN SETUP
-// ============================================================================
-// File: src/workers/index.ts
-// Purpose: Start worker process, setup queues and exchanges, consume messages
-// ============================================================================
-
 import "dotenv/config"; // Load environment variables
 import { connectRabbitMQ, getChannel, closeRabbitMQ } from "../config/rabbitmq";
+import connectDB from "../config/database";
 import { PostWorker } from "./post.worker";
 import { QUEUES, EXCHANGES } from "../lib/queues/types";
-
-// ============================================================================
-// STARTUP FUNCTION
-// ============================================================================
 
 async function startWorker(): Promise<void> {
   console.log("🚀 Starting Worker Process...");
 
   try {
+    // ========================================================================
+    // STEP 0: Connect to Database
+    // ========================================================================
+    await connectDB();
+    console.log("✅ Connected to Database");
+
     // ========================================================================
     // STEP 1: Connect to RabbitMQ
     // ========================================================================
@@ -202,5 +198,4 @@ async function startWorker(): Promise<void> {
  *                            (try again)
  */
 
-// Start the worker
 startWorker();

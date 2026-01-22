@@ -1,10 +1,3 @@
-// ============================================================================
-// POSTING SERVICE FACTORY - SKELETON WITH TODO COMMENTS
-// ============================================================================
-// File: src/services/posting/index.ts
-// Purpose: Factory to get platform-specific posting services and credential fetching
-// ============================================================================
-
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { BlueskyPostingService } from "./bluesky.posting.service";
 import { InstagramPostingService } from "./instagram.posting.service";
@@ -13,18 +6,7 @@ import { FacebookPostingService } from "./facebook.posting.service";
 import { MastodonPostingService } from "./mastodon.posting.service";
 import { TumblrPostingService } from "./tumblr.posting.service";
 import { PlatformType } from "../../interfaces/post.interface";
-
-// ============================================================================
-// FACTORY - Get posting service by platform
-// ============================================================================
-
-/*
- * Used by worker to get the correct posting service.
- * 
- * Usage in worker:
- * const service = getPostingService(payload.platform);
- * const result = await service.execute(payload, credentials);
- */
+import SocialAccountModel from "../../models/socialAccount.model";
 
 const serviceMap: Record<PlatformType, new () => BasePostingService> = {
     bluesky: BlueskyPostingService,
@@ -32,7 +14,7 @@ const serviceMap: Record<PlatformType, new () => BasePostingService> = {
     threads: ThreadsPostingService,
     facebook: FacebookPostingService,
     mastodon: MastodonPostingService,
-    tumblr: TumblrPostingService
+    tumblr: TumblrPostingService,
 };
 
 export function getPostingService(platform: PlatformType): BasePostingService {
@@ -43,149 +25,54 @@ export function getPostingService(platform: PlatformType): BasePostingService {
     return new ServiceClass();
 }
 
-// ============================================================================
-// CREDENTIAL FETCHING
-// ============================================================================
-
-/*
- * TODO: Implement getCredentialsForPlatform
+/**
+ * Fetches platform data for a specific platform from SocialAccountModel.
  * 
- * Fetches the appropriate credentials from SocialAccountModel
- * based on platform and userId.
- * 
- * Each platform has different credential structures:
- * - Bluesky: session (accessJwt, refreshJwt, did, handle)
- * - Instagram: igUserId, accessToken, linkedPageId
- * - Threads: threadsUserId, accessToken
- * - Facebook: pageId, accessToken (page token)
- * - Mastodon: instanceUrl, accessToken
- * - Tumblr: blogHostname, oauthToken, oauthTokenSecret
- * 
- * Usage in worker:
- * const credentials = await getCredentialsForPlatform(userId, platform);
- * if (!credentials) throw new Error("Account not connected");
- * const result = await service.execute(payload, credentials);
+ * Returns the full platform object (e.g., socialAccount.mastodon) which includes:
+ * - auth: { accessToken, etc. }
+ * - Metadata: instanceUrl, handle, platformId, etc.
  */
-
-import SocialAccountModel from "../../models/socialAccount.model";
-
 export async function getCredentialsForPlatform(
     userId: string,
     platform: PlatformType
 ): Promise<any | null> {
-    // TODO: Implement credential extraction
+    const socialAccount = await SocialAccountModel.findOne(
+        { userId },
+        { [platform]: 1 } // Projection: only fetch the platform we need
+    );
 
-    // const socialAccount = await SocialAccountModel.findOne({ userId });
-    // if (!socialAccount) return null;
-    // 
-    // const platformData = socialAccount[platform];
-    // if (!platformData?.connected) return null;
-    // 
-    // switch (platform) {
-    //   case "bluesky":
-    //     return {
-    //       session: {
-    //         did: platformData.did,
-    //         handle: platformData.handle,
-    //         accessJwt: platformData.auth.accessJwt,
-    //         refreshJwt: platformData.auth.refreshJwt
-    //       },
-    //       handle: platformData.handle
-    //     };
-    //     
-    //   case "instagram":
-    //     return {
-    //       igUserId: platformData.platformId,
-    //       accessToken: platformData.auth.accessToken,
-    //       linkedPageId: platformData.linkedPageId
-    //     };
-    //     
-    //   case "threads":
-    //     return {
-    //       threadsUserId: platformData.platformId,
-    //       accessToken: platformData.auth.accessToken
-    //     };
-    //     
-    //   case "facebook":
-    //     return {
-    //       pageId: platformData.platformId,
-    //       accessToken: platformData.auth.accessToken
-    //     };
-    //     
-    //   case "mastodon":
-    //     return {
-    //       instanceUrl: platformData.instanceUrl,
-    //       accessToken: platformData.auth.accessToken,
-    //       accountId: platformData.accountId
-    //     };
-    //     
-    //   case "tumblr":
-    //     return {
-    //       blogHostname: platformData.blogHostname,
-    //       oauthToken: platformData.auth.oauthToken,
-    //       oauthTokenSecret: platformData.auth.oauthTokenSecret
-    //     };
-    //     
-    //   default:
-    //     return null;
-    // }
+    if (!socialAccount) {
+        return null;
+    }
 
-    return null;
+    const platformData = socialAccount[platform];
+
+    // For some reason Mongoose might return the key but with no data
+    if (!platformData || !platformData.connected) {
+        return null;
+    }
+
+    // Return the full platform object. 
+    // The specific service will destructure what it needs (auth, instanceUrl, etc.)
+    return platformData;
 }
-
-// ============================================================================
-// HEALTH CHECK - Validate credentials before posting
-// ============================================================================
-
-/*
- * TODO: Implement validateCredentials
- * 
- * Before posting, check if credentials are still valid:
- * - Token not expired
- * - Account not disconnected
- * - Health status is "active"
- * 
- * If expired/invalid:
- * - Update health status in DB
- * - Return error indicating reconnection needed
- */
 
 export async function validateCredentials(
     userId: string,
     platform: PlatformType
 ): Promise<{ valid: boolean; error?: string }> {
-    // TODO: Implement
+    // TEMP STUB — replace with DB lookup later
 
-    // const socialAccount = await SocialAccountModel.findOne({ userId });
-    // const platformData = socialAccount?.[platform];
-    // 
-    // if (!platformData?.connected) {
-    //   return { valid: false, error: "Account not connected" };
-    // }
-    // 
-    // if (platformData.health?.status !== "active") {
-    //   return { valid: false, error: `Account status: ${platformData.health?.status}` };
-    // }
-    // 
-    // // Check token expiry based on platform
-    // const expiresAt = platformData.auth?.expiresAt;
-    // if (expiresAt && new Date(expiresAt) < new Date()) {
-    //   // Mark as needing reconnection
-    //   await SocialAccountModel.updateOne(
-    //     { userId },
-    //     { [`${platform}.health.status`]: "expired", [`${platform}.health.needsReconnection`]: true }
-    //   );
-    //   return { valid: false, error: "Token expired - needs reconnection" };
-    // }
-    // 
-    // return { valid: true };
+    if (!userId || !platform) {
+        return {
+            valid: false,
+            error: "Invalid user or platform"
+        };
+    }
 
+    // Assume credentials exist for now
     return { valid: true };
 }
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export { BasePostingService, PostResult };
 export { BlueskyPostingService } from "./bluesky.posting.service";

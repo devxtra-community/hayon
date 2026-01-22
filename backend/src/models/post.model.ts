@@ -1,181 +1,161 @@
-// ============================================================================
-// POST MODEL - SKELETON WITH TODO COMMENTS
-// ============================================================================
-// File: src/models/post.model.ts
-// Purpose: Store post data and track status across multiple platforms
-// ============================================================================
+import mongoose, { Schema, Model, Types, Document } from "mongoose";
+import { Post, ALL_PLATFORMS, PlatformStatus } from "../interfaces/post.interface";
 
-import mongoose, { Schema, Model, Types } from "mongoose";
+export interface IPostDocument extends Post, Document {
+    _id: Types.ObjectId;
+}
 
-// ============================================================================
-// TODO: TYPES/INTERFACES TO DEFINE
-// ============================================================================
+const mediaItemSchema = new Schema({
+    // S3 storage path: "posts/user123/post456/image.jpg"
+    s3Key: {
+        type: String,
+        required: true
+    },
 
-/*
- * TODO: Define these in src/interfaces/post.interface.ts:
- *
- * 1. PostStatus enum:
- *    - DRAFT: Post saved but not submitted yet
- *    - PENDING: Post queued for immediate publishing
- *    - SCHEDULED: Post queued for future publishing
- *    - PROCESSING: Worker is currently processing this post
- *    - COMPLETED: All platforms published successfully
- *    - PARTIAL_SUCCESS: Some platforms succeeded, some failed
- *    - FAILED: All platforms failed
- *
- * 2. PlatformPostStatus interface (per-platform status):
- *    - platform: "bluesky" | "threads" | "tumblr" | "mastodon" | "facebook" | "instagram"
- *    - status: "pending" | "processing" | "completed" | "failed"
- *    - platformPostId?: string  // ID returned by platform after posting
- *    - platformPostUrl?: string // Direct link to the post on platform
- *    - error?: string           // Error message if failed
- *    - attemptCount: number     // For retry logic
- *    - lastAttemptAt?: Date
- *    - completedAt?: Date
- *
- * 3. MediaItem interface:
- *    - s3Key: string           // Key in S3 bucket
- *    - s3Url: string           // Full CDN/S3 URL
- *    - mimeType: string        // "image/jpeg", "video/mp4", etc.
- *    - originalFilename: string
- *    - sizeBytes: number
- *    - width?: number          // For images/videos
- *    - height?: number
- *    - duration?: number       // For videos (seconds)
- *
- * 4. Post interface:
- *    - userId: ObjectId
- *    - content: { text: string, mediaItems: MediaItem[] }
- *    - platformSpecificContent: Map<platform, { text: string, mediaItems?: MediaItem[] }>
- *    - selectedPlatforms: PlatformType[]
- *    - platformStatuses: PlatformPostStatus[]
- *    - scheduledAt?: Date
- *    - status: PostStatus
- *    - correlationId: string   // Links to RabbitMQ messages
- *    - timezone: string
- *    - metadata: { source: "web" | "api", userAgent?: string, ipAddress?: string }
- */
+    // Full URL to access the file: "https://cdn.example.com/posts/..."
+    s3Url: {
+        type: String,
+        required: true
+    },
+    mimeType: {
+        type: String,
+        required: true
+    },
+    originalFilename: String,
+    sizeBytes: Number,
+    width: Number,
+    height: Number,
 
-// ============================================================================
-// TODO: PLATFORM-SPECIFIC CONTENT HANDLING
-// ============================================================================
+    // For videos only: length in seconds
+    duration: Number
+}, {
+    _id: false  // Don't create separate IDs for media items
+});
 
-/*
- * EDGE CASE: Per-Platform Customization
- * 
- * When user edits content for a specific platform in the preview view,
- * we need to store platform-specific overrides.
- * 
- * Example scenario:
- * - User writes 500 char post
- * - Bluesky limit is 300 chars, user edits down for Bluesky only
- * - Original 500 char version goes to Facebook
- * - Edited 300 char version goes to Bluesky
- * 
- * Schema structure:
- * {
- *   content: { text: "Original 500 char post...", mediaItems: [...] },
- *   platformSpecificContent: {
- *     bluesky: { text: "Shortened 300 char...", mediaItems: [...] }
- *   }
- * }
- * 
- * Worker logic: Check platformSpecificContent[platform] first, 
- * fallback to main content if not customized.
- */
+const platformPostStatusSchema = new Schema({
+    platform: {
+        type: String,
+        enum: [...ALL_PLATFORMS],
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ["pending", "processing", "completed", "failed"],
+        default: "pending"
+    },
+    platformPostId: String,
+    platformPostUrl: String,
+    error: String,
+    attemptCount: {
+        type: Number,
+        default: 0
+    },
+    lastAttemptAt: Date,
+    completedAt: Date
+}, {
+    _id: false
+});
 
-// ============================================================================
-// TODO: SCHEMA DEFINITION
-// ============================================================================
+const postSchema = new Schema({
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true
+    },
 
-/*
- * Pseudo-schema structure:
- * 
- * const mediaItemSchema = new Schema({
- *   s3Key: { type: String, required: true },
- *   s3Url: { type: String, required: true },
- *   mimeType: { type: String, required: true },
- *   originalFilename: String,
- *   sizeBytes: Number,
- *   width: Number,
- *   height: Number,
- *   duration: Number
- * }, { _id: false });
- * 
- * const platformPostStatusSchema = new Schema({
- *   platform: { type: String, enum: [...ALL_PLATFORMS], required: true },
- *   status: { type: String, enum: ["pending", "processing", "completed", "failed"], default: "pending" },
- *   platformPostId: String,
- *   platformPostUrl: String,
- *   error: String,
- *   attemptCount: { type: Number, default: 0 },
- *   lastAttemptAt: Date,
- *   completedAt: Date
- * }, { _id: false });
- * 
- * const postSchema = new Schema({
- *   userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
- *   
- *   content: {
- *     text: { type: String, required: true },
- *     mediaItems: [mediaItemSchema]
- *   },
- *   
- *   platformSpecificContent: {
- *     type: Map,
- *     of: {
- *       text: String,
- *       mediaItems: [mediaItemSchema]
- *     }
- *   },
- *   
- *   selectedPlatforms: [{
- *     type: String,
- *     enum: ["bluesky", "threads", "tumblr", "mastodon", "facebook", "instagram"]
- *   }],
- *   
- *   platformStatuses: [platformPostStatusSchema],
- *   
- *   status: {
- *     type: String,
- *     enum: ["DRAFT", "PENDING", "SCHEDULED", "PROCESSING", "COMPLETED", "PARTIAL_SUCCESS", "FAILED"],
- *     default: "DRAFT",
- *     index: true
- *   },
- *   
- *   scheduledAt: { type: Date, index: true },
- *   
- *   correlationId: { type: String, unique: true, sparse: true },
- *   
- *   timezone: { type: String, default: "UTC" },
- *   
- *   metadata: {
- *     source: { type: String, enum: ["web", "api"], default: "web" },
- *     userAgent: String,
- *     ipAddress: String
- *   }
- * }, { timestamps: true });
- */
+    content: {
+        // The actual post text
+        text: {
+            type: String,
+            required: true
+        },
+        mediaItems: [mediaItemSchema]
+    },
 
-// ============================================================================
-// TODO: INDEXES FOR PERFORMANCE
-// ============================================================================
+    platformSpecificContent: {
+        type: Schema.Types.Mixed,
+        default: {}
+    },
 
-/*
- * Add these indexes for common query patterns:
- * 
- * 1. postSchema.index({ userId: 1, status: 1, createdAt: -1 })
- *    - For user's post history with status filter
- * 
- * 2. postSchema.index({ status: 1, scheduledAt: 1 })
- *    - For finding scheduled posts that need processing
- * 
- * 3. postSchema.index({ correlationId: 1 })
- *    - For worker to find post by RabbitMQ correlation ID
- * 
- * 4. postSchema.index({ "platformStatuses.status": 1, "platformStatuses.platform": 1 })
- *    - For finding posts with failed platform statuses for retry
- */
+    selectedPlatforms: [{
+        type: String,
+        enum: ALL_PLATFORMS
+    }],
+
+    platformStatuses: [platformPostStatusSchema],
+    status: {
+        type: String,
+        enum: ["DRAFT", "PENDING", "SCHEDULED", "PROCESSING", "COMPLETED", "PARTIAL_SUCCESS", "FAILED", "CANCELLED"],
+        default: "DRAFT",
+        index: true  // Index for fast status filtering
+    },
+
+    scheduledAt: {
+        type: Date,
+        index: true  // Index to quickly find posts ready to publish
+    },
+
+    correlationId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+
+    timezone: {
+        type: String,
+        default: "UTC"
+    },
+
+    metadata: {
+        source: {
+            type: String,
+            enum: ["web", "api"],
+            default: "web"
+        },
+
+        userAgent: String,
+
+        ipAddress: String
+    }
+}, {
+    timestamps: true
+});
+
+
+postSchema.index({ userId: 1, status: 1, createdAt: -1 });
+
+postSchema.index({ status: 1, scheduledAt: 1 });
+
+
+postSchema.index({
+    "platformStatuses.status": 1,
+    "platformStatuses.platform": 1
+});
+
+
+
+postSchema.pre<IPostDocument>("save", function (next) {
+    if (!this.isNew) return next();
+
+    // Initialize platformStatuses
+    this.platformStatuses = this.selectedPlatforms.map(platform => ({
+        platform,
+        status: "pending" as PlatformStatus,
+        attemptCount: 0
+    })) as any; // Cast to any to satisfy Mongoose DocumentArray
+
+    // Set initial overall status
+    this.status = this.scheduledAt ? "SCHEDULED" : "PENDING";
+
+    next();
+});
+
+
+
+const PostModel: Model<IPostDocument> = mongoose.model<IPostDocument>("Post", postSchema);
+
+export default PostModel;
 
 // ============================================================================
 // TODO: HOOKS (PRE-SAVE MIDDLEWARE)
@@ -194,17 +174,3 @@ import mongoose, { Schema, Model, Types } from "mongoose";
  *    - If all failed → status = "FAILED"
  *    - If any processing → status = "PROCESSING"
  */
-
-// ============================================================================
-// TEMPORARY PLACEHOLDER - REPLACE WITH ACTUAL IMPLEMENTATION
-// ============================================================================
-
-// Placeholder to avoid syntax errors - implement full schema above
-const postSchema = new Schema({
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    // TODO: Add full schema as described above
-}, { timestamps: true });
-
-const PostModel: Model<any> = mongoose.model("Post", postSchema);
-
-export default PostModel;

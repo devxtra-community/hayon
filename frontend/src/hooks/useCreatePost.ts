@@ -323,21 +323,39 @@ export function useCreatePost() {
 
   const handlePostNow = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    setErrors([]);
 
-    // Reset after success
-    setTimeout(() => {
-      setIsSuccess(false);
-      setViewMode("create");
-      setPostText("");
-      setMediaFiles([]);
-      setFilePreviews([]);
-      setPlatformPosts({});
-    }, 2000);
+    try {
+      const postPromises = selectedPlatforms.map(async (platformId) => {
+        const content = platformPosts[platformId] || { text: postText };
+        const scheduledAt =
+          scheduleDate && scheduleTime ? `${scheduleDate}T${scheduleTime}` : undefined;
+
+        return api.post(`/${platformId}/post`, {
+          text: content.text,
+          scheduledAt,
+        });
+      });
+
+      await Promise.all(postPromises);
+      setIsSubmitting(false);
+      setIsSuccess(true);
+
+      setTimeout(() => {
+        setIsSuccess(false);
+        setViewMode("create");
+        setPostText("");
+        setMediaFiles([]);
+        setFilePreviews([]);
+        setPlatformPosts({});
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to post", error);
+      setErrors(["Failed to post to one or more platforms"]);
+      setIsSubmitting(false);
+    }
   };
+
 
   const handleScheduleConfirm = () => {
     setIsScheduleOpen(false);

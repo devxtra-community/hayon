@@ -1,11 +1,3 @@
-// ============================================================================
-// QUEUE TYPES - UPDATED FOR DELAYED MESSAGE EXCHANGE PLUGIN
-// ============================================================================
-// File: src/lib/queues/types.ts
-// Purpose: Define message interfaces and queue/exchange constants
-// ============================================================================
-
-// Base interface for all queue messages
 export interface BaseQueueMessage {
   timestamp: Date;
   correlationId: string; // For tracking/debugging
@@ -73,23 +65,3 @@ export const ROUTING_KEYS = {
   POST_CREATE_TUMBLR: "post.create.tumblr",
 } as const;
 
-// ============================================================================
-// PLUGIN INSTALLATION REMINDER
-// ============================================================================
-
-/*
- * The Delayed Message Exchange Plugin must be installed on RabbitMQ:
- * 
- * DOCKER:
- *   1. Download plugin: https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases
- *   2. Copy to container: docker cp rabbitmq_delayed_message_exchange-3.12.0.ez rabbitmq:/plugins/
- *   3. Enable: docker exec rabbitmq rabbitmq-plugins enable rabbitmq_delayed_message_exchange
- *   4. Restart: docker restart rabbitmq
- * 
- * LOCAL INSTALL:
- *   rabbitmq-plugins enable rabbitmq_delayed_message_exchange
- * 
- * VERIFY:
- *   rabbitmq-plugins list | grep delayed
- *   Should show: [E*] rabbitmq_delayed_message_exchange
- */

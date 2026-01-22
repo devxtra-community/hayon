@@ -221,3 +221,29 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
     return new ErrorResponse("Failed to refresh Facebook profile", { status: 500 }).send(res);
   }
 };
+
+export const postToFacebook = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    }
+
+    const { text, scheduledAt } = req.body;
+    const userId = req.auth.id;
+
+    const { Producer } = await import("../../lib/queues/producer");
+
+    const correlationId = await Producer.queueSocialPost({
+      postId: `facebook-${Date.now()}`,
+      userId,
+      platform: "facebook",
+      content: { text },
+      scheduledAt,
+    });
+
+    return new SuccessResponse("Post queued successfully", { data: { correlationId } }).send(res);
+  } catch (error) {
+    logger.error("Failed to post to Facebook", error);
+    return new ErrorResponse("Failed to post to Facebook", { status: 500 }).send(res);
+  }
+};
