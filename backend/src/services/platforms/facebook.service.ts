@@ -32,7 +32,7 @@ export class FacebookService {
   async getFacebookPages(accessToken: string) {
     const response = await axios.get(`${FB_GRAPH_URL}/me/accounts`, {
       params: {
-        fields: "id,name,picture{url},username,link",
+        fields: "id,name,picture{url},username,link,access_token",
         access_token: accessToken,
       },
     });
@@ -66,6 +66,6 @@ export class FacebookService {
   }
 }
 
-export const createPostServiceFacebook = () => {};
+export const createPostServiceFacebook = () => { };
 
 export const facebookService = new FacebookService();

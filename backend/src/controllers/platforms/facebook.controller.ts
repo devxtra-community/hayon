@@ -8,6 +8,7 @@ import {
   updateInstagramDetails,
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
+import { Producer } from "../../lib/queues/producer";
 
 export const connectFacebook = (req: Request, res: Response) => {
   if (!req.auth) return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
@@ -18,6 +19,8 @@ export const connectFacebook = (req: Request, res: Response) => {
     "instagram_manage_insights",
     "pages_show_list",
     "pages_read_engagement",
+    "pages_manage_posts",
+    "pages_manage_metadata",
     "public_profile",
     "business_management",
   ].join(",");
@@ -85,12 +88,15 @@ export const facebookCallback = async (req: Request, res: Response) => {
     const userId = req.query.state as string;
 
     if (userId) {
+      const page = pages && pages.length > 0 ? pages[0] : null;
+      const pageAccessToken = page?.access_token || longToken;
+
       await updateFacebookDetails(userId, {
         connected: true,
         platformId: linkedPageId || fbUser.id,
         profile: fbProfile,
         auth: {
-          accessToken: longToken,
+          accessToken: pageAccessToken, // Store PAGE token here
           refreshToken: "",
           expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
         },
@@ -103,7 +109,7 @@ export const facebookCallback = async (req: Request, res: Response) => {
           platformId: linkedIgId,
           profile: igProfile,
           auth: {
-            accessToken: longToken,
+            accessToken: longToken, // Instagram uses USER token
             refreshToken: "",
             expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
           },
@@ -182,9 +188,12 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
     // Also refresh Linked Instagram if exists
     // We re-check pages to find connected IG
     const pages = await facebookService.getFacebookPages(longToken);
+    let pageAccessToken = longToken;
+
     if (pages && pages.length > 0) {
       const page = pages[0];
       fbPlatformId = page.id;
+      pageAccessToken = page.access_token || longToken;
       fbProfile = {
         displayName: page.name,
         avatar: page.picture?.data?.url,
@@ -205,6 +214,9 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
           connected: true,
           profile: igProfile,
           platformId: igData.id,
+          auth: {
+            accessToken: longToken, // IG uses User token
+          }
         });
       }
     }
@@ -213,6 +225,9 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
       connected: true,
       platformId: fbPlatformId,
       profile: fbProfile,
+      auth: {
+        accessToken: pageAccessToken, // FB uses Page token
+      }
     });
 
     return new SuccessResponse("Facebook & Instagram profiles refreshed").send(res);
@@ -222,28 +237,74 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
   }
 };
 
+import { Types } from "mongoose";
+import * as postRepository from "../../repositories/post.repository";
+
 export const postToFacebook = async (req: Request, res: Response) => {
   try {
     if (!req.auth) {
       return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
     }
 
-    const { text, scheduledAt } = req.body;
+    const { text, mediaUrls, scheduledAt, timezone } = req.body;
     const userId = req.auth.id;
 
-    const { Producer } = await import("../../lib/queues/producer");
+    // 0. Check connection
+    const socialAccount = await findPlatformAccountByUserId(userId);
+    if (!socialAccount?.facebook?.connected) {
+      return new ErrorResponse("Facebook account not connected", { status: 400 }).send(res);
+    }
 
+    // 1. Create a persistent Post record in MongoDB
+    const post = await postRepository.createPost({
+      userId: new Types.ObjectId(userId),
+      content: {
+        text,
+        mediaItems: (mediaUrls || []).map((url: string) => ({
+          s3Url: url,
+          s3Key: "unknown",
+          mimeType: "image/jpeg",
+          originalFilename: "uploaded_file",
+          sizeBytes: 0,
+        })),
+      },
+      selectedPlatforms: ["facebook"],
+      platformStatuses: [
+        {
+          platform: "facebook",
+          status: "pending",
+          attemptCount: 0,
+        },
+      ],
+      status: scheduledAt ? "SCHEDULED" : "PENDING",
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+      timezone: timezone || "UTC",
+      metadata: {
+        source: "web",
+      },
+    });
+
+    // 2. Queue the message in RabbitMQ with the real DB ID
     const correlationId = await Producer.queueSocialPost({
-      postId: `facebook-${Date.now()}`,
+      postId: post._id!.toString(), // Real Database ID
       userId,
       platform: "facebook",
-      content: { text },
+      content: {
+        text,
+        mediaUrls: mediaUrls || [],
+      },
       scheduledAt,
     });
 
-    return new SuccessResponse("Post queued successfully", { data: { correlationId } }).send(res);
+    return new SuccessResponse("Post created and queued successfully", {
+      data: {
+        postId: post._id,
+        correlationId,
+      },
+    }).send(res);
   } catch (error) {
     logger.error("Failed to post to Facebook", error);
     return new ErrorResponse("Failed to post to Facebook", { status: 500 }).send(res);
   }
 };
+  

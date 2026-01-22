@@ -1,39 +1,13 @@
-// ============================================================================
-// FACEBOOK POSTING SERVICE - SKELETON WITH TODO COMMENTS
-// ============================================================================
-// File: src/services/posting/facebook.posting.service.ts
-// Purpose: Post content to Facebook Pages via Graph API
-// ============================================================================
-
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
-
-// ============================================================================
-// FACEBOOK API SPECIFICS
-// ============================================================================
-
-/*
- * Facebook posting via Graph API:
- * - Posts to Facebook PAGES (not personal profiles!)
- * - Uses Page Access Token (long-lived)
- * - Simpler than Instagram - direct posting
- * - Can post text-only, with photos, or with videos
- * 
- * API Docs: https://developers.facebook.com/docs/pages-api/posts
- * 
- * IMPORTANT: We post to the PAGE, not the user profile.
- * The pageId and pageAccessToken are stored in SocialAccountModel.
- */
+import axios from "axios";
 
 // ============================================================================
 // CONSTRAINTS
 // ============================================================================
 
 const FACEBOOK_CONSTRAINTS = {
-    MAX_CHARS: 63206,       // Very generous
-    MAX_PHOTOS: 10,         // Per single post
-    MAX_VIDEO_SIZE: 10_000_000_000,  // 10GB
-    MAX_VIDEO_DURATION: 14400  // 4 hours
+    MAX_CHARS: 63206,
 };
 
 // ============================================================================
@@ -48,103 +22,99 @@ export class FacebookPostingService extends BasePostingService {
     }
 
     async validateContent(payload: PostQueueMessage): Promise<string | null> {
-        // if (payload.content.text.length > FACEBOOK_CONSTRAINTS.MAX_CHARS) {
-        //   return `Text exceeds ${FACEBOOK_CONSTRAINTS.MAX_CHARS} characters`;
-        // }
+        if (payload.content.text.length > FACEBOOK_CONSTRAINTS.MAX_CHARS) {
+            return `Text exceeds ${FACEBOOK_CONSTRAINTS.MAX_CHARS} character limit`;
+        }
         return null;
     }
 
     async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
-        // Facebook can accept public URLs directly for photos
-        // For multiple photos, need to upload each separately
+        // Facebook can accept public URLs directly
         return mediaUrls;
     }
-
-    // ============================================================================
-    // CREATE POST
-    // ============================================================================
-
-    /*
-     * TODO: Implement Facebook posting
-     * 
-     * TEXT-ONLY POST:
-     * POST /{page-id}/feed
-     * - message: text content
-     * - access_token: page access token
-     * Returns: { id: "PAGE_ID_POST_ID" }
-     * 
-     * SINGLE PHOTO POST:
-     * POST /{page-id}/photos
-     * - url: public image URL (or source: multipart)
-     * - message: caption
-     * - access_token: page access token
-     * 
-     * MULTIPLE PHOTOS POST (complex!):
-     * 1. For each photo, POST /{page-id}/photos with published=false
-     *    Returns: { id: photo_id }
-     * 2. POST /{page-id}/feed with attached_media array
-     *    - attached_media: [{ media_fbid: photo_id1 }, { media_fbid: photo_id2 }]
-     *    - message: caption
-     * 
-     * VIDEO POST:
-     * POST /{page-id}/videos
-     * - file_url: public video URL
-     * - description: caption
-     * - access_token: page access token
-     * 
-     * Note: Videos are processed async, might need status check
-     */
 
     async createPost(
         payload: PostQueueMessage,
         credentials: any,
         mediaUrls: string[]
     ): Promise<PostResult> {
-        // TODO: Implement
+        const { platformId: pageId, auth } = credentials;
+        const { accessToken } = auth;
+        const hasMedia = mediaUrls && mediaUrls.length > 0;
 
-        // const { pageId, accessToken } = credentials;
-        // const hasMedia = mediaUrls.length > 0;
-        // 
-        // try {
-        //   if (!hasMedia) {
-        //     // Text-only post
-        //     const response = await axios.post(
-        //       `${this.graphApiUrl}/${pageId}/feed`,
-        //       {
-        //         message: payload.content.text,
-        //         access_token: accessToken
-        //       }
-        //     );
-        //     return {
-        //       success: true,
-        //       platformPostId: response.data.id,
-        //       platformPostUrl: `https://facebook.com/${response.data.id}`
-        //     };
-        //   } else if (mediaUrls.length === 1 && this.isImage(mediaUrls[0])) {
-        //     // Single photo
-        //     const response = await axios.post(
-        //       `${this.graphApiUrl}/${pageId}/photos`,
-        //       {
-        //         url: mediaUrls[0],
-        //         message: payload.content.text,
-        //         access_token: accessToken
-        //       }
-        //     );
-        //     return {
-        //       success: true,
-        //       platformPostId: response.data.id,
-        //       platformPostUrl: `https://facebook.com/${response.data.id}`
-        //     };
-        //   } else if (mediaUrls.length > 1) {
-        //     // Multiple photos
-        //     // ... upload each unpublished, then create feed post
-        //   }
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+        try {
+            let response;
 
-        console.log(`[STUB] Would post to Facebook: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+            if (!hasMedia) {
+                // Text-only post
+                response = await axios.post(
+                    `${this.graphApiUrl}/${pageId}/feed`,
+                    null,
+                    {
+                        params: {
+                            message: payload.content.text,
+                            access_token: accessToken
+                        }
+                    }
+                );
+            } else if (mediaUrls.length === 1) {
+                // Single photo
+                // Note: Facebook /photos returns 'id' and 'post_id'
+                response = await axios.post(
+                    `${this.graphApiUrl}/${pageId}/photos`,
+                    null,
+                    {
+                        params: {
+                            url: mediaUrls[0],
+                            caption: payload.content.text,
+                            access_token: accessToken
+                        }
+                    }
+                );
+            } else {
+                // Multiple photos (Carousel/Album style)
+                // 1. Upload each photo as unpublished
+                const mediaIds = [];
+                for (const url of mediaUrls) {
+                    const photoRes = await axios.post(
+                        `${this.graphApiUrl}/${pageId}/photos`,
+                        null,
+                        {
+                            params: {
+                                url,
+                                published: false,
+                                access_token: accessToken
+                            }
+                        }
+                    );
+                    mediaIds.push(photoRes.data.id);
+                }
+
+                // 2. Create feed post with attached media
+                const attachedMedia = mediaIds.map(id => ({ media_fbid: id }));
+                response = await axios.post(
+                    `${this.graphApiUrl}/${pageId}/feed`,
+                    null,
+                    {
+                        params: {
+                            message: payload.content.text,
+                            attached_media: JSON.stringify(attachedMedia),
+                            access_token: accessToken
+                        }
+                    }
+                );
+            }
+
+            const postId = response.data.post_id || response.data.id;
+
+            return {
+                success: true,
+                platformPostId: postId,
+                platformPostUrl: `https://www.facebook.com/${postId}`
+            };
+        } catch (error: any) {
+            return this.handleError(error);
+        }
     }
 }
 
