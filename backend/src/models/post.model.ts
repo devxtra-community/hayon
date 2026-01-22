@@ -1,4 +1,4 @@
-import mongoose, { Schema, Model, Types, Document } from "mongoose";
+    import mongoose, { Schema, Model, Types, Document } from "mongoose";
 import { Post, ALL_PLATFORMS, PlatformStatus } from "../interfaces/post.interface";
 
 export interface IPostDocument extends Post, Document {

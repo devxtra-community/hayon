@@ -6,6 +6,8 @@ import {
   updateBlueskyDetails,
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
+import * as postRepository from '../../repositories/post.repository';
+import {Types} from "mongoose"
 import { Producer } from "../../lib/queues/producer";
 
 export const connectBluesky = async (req: Request, res: Response) => {
@@ -128,24 +130,50 @@ export const refreshBlueskyProfile = async (req: Request, res: Response) => {
   }
 };
 
+
 export const postToBluesky = async (req: Request, res: Response) => {
   try {
-    if (!req.auth) {
-      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
-    }
+    // if (!req.auth) {
+    //   return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    // }
 
-    const { text, scheduledAt } = req.body;
-    const userId = req.auth.id;
 
-    const correlationId = await Producer.queueSocialPost({
-      postId: `bluesky-${Date.now()}`,
+
+
+    const { text, scheduledAt,mediaUrls } = req.body;
+    const userId = "6953e6e11caa1dc50b6bf5a6" // req.auth.id; 
+    const timezone = 'UTC';
+
+    const post = await postRepository.createPost({
+      userId: new Types.ObjectId(userId),
+      content: {
+        text,
+        mediaItems: mediaUrls?.map((url: string) => ({
+          s3Url: url,
+          s3Key: url.split("/").pop() || "unknown", // Temporary logic until media handling is fully ready
+          mimeType: "image/jpeg" // Default for now
+        })) || []
+      },
+      selectedPlatforms: ["bluesky"],
+      status: scheduledAt ? "SCHEDULED" : "PENDING",
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+      timezone: timezone || "UTC",
+      platformStatuses: [] // Will be initialized by the model's pre-save hook
+    })
+
+    const correlationId = Producer.queueSocialPost({
+       postId: post._id.toString(),
       userId,
       platform: "bluesky",
-      content: { text },
+      content: {
+        text,
+        mediaUrls: mediaUrls || []
+      },
       scheduledAt,
-    });
+    })
+   
 
-    return new SuccessResponse("Post queued successfully", { data: { correlationId } }).send(res);
+    return new SuccessResponse("Post queued successfully",{data:post}).send(res);
   } catch (error) {
     logger.error("Failed to post to Bluesky", error);
     return new ErrorResponse("Failed to post to Bluesky", { status: 500 }).send(res);

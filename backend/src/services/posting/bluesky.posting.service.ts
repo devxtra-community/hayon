@@ -63,18 +63,18 @@ export class BlueskyPostingService extends BasePostingService {
      */
 
     async validateContent(payload: PostQueueMessage): Promise<string | null> {
-        // if (payload.content.text.length > BLUESKY_CONSTRAINTS.MAX_CHARS) {
-        //   return `Text exceeds ${BLUESKY_CONSTRAINTS.MAX_CHARS} character limit`;
-        // }
-        // 
-        // const mediaCount = payload.content.mediaUrls?.length || 0;
-        // if (mediaCount > BLUESKY_CONSTRAINTS.MAX_IMAGES) {
-        //   return `Maximum ${BLUESKY_CONSTRAINTS.MAX_IMAGES} images allowed`;
-        // }
-        // 
-        // return null;
-
+        if (payload.content.text.length > BLUESKY_CONSTRAINTS.MAX_CHARS) {
+          return `Text exceeds ${BLUESKY_CONSTRAINTS.MAX_CHARS} character limit`;
+        }
+        
+        const mediaCount = payload.content.mediaUrls?.length || 0;
+        if (mediaCount > BLUESKY_CONSTRAINTS.MAX_IMAGES) {
+          return `Maximum ${BLUESKY_CONSTRAINTS.MAX_IMAGES} images allowed`;
+        }
+        
         return null;
+
+        // return null;
     }
 
     // ============================================================================
@@ -150,50 +150,62 @@ export class BlueskyPostingService extends BasePostingService {
     ): Promise<PostResult> {
         // TODO: Implement actual Bluesky posting
 
-        // try {
-        //   const agent = new AtpAgent({ service: "https://bsky.social" });
-        //   await agent.resumeSession(credentials.session);
-        //   
-        //   // Build post record
-        //   const postRecord: any = {
-        //     $type: "app.bsky.feed.post",
-        //     text: payload.content.text,
-        //     createdAt: new Date().toISOString()
-        //   };
-        //   
-        //   // Add images embed if media exists
-        //   if (mediaBlobs.length > 0) {
-        //     postRecord.embed = {
-        //       $type: "app.bsky.embed.images",
-        //       images: mediaBlobs.map(blob => ({
-        //         alt: "", // TODO: Add alt text support
-        //         image: blob
-        //       }))
-        //     };
-        //   }
-        //   
-        //   // Detect and add facets (links, mentions, hashtags)
-        //   // const rt = new RichText({ text: payload.content.text });
-        //   // await rt.detectFacets(agent);
-        //   // postRecord.facets = rt.facets;
-        //   
-        //   // Create the post
-        //   const { data } = await agent.post(postRecord);
-        //   
-        //   // Construct post URL
-        //   const postUrl = `https://bsky.app/profile/${credentials.handle}/post/${data.uri.split('/').pop()}`;
-        //   
-        //   return {
-        //     success: true,
-        //     platformPostId: data.uri,
-        //     platformPostUrl: postUrl
-        //   };
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+        console.log("entred to createPost of bluesky")
+        try {
+          const agent = new AtpAgent({ service: "https://bsky.social" });
+          // console.log("resumeing session :",credentials)
+          const session = {
+  did: credentials.did,
+  handle: credentials.handle,
+  accessJwt: credentials.auth.accessJwt,
+  refreshJwt: credentials.auth.refreshJwt,
+  active: true,
+};
+        await  agent.resumeSession(session)
+          // Build post record
+          const postRecord: any = {
+            $type: "app.bsky.feed.post",
+            text: payload.content.text,
+            createdAt: new Date().toISOString()
+          };
 
-        console.log(`[STUB] Would post to Bluesky: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+          console.log("post record :",postRecord)
+          
+          // Add images embed if media exists
+          if (mediaBlobs.length > 0) {
+            postRecord.embed = {
+              $type: "app.bsky.embed.images",
+              images: mediaBlobs.map(blob => ({
+                alt: "", // TODO: Add alt text support
+                image: blob
+              }))
+            };
+          }
+          
+          // Detect and add facets (links, mentions, hashtags)
+          // const rt = new RichText({ text: payload.content.text });
+          // await rt.detectFacets(agent);
+          // postRecord.facets = rt.facets;
+          
+          // Create the post
+          const  data  = await agent.post(postRecord);
+          console.log("this is the data ::",data)
+          
+          // Construct post URL
+          const postUrl = `https://bsky.app/profile/${credentials.handle}/post/${data.uri.split('/').pop()}`;
+          
+          return {
+            success: true,
+            platformPostId: data.uri,
+            platformPostUrl: postUrl
+          };
+        } catch (error: any) {
+          console.log("EEEEEEEEEEEEEEEEEEEEEu: ",error)
+          return this.handleError(error);
+        }
+
+        // console.log(`[STUB] Would post to Bluesky: ${payload.content.text.substring(0, 50)}...`);
+        // return { success: false, error: "Not implemented" };
     }
 }
 

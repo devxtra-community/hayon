@@ -77,11 +77,15 @@ export abstract class BasePostingService {
         return { success: false, error: validationError };
       }
 
+      // console.log("validtion error", validationError)
+
       // Step 2: Upload media if present
       let mediaIds: string[] = [];
       if (payload.content.mediaUrls?.length) {
         mediaIds = await this.uploadMedia(payload.content.mediaUrls, credentials);
       }
+
+      console.log("this is media ids",mediaIds)
 
       // Step 3: Create the post
       const result = await this.createPost(payload, credentials, mediaIds);
@@ -93,8 +97,7 @@ export abstract class BasePostingService {
     } catch (error: any) {
       return this.handleError(error);
     }
-
-    return { success: false, error: "Not implemented" };
+    // return { success: false, error: "Not implemented" };
   }
 
   // ============================================================================

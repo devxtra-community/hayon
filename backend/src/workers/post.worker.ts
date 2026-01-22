@@ -139,10 +139,12 @@ export class PostWorker {
       // TODO: STEP 3 - Update status to processing
       // ============================================================================
 
+      
       await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
         status: "processing",
         lastAttemptAt: new Date()
       });
+      console.log('changed to processing')
 
       // ============================================================================
       // TODO: STEP 4 - Get credentials and posting service
@@ -152,13 +154,14 @@ export class PostWorker {
       const credentials = await getCredentialsForPlatform(payload.userId, payload.platform);
       const service = getPostingService(payload.platform);
 
-
+      // console.log('got credentials :', credentials)
       // ============================================================================
       // TODO: STEP 5 - Execute the post
       // ============================================================================
 
 
       const result = await service.execute(payload, credentials);
+      // console.log("this is the result :",result)
 
       if (result.success) {
         await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
