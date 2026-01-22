@@ -7,6 +7,9 @@ import {
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
 import logger from "../../utils/logger";
+import { createPost } from "../../repositories/post.repository";
+import { Types } from "mongoose";
+import { Producer } from "../../lib/queues/producer";
 
 export const connectMastodon = (req: Request, res: Response) => {
   try {
@@ -119,10 +122,7 @@ export const postToMastodon = async (req: Request, res: Response) => {
     const userId = req.auth.id;
 
     // 1. Create a persistent Post record in MongoDB
-    const postRepository = await import("../../repositories/post.repository");
-    const { Types } = await import("mongoose");
-
-    const post = await postRepository.createPost({
+    const post = await createPost({
       userId: new Types.ObjectId(userId),
       content: {
         text,
@@ -136,12 +136,10 @@ export const postToMastodon = async (req: Request, res: Response) => {
       status: scheduledAt ? "SCHEDULED" : "PENDING",
       scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       timezone: timezone || "UTC",
-      platformStatuses: [] // Will be initialized by the model's pre-save hook
+      platformStatuses: []
     });
 
     // 2. Queue the message in RabbitMQ with the real Post ID
-    const { Producer } = await import("../../lib/queues/producer");
-
     const correlationId = await Producer.queueSocialPost({
       postId: post._id.toString(),
       userId,

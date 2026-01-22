@@ -6,8 +6,11 @@ import {
   updateTumblerDetails,
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
+import * as postRepository from "../../repositories/post.repository";
 import { ENV } from "../../config/env";
 import { getErrorMessage } from "../../utils/errorHandler";
+import { Producer } from "../../lib/queues/producer";
+import { Types } from "mongoose";
 
 export const connectTumblr = async (req: Request, res: Response) => {
   try {
@@ -40,10 +43,11 @@ export const tumblrCallback = async (req: Request, res: Response) => {
       oauth_verifier,
     );
 
-    const { handle, avatar } = await tumblrService.getUserInfo(accessToken, accessSecret);
+    const { handle, blogHostname, avatar } = await tumblrService.getUserInfo(accessToken, accessSecret);
 
     await updateTumblerDetails(userId, {
       connected: true,
+      blogHostname,
       auth: {
         oauthToken: accessToken,
         oauthTokenSecret: accessSecret,
@@ -109,10 +113,11 @@ export const refreshTumblrProfile = async (req: Request, res: Response) => {
     }
 
     const { oauthToken, oauthTokenSecret } = tumblrAuth;
-    const { handle, avatar } = await tumblrService.getUserInfo(oauthToken, oauthTokenSecret);
+    const { handle, blogHostname, avatar } = await tumblrService.getUserInfo(oauthToken, oauthTokenSecret);
 
     await updateTumblerDetails(userId, {
       connected: true,
+      blogHostname,
       profile: {
         handle,
         avatar,
@@ -132,20 +137,62 @@ export const postToTumblr = async (req: Request, res: Response) => {
       return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
     }
 
-    const { text, scheduledAt } = req.body;
+    const { text, mediaUrls, scheduledAt, timezone } = req.body;
     const userId = req.auth.id;
 
-    const { Producer } = await import("../../lib/queues/producer");
+    // 0. Check if Tumblr is connected
+    const socialAccount = await findPlatformAccountByUserId(userId);
+    if (!socialAccount?.tumblr?.connected) {
+      return new ErrorResponse("Tumblr account not connected", { status: 400 }).send(res);
+    }
 
+    // 1. Create a persistent Post record in MongoDB
+    const post = await postRepository.createPost({
+      userId: new Types.ObjectId(userId),
+      content: {
+        text,
+        mediaItems: (mediaUrls || []).map((url: string) => ({
+          s3Url: url,
+          s3Key: "unknown", // Simplified for testing
+          mimeType: "image/jpeg",
+          originalFilename: "uploaded_file",
+          sizeBytes: 0,
+        })),
+      },
+      selectedPlatforms: ["tumblr"],
+      platformStatuses: [
+        {
+          platform: "tumblr",
+          status: "pending",
+          attemptCount: 0,
+        },
+      ],
+      status: scheduledAt ? "SCHEDULED" : "PENDING",
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+      timezone: timezone || "UTC",
+      metadata: {
+        source: "web",
+      },
+    });
+
+    // 2. Queue the message in RabbitMQ with the real DB ID
     const correlationId = await Producer.queueSocialPost({
-      postId: `tumblr-${Date.now()}`,
+      postId: post._id!.toString(), // Real Database ID
       userId,
       platform: "tumblr",
-      content: { text },
+      content: {
+        text,
+        mediaUrls: mediaUrls || [],
+      },
       scheduledAt,
     });
 
-    return new SuccessResponse("Post queued successfully", { data: { correlationId } }).send(res);
+    return new SuccessResponse("Post created and queued successfully", {
+      data: {
+        postId: post._id,
+        correlationId,
+      },
+    }).send(res);
   } catch (error) {
     logger.error("Failed to post to Tumblr", error);
     return new ErrorResponse("Failed to post to Tumblr", { status: 500 }).send(res);

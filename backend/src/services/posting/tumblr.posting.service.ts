@@ -1,37 +1,7 @@
-// ============================================================================
-// TUMBLR POSTING SERVICE - SKELETON WITH TODO COMMENTS
-// ============================================================================
-// File: src/services/posting/tumblr.posting.service.ts
-// Purpose: Post content to Tumblr blogs
-// ============================================================================
-
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
-
-// ============================================================================
-// TUMBLR API SPECIFICS
-// ============================================================================
-
-/*
- * Tumblr uses OAuth 1.0a (not OAuth 2.0!):
- * - Requires signing each request
- * - Uses oauth_token and oauth_token_secret
- * - Similar pattern to old Twitter API
- * 
- * API Docs: https://www.tumblr.com/docs/en/api/v2
- * 
- * Endpoint: POST /v2/blog/{blog-identifier}/post
- * 
- * Post Types:
- * - text: Text/HTML content
- * - photo: Image posts
- * - video: Video posts
- * - link: Link sharing
- * - audio: Audio posts
- * - chat: Chat/dialogue format
- * 
- * IMPORTANT: Use existing tumblrOAuth utility for signing!
- */
+import { tumblrOAuth } from "../../utils/tumblrOAuth";
+import axios from "axios";
 
 // ============================================================================
 // CONSTRAINTS
@@ -41,8 +11,6 @@ const TUMBLR_CONSTRAINTS = {
     MAX_CHARS: 4096,
     MAX_PHOTOS: 10,
     MAX_PHOTO_SIZE: 20_000_000,  // 20MB
-    MAX_VIDEO_SIZE: 500_000_000, // 500MB
-    MAX_VIDEO_DURATION: 600      // 10 minutes
 };
 
 // ============================================================================
@@ -57,118 +25,80 @@ export class TumblrPostingService extends BasePostingService {
     }
 
     async validateContent(payload: PostQueueMessage): Promise<string | null> {
-        // if (payload.content.text.length > TUMBLR_CONSTRAINTS.MAX_CHARS) {
-        //   return `Text exceeds ${TUMBLR_CONSTRAINTS.MAX_CHARS} characters`;
-        // }
-        // 
-        // const mediaCount = payload.content.mediaUrls?.length || 0;
-        // if (mediaCount > TUMBLR_CONSTRAINTS.MAX_PHOTOS) {
-        //   return `Maximum ${TUMBLR_CONSTRAINTS.MAX_PHOTOS} photos allowed`;
-        // }
+        if (payload.content.text && payload.content.text.length > TUMBLR_CONSTRAINTS.MAX_CHARS) {
+            return `Text exceeds ${TUMBLR_CONSTRAINTS.MAX_CHARS} characters`;
+        }
+
+        const mediaCount = payload.content.mediaUrls?.length || 0;
+        if (mediaCount > TUMBLR_CONSTRAINTS.MAX_PHOTOS) {
+            return `Maximum ${TUMBLR_CONSTRAINTS.MAX_PHOTOS} photos allowed`;
+        }
 
         return null;
     }
 
     async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
-        // Tumblr accepts URLs directly in the post request
-        // No pre-upload needed
+        // Tumblr accepts URLs directly in the NPF content block
         return mediaUrls;
     }
-
-    // ============================================================================
-    // CREATE POST
-    // ============================================================================
-
-    /*
-     * TODO: Implement Tumblr posting
-     * 
-     * Endpoint: POST /v2/blog/{blog-identifier}/post
-     * 
-     * For NPF (Neue Post Format) - recommended:
-     * Body:
-     * {
-     *   content: [
-     *     { type: "text", text: "Hello world!", formatting: [...] },
-     *     { type: "image", media: [{ url: "..." }] }
-     *   ],
-     *   tags: "tag1,tag2"
-     * }
-     * 
-     * For Legacy (simpler):
-     * Body:
-     * {
-     *   type: "text",
-     *   body: "<p>HTML content</p>",
-     *   tags: "tag1,tag2"
-     * }
-     * 
-     * For Photo Post:
-     * {
-     *   type: "photo",
-     *   caption: "Caption text",
-     *   source: "https://url-to-image",  // OR data: base64
-     *   tags: "tag1,tag2"
-     * }
-     * 
-     * Returns: { meta: { status: 201 }, response: { id: "post_id" } }
-     * 
-     * OAuth 1.0a Signing:
-     * - Use tumblrOAuth from utils/tumblrOAuth
-     * - Sign request with consumer key/secret + oauth token/secret
-     */
 
     async createPost(
         payload: PostQueueMessage,
         credentials: any,
         mediaUrls: string[]
     ): Promise<PostResult> {
-        // TODO: Implement using tumblrOAuth for signing
+        const { blogHostname, auth } = credentials;
+        const { oauthToken, oauthTokenSecret } = auth;
 
-        // const { blogHostname, oauthToken, oauthTokenSecret } = credentials;
-        // 
-        // try {
-        //   const hasMedia = mediaUrls.length > 0;
-        //   
-        //   const requestData = {
-        //     url: `${this.apiUrl}/blog/${blogHostname}/post`,
-        //     method: "POST",
-        //     data: hasMedia ? {
-        //       type: "photo",
-        //       caption: payload.content.text,
-        //       source: mediaUrls[0]  // For single photo
-        //       // For multiple: source0, source1, etc.
-        //     } : {
-        //       type: "text",
-        //       body: payload.content.text
-        //     }
-        //   };
-        //   
-        //   // Sign request with OAuth
-        //   const headers = tumblrOAuth.toHeader(
-        //     tumblrOAuth.authorize(requestData, {
-        //       key: oauthToken,
-        //       secret: oauthTokenSecret
-        //     })
-        //   );
-        //   
-        //   const response = await axios.post(
-        //     requestData.url,
-        //     requestData.data,
-        //     { headers }
-        //   );
-        //   
-        //   const postId = response.data.response.id;
-        //   return {
-        //     success: true,
-        //     platformPostId: postId.toString(),
-        //     platformPostUrl: `https://${blogHostname}.tumblr.com/post/${postId}`
-        //   };
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+        try {
+            // Using NPF (Neue Post Format) for modern posting
+            const content: any[] = [];
 
-        console.log(`[STUB] Would post to Tumblr: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+            if (payload.content.text) {
+                content.push({
+                    type: "text",
+                    text: payload.content.text
+                });
+            }
+
+            if (mediaUrls && mediaUrls.length > 0) {
+                mediaUrls.forEach(url => {
+                    content.push({
+                        type: "image",
+                        media: [{ url }]
+                    });
+                });
+            }
+
+            const requestData = {
+                url: `${this.apiUrl}/blog/${blogHostname}/posts`,
+                method: "POST"
+            };
+
+            // Sign request with OAuth 1.0a
+            // IMPORTANT: Do NOT include JSON body in authorize() if it's not form-encoded parameters
+            const headers = tumblrOAuth.toHeader(
+                tumblrOAuth.authorize(requestData, {
+                    key: oauthToken,
+                    secret: oauthTokenSecret
+                })
+            );
+
+            const response = await axios.post(
+                requestData.url,
+                { content }, // This is the JSON body, NOT included in signature
+                { headers: { ...headers, "Content-Type": "application/json" } }
+            );
+
+            const postId = response.data.response.id_string || response.data.response.id;
+            return {
+                success: true,
+                platformPostId: postId.toString(),
+                platformPostUrl: `https://www.tumblr.com/posts/${postId}`
+            };
+        } catch (error: any) {
+            return this.handleError(error);
+        }
     }
 }
 

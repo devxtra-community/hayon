@@ -34,15 +34,13 @@ export interface PostResult {
 // ABSTRACT BASE CLASS
 // ============================================================================
 
-/*
- * TODO: Implement this abstract class
- * 
+/**
  * Each platform implementation extends this and implements:
  * - post(): Main posting logic
  * - uploadMedia(): Platform-specific media upload
  * - validateContent(): Pre-flight content validation
  * 
- * The worker will call these methods polymorphically.
+ * The worker calls these methods polymorphically.
  */
 
 export abstract class BasePostingService {
@@ -68,7 +66,6 @@ export abstract class BasePostingService {
    */
 
   async execute(payload: PostQueueMessage, credentials: any): Promise<PostResult> {
-    // TODO: Implement template method
 
     try {
       // Step 1: Validate content before posting
@@ -86,8 +83,12 @@ export abstract class BasePostingService {
       // Step 3: Create the post
       const result = await this.createPost(payload, credentials, mediaIds);
 
-      // Step 4: Log success
-      console.log(`✅ Posted to ${this.platformName}: ${result.platformPostUrl}`);
+      // Step 4: Log result
+      if (result.success) {
+        console.log(`✅ Posted to ${this.platformName}: ${result.platformPostUrl}`);
+      } else {
+        console.log(`❌ Failed to post to ${this.platformName}: ${result.error}`);
+      }
 
       return result;
     } catch (error: any) {

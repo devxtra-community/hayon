@@ -6,12 +6,11 @@ import { ENV } from "../../config/env";
 
 export class TumblrService {
   async getRequestToken(userId: string) {
+    const callbackUrl = `${ENV.APP.BACKEND_URL}/api/platform/tumblr/callback?state=${userId}`;
     const requestData = {
-      url: "https://www.tumblr.com/oauth/request_token",
+      url: `https://www.tumblr.com/oauth/request_token?oauth_callback=${encodeURIComponent(callbackUrl)}`,
       method: "POST",
-      data: {
-        oauth_callback: `${ENV.APP.BACKEND_URL}/api/platform/tumblr/callback?state=${userId}`,
-      },
+      data: { oauth_callback: callbackUrl },
     };
 
     const headers = tumblrOAuth.toHeader(tumblrOAuth.authorize(requestData)) as AxiosRequestHeaders;
@@ -78,15 +77,20 @@ export class TumblrService {
     });
 
     const tumblrUsername: string = userRes.data.response.user.name;
-    const avatarUrl = `https://api.tumblr.com/v2/blog/${tumblrUsername}.tumblr.com/avatar/512`;
+    const blogs = userRes.data.response.user.blogs;
+    const primaryBlog = blogs.find((b: any) => b.primary === true) || blogs[0];
+    const blogHostname = primaryBlog.name; // This is the identifier used in API paths
+
+    const avatarUrl = `https://api.tumblr.com/v2/blog/${blogHostname}.tumblr.com/avatar/512`;
 
     return {
       handle: tumblrUsername,
+      blogHostname,
       avatar: avatarUrl,
     };
   }
 }
 
-export const createPostServiceTumbler = () => {};
+export const createPostServiceTumbler = () => { };
 
 export const tumblrService = new TumblrService();
