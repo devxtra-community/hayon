@@ -1,9 +1,8 @@
 import { Channel, ConsumeMessage } from "amqplib";
 import { PostQueueMessage } from "../lib/queues/types";
 import { handleDeadLetter } from "../lib/queues/dlx.setup";
-// TODO: Uncomment when implemented
 import { getPostingService, getCredentialsForPlatform, validateCredentials } from "../services/posting";
-import * as postRepository from "../repositories/post.repository";
+import { findById, updatePlatformStatus } from "../repositories/post.repository";
 
 // ============================================================================
 // WORKER FLOW OVERVIEW
@@ -72,12 +71,10 @@ export class PostWorker {
     try {
       console.log(`📥 Processing: ${payload.postId} for ${payload.platform}`);
 
-      // ============================================================================
-      // TODO: STEP 1 - Check if post was cancelled
-      // ============================================================================
+      // 1. Check if post was cancelled
 
 
-      const post = await postRepository.findById(payload.postId);
+      const post = await findById(payload.postId);
       if (!post) {
         console.log(`⚠️ Post ${payload.postId} not found, skipping`);
         channel.ack(msg);
@@ -100,7 +97,7 @@ export class PostWorker {
        */
 
       const platformStatus = post.platformStatuses.find(
-        (p) => p.platform === payload.platform
+        (p: any) => p.platform === payload.platform
       );
 
       if (platformStatus?.status === "completed") {
@@ -112,9 +109,7 @@ export class PostWorker {
       }
 
 
-      // ============================================================================
-      // TODO: STEP 2 - Validate credentials
-      // ============================================================================
+      // 2. Validate credentials
 
       const credentialCheck = await validateCredentials(
         payload.userId,
@@ -124,7 +119,7 @@ export class PostWorker {
       if (!credentialCheck.valid) {
         console.log(`❌ Credentials invalid: ${credentialCheck.error}`);
 
-        await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+        await updatePlatformStatus(payload.postId, payload.platform, {
           status: "failed",
           error: credentialCheck.error,
           lastAttemptAt: new Date()
@@ -135,33 +130,27 @@ export class PostWorker {
         return;
       }
 
-      // ============================================================================
-      // TODO: STEP 3 - Update status to processing
-      // ============================================================================
+      // 3. Update status to processing
 
-      await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+      await updatePlatformStatus(payload.postId, payload.platform, {
         status: "processing",
         lastAttemptAt: new Date()
       });
 
-      // ============================================================================
-      // TODO: STEP 4 - Get credentials and posting service
-      // ============================================================================
+      // 4. Get credentials and posting service
 
 
       const credentials = await getCredentialsForPlatform(payload.userId, payload.platform);
       const service = getPostingService(payload.platform);
 
 
-      // ============================================================================
-      // TODO: STEP 5 - Execute the post
-      // ============================================================================
+      // 5. Execute the post
 
 
       const result = await service.execute(payload, credentials);
 
       if (result.success) {
-        await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+        await updatePlatformStatus(payload.postId, payload.platform, {
           status: "completed",
           platformPostId: result.platformPostId,
           platformPostUrl: result.platformPostUrl,
@@ -176,7 +165,7 @@ export class PostWorker {
           throw new Error(`Rate limited, retry after ${result.retryAfter}s`);
         }
 
-        await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+        await updatePlatformStatus(payload.postId, payload.platform, {
           status: "failed",
           error: result.error,
           lastAttemptAt: new Date()
@@ -191,10 +180,10 @@ export class PostWorker {
       console.error(`❌ Failed to process message:`, error.message);
 
       // Fetch post again to get latest attemptCount
-      const post = await postRepository.findById(payload.postId);
+      const post = await findById(payload.postId);
 
       const platformStatus = post?.platformStatuses.find(
-        (p) => p.platform === payload.platform
+        (p: any) => p.platform === payload.platform
       );
 
       const attempts = platformStatus?.attemptCount ?? 0;
@@ -224,7 +213,7 @@ export class PostWorker {
         `🪦 Permanent failure for ${payload.postId} / ${payload.platform}`
       );
 
-      await postRepository.updatePlatformStatus(payload.postId, payload.platform, {
+      await updatePlatformStatus(payload.postId, payload.platform, {
         status: "failed",
         error: error.message,
         lastAttemptAt: new Date()

@@ -93,8 +93,7 @@ export async function handleDeadLetter(options: DeadLetterOptions): Promise<void
 
         console.log(`🅿️ Message parked after ${retryCount} failed attempts`);
 
-        // TODO: Update post status in DB to FAILED
-        // TODO: Send notification to user about permanent failure
+
     }
 }
 
