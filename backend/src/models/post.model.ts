@@ -156,21 +156,3 @@ postSchema.pre<IPostDocument>("save", function (next) {
 const PostModel: Model<IPostDocument> = mongoose.model<IPostDocument>("Post", postSchema);
 
 export default PostModel;
-
-// ============================================================================
-// TODO: HOOKS (PRE-SAVE MIDDLEWARE)
-// ============================================================================
-
-/*
- * Pre-save hook to:
- * 
- * 1. Initialize platformStatuses array based on selectedPlatforms
- *    - When post is first created, create a platformPostStatus entry
- *      for each platform in selectedPlatforms with status: "pending"
- * 
- * 2. Update overall status based on platformStatuses
- *    - If all platforms completed → status = "COMPLETED"
- *    - If some completed, some failed → status = "PARTIAL_SUCCESS"
- *    - If all failed → status = "FAILED"
- *    - If any processing → status = "PROCESSING"
- */

@@ -129,30 +129,30 @@ export const cancelPost = async (postId: string, userId: string) => {
  */
 
 export const findByUserId = async (
-    userId: string,
-    options: {
-        page?: number;
-        limit?: number;
-        status?: string;
-        sortBy?: string;
-        sortOrder?: "asc" | "desc";
-    }
+  userId: string,
+  options: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  }
 ) => {
-    // TODO: Implement with proper pagination
-    // const { page = 1, limit = 20, status, sortBy = "createdAt", sortOrder = "desc" } = options;
-    // 
-    // const query: any = { userId: new Types.ObjectId(userId) };
-    // if (status) query.status = status;
-    // 
-    // const [posts, total] = await Promise.all([
-    //   PostModel.find(query)
-    //     .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
-    //     .skip((page - 1) * limit)
-    //     .limit(limit),
-    //   PostModel.countDocuments(query)
-    // ]);
-    // 
-    // return { posts, total };
+  // TODO: Implement with proper pagination
+  // const { page = 1, limit = 20, status, sortBy = "createdAt", sortOrder = "desc" } = options;
+  // 
+  // const query: any = { userId: new Types.ObjectId(userId) };
+  // if (status) query.status = status;
+  // 
+  // const [posts, total] = await Promise.all([
+  //   PostModel.find(query)
+  //     .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
+  //     .skip((page - 1) * limit)
+  //     .limit(limit),
+  //   PostModel.countDocuments(query)
+  // ]);
+  // 
+  // return { posts, total };
 };
 
 // ============================================================================
@@ -166,66 +166,11 @@ export const findByUserId = async (
  */
 
 export const findByCorrelationId = async (correlationId: string) => {
-    // return await PostModel.findOne({ correlationId });
-};
-
-// ============================================================================
-// UPDATE POST STATUS
-// ============================================================================
-
-/*
- * TODO: updatePostStatus
- * 
- * Updates the overall post status.
- */
-
-export const updatePostStatus = async (postId: string, status: string) => {
-    // return await PostModel.findByIdAndUpdate(
-    //   postId,
-    //   { status },
-    //   { new: true }
-    // );
+  // return await PostModel.findOne({ correlationId });
 };
 
 
-// ============================================================================
-// RECALCULATE POST STATUS
-// ============================================================================
 
-/*
- * TODO: recalculatePostStatus
- * 
- * Calculates overall status based on individual platform statuses.
- * Called after each platform status update.
- * 
- * Logic:
- * - All completed → COMPLETED
- * - Some completed, some failed → PARTIAL_SUCCESS
- * - All failed → FAILED
- * - Any processing → PROCESSING
- * - All pending → PENDING/SCHEDULED
- */
-
-export const recalculatePostStatus = async (postId: string) => {
-    // const post = await PostModel.findById(postId);
-    // if (!post) return;
-    //
-    // const statuses = post.platformStatuses.map(ps => ps.status);
-    // const allCompleted = statuses.every(s => s === "completed");
-    // const allFailed = statuses.every(s => s === "failed");
-    // const hasCompleted = statuses.some(s => s === "completed");
-    // const hasFailed = statuses.some(s => s === "failed");
-    // const hasProcessing = statuses.some(s => s === "processing");
-    //
-    // let newStatus;
-    // if (allCompleted) newStatus = "COMPLETED";
-    // else if (allFailed) newStatus = "FAILED";
-    // else if (hasCompleted && hasFailed) newStatus = "PARTIAL_SUCCESS";
-    // else if (hasProcessing) newStatus = "PROCESSING";
-    // else newStatus = post.scheduledAt ? "SCHEDULED" : "PENDING";
-    //
-    // await PostModel.findByIdAndUpdate(postId, { status: newStatus });
-};
 
 // ============================================================================
 // FIND SCHEDULED POSTS DUE
@@ -242,10 +187,10 @@ export const recalculatePostStatus = async (postId: string) => {
  */
 
 export const findScheduledPostsDue = async () => {
-    // return await PostModel.find({
-    //   status: "SCHEDULED",
-    //   scheduledAt: { $lte: new Date() }
-    // });
+  // return await PostModel.find({
+  //   status: "SCHEDULED",
+  //   scheduledAt: { $lte: new Date() }
+  // });
 };
 
 // ============================================================================
@@ -260,8 +205,8 @@ export const findScheduledPostsDue = async () => {
  */
 
 export const findPostsWithFailedPlatforms = async (maxAttempts: number = 3) => {
-    // return await PostModel.find({
-    //   "platformStatuses.status": "failed",
-    //   "platformStatuses.attemptCount": { $lt: maxAttempts }
-    // });
+  // return await PostModel.find({
+  //   "platformStatuses.status": "failed",
+  //   "platformStatuses.attemptCount": { $lt: maxAttempts }
+  // });
 };
