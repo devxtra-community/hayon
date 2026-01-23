@@ -116,53 +116,86 @@ export class ThreadsPostingService extends BasePostingService {
         credentials: any,
         mediaUrls: string[]
     ): Promise<PostResult> {
-        // TODO: Implement similar to Instagram
+        const { threadsUserId, accessToken } = credentials;
+        const axios = require('axios');
+        const hasMedia = mediaUrls.length > 0;
 
-        // const { threadsUserId, accessToken } = credentials;
-        // const hasMedia = mediaUrls.length > 0;
-        // 
-        // try {
-        //   let containerId: string;
-        //   
-        //   if (!hasMedia) {
-        //     // Text-only post
-        //     const response = await axios.post(
-        //       `${this.graphApiUrl}/${threadsUserId}/threads`,
-        //       {
-        //         media_type: "TEXT",
-        //         text: payload.content.text,
-        //         access_token: accessToken
-        //       }
-        //     );
-        //     containerId = response.data.id;
-        //   } else if (mediaUrls.length === 1) {
-        //     // Single media
-        //     // ... similar to Instagram single image
-        //   } else {
-        //     // Carousel
-        //     // ... similar to Instagram carousel
-        //   }
-        //   
-        //   // Publish
-        //   const publishResponse = await axios.post(
-        //     `${this.graphApiUrl}/${threadsUserId}/threads_publish`,
-        //     {
-        //       creation_id: containerId,
-        //       access_token: accessToken
-        //     }
-        //   );
-        //   
-        //   return {
-        //     success: true,
-        //     platformPostId: publishResponse.data.id,
-        //     platformPostUrl: `https://threads.net/t/${publishResponse.data.id}`
-        //   };
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+        try {
+            let containerId: string;
 
-        console.log(`[STUB] Would post to Threads: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+            if (!hasMedia) {
+                // Text-only post
+                containerId = await this.createThreadsContainer(threadsUserId, accessToken, {
+                    media_type: "TEXT",
+                    text: payload.content.text
+                });
+            } else if (mediaUrls.length === 1) {
+                const isVideo = mediaUrls[0].toLowerCase().match(/\.(mp4|mov)$/);
+                containerId = await this.createThreadsContainer(threadsUserId, accessToken, {
+                    media_type: isVideo ? "VIDEO" : "IMAGE",
+                    [isVideo ? "video_url" : "image_url"]: mediaUrls[0],
+                    text: payload.content.text
+                });
+            } else {
+                // Carousel
+                containerId = await this.createThreadsCarousel(threadsUserId, accessToken, {
+                    mediaUrls,
+                    text: payload.content.text
+                });
+            }
+
+            // Threads also needs a wait for video processing if applicable
+            // For now, simple publish
+            const publishResponse = await axios.post(
+                `${this.graphApiUrl}/${threadsUserId}/threads_publish`,
+                {
+                    creation_id: containerId,
+                    access_token: accessToken
+                }
+            );
+
+            return {
+                success: true,
+                platformPostId: publishResponse.data.id,
+                platformPostUrl: `https://threads.net/t/${publishResponse.data.id}`
+            };
+        } catch (error: any) {
+            console.error("Threads post creation failed:", error.response?.data || error.message);
+            return this.handleError(error);
+        }
+    }
+
+    private async createThreadsContainer(threadsUserId: string, accessToken: string, data: any): Promise<string> {
+        const axios = require('axios');
+        const response = await axios.post(`${this.graphApiUrl}/${threadsUserId}/threads`, {
+            ...data,
+            access_token: accessToken
+        });
+        return response.data.id;
+    }
+
+    private async createThreadsCarousel(threadsUserId: string, accessToken: string, { mediaUrls, text }: any): Promise<string> {
+        const axios = require('axios');
+        const childIds: string[] = [];
+
+        for (const url of mediaUrls) {
+            const isVideo = url.toLowerCase().match(/\.(mp4|mov)$/);
+            const res = await axios.post(`${this.graphApiUrl}/${threadsUserId}/threads`, {
+                media_type: isVideo ? "VIDEO" : "IMAGE",
+                [isVideo ? "video_url" : "image_url"]: url,
+                is_carousel_item: true,
+                access_token: accessToken
+            });
+            childIds.push(res.data.id);
+        }
+
+        const response = await axios.post(`${this.graphApiUrl}/${threadsUserId}/threads`, {
+            media_type: "CAROUSEL",
+            children: childIds,
+            text: text,
+            access_token: accessToken
+        });
+        return response.data.id;
     }
 }
 

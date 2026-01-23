@@ -35,11 +35,11 @@ import axios from "axios";
 // ============================================================================
 
 const MASTODON_CONSTRAINTS = {
-    MAX_CHARS: 500,           // Default, some instances allow more
-    MAX_MEDIA: 4,
-    MAX_IMAGE_SIZE: 10_000_000,  // 10MB
-    MAX_VIDEO_SIZE: 40_000_000,  // 40MB
-    SUPPORTED_TYPES: ["image/jpeg", "image/png", "image/gif", "video/webm", "video/mp4"]
+  MAX_CHARS: 500,           // Default, some instances allow more
+  MAX_MEDIA: 4,
+  MAX_IMAGE_SIZE: 10_000_000,  // 10MB
+  MAX_VIDEO_SIZE: 40_000_000,  // 40MB
+  SUPPORTED_TYPES: ["image/jpeg", "image/png", "image/gif", "video/webm", "video/mp4"]
 };
 
 // ============================================================================
@@ -47,133 +47,141 @@ const MASTODON_CONSTRAINTS = {
 // ============================================================================
 
 export class MastodonPostingService extends BasePostingService {
-    constructor() {
-        super("mastodon");
+  constructor() {
+    super("mastodon");
+  }
+
+  async validateContent(payload: PostQueueMessage): Promise<string | null> {
+    if (payload.content.text.length > MASTODON_CONSTRAINTS.MAX_CHARS) {
+      return `Text exceeds ${MASTODON_CONSTRAINTS.MAX_CHARS} characters`;
     }
 
-    async validateContent(payload: PostQueueMessage): Promise<string | null> {
-        if (payload.content.text.length > MASTODON_CONSTRAINTS.MAX_CHARS) {
-            return `Text exceeds ${MASTODON_CONSTRAINTS.MAX_CHARS} characters`;
-        }
-
-        const mediaCount = payload.content.mediaUrls?.length || 0;
-        if (mediaCount > MASTODON_CONSTRAINTS.MAX_MEDIA) {
-            return `Maximum ${MASTODON_CONSTRAINTS.MAX_MEDIA} media attachments allowed`;
-        }
-
-        return null;
+    const mediaCount = payload.content.mediaUrls?.length || 0;
+    if (mediaCount > MASTODON_CONSTRAINTS.MAX_MEDIA) {
+      return `Maximum ${MASTODON_CONSTRAINTS.MAX_MEDIA} media attachments allowed`;
     }
 
-    // ============================================================================
-    // UPLOAD MEDIA
-    // ============================================================================
+    return null;
+  }
 
-    /*
-     * TODO: Implement media upload
-     * 
-     * Mastodon requires uploading media BEFORE creating status:
-     * 
-     * POST {instanceUrl}/api/v2/media
-     * Headers: Authorization: Bearer {accessToken}
-     * Body: multipart/form-data with file
-     * 
-     * Returns: { id: "media_id", type: "image", url: "..." }
-     * 
-     * Flow:
-     * 1. Download media from S3 URL
-     * 2. POST to Mastodon with file buffer
-     * 3. Collect media IDs
-     * 4. Use media IDs in status creation
-     */
+  // ============================================================================
+  // UPLOAD MEDIA
+  // ============================================================================
 
-    async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
-        // TODO: Implement
+  /*
+   * TODO: Implement media upload
+   * 
+   * Mastodon requires uploading media BEFORE creating status:
+   * 
+   * POST {instanceUrl}/api/v2/media
+   * Headers: Authorization: Bearer {accessToken}
+   * Body: multipart/form-data with file
+   * 
+   * Returns: { id: "media_id", type: "image", url: "..." }
+   * 
+   * Flow:
+   * 1. Download media from S3 URL
+   * 2. POST to Mastodon with file buffer
+   * 3. Collect media IDs
+   * 4. Use media IDs in status creation
+   */
 
-const { instanceUrl, auth: { accessToken } } = credentials;
-        const mediaIds: string[] = [];
+  async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
+    const { instanceUrl, auth: { accessToken } } = credentials;
+    const mediaIds: string[] = [];
+    const axios = require('axios');
+    const FormData = require('form-data'); // Use form-data package
 
-        for (const url of mediaUrls) {
-            // Download from S3
-            const response = await axios.get(url, { responseType: "arraybuffer" });
-            const buffer = Buffer.from(response.data);
+    for (const url of mediaUrls) {
+      try {
+        // Download from S3
+        const response = await axios.get(url, { responseType: "arraybuffer" });
+        const buffer = Buffer.from(response.data);
 
-            // Create form data
-            const formData = new FormData();
-            const blob = new Blob([buffer], { type: response.headers["content-type"] as string });
-            formData.append("file", blob, "media");
+        // Create form data
+        const formData = new FormData();
+        formData.append("file", buffer, {
+          filename: "media",
+          contentType: response.headers["content-type"]
+        });
 
-            // Upload to Mastodon
-            const uploadRes = await axios.post(
-                `${instanceUrl}/api/v2/media`,
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                }
-            );
-
-            mediaIds.push(uploadRes.data.id);
-        }
-
-        return mediaIds;
-    }
-
-    // ============================================================================
-    // CREATE POST (Status)
-    // ============================================================================
-
-    /*
-     * TODO: Implement status creation
-     * 
-     * POST {instanceUrl}/api/v1/statuses
-     * Headers: Authorization: Bearer {accessToken}
-     * Body (JSON):
-     * {
-     *   status: "Text content",
-     *   media_ids: ["id1", "id2"],  // Optional
-     *   visibility: "public",       // public, unlisted, private, direct
-     *   spoiler_text: "CW text"     // Optional content warning
-     * }
-     * 
-     * Returns:
-     * {
-     *   id: "status_id",
-     *   url: "https://instance.social/@user/status_id",
-     *   ...
-     * }
-     */
-
-    async createPost(
-        payload: PostQueueMessage,
-        credentials: any,
-        mediaIds: string[]
-    ): Promise<PostResult> {
-const { instanceUrl, auth: { accessToken } } = credentials;
-        try {
-          const response = await axios.post(
-            `${instanceUrl}/api/v1/statuses`,
-            {
-              status: payload.content.text,
-              media_ids: mediaIds.length > 0 ? mediaIds : undefined,
-              visibility: "public"
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`
-              }
+        // Upload to Mastodon
+        const uploadRes = await axios.post(
+          `${instanceUrl}/api/v2/media`,
+          formData,
+          {
+            headers: {
+              ...formData.getHeaders(),
+              Authorization: `Bearer ${accessToken}`
             }
-          );
-          
-          return {
-            success: true,
-            platformPostId: response.data.id,
-            platformPostUrl: response.data.url
-          };
-        } catch (error: any) {
-          return this.handleError(error);
-        }
+          }
+        );
+
+        mediaIds.push(uploadRes.data.id);
+      } catch (error: any) {
+        console.error(`Error uploading media to Mastodon: ${error.response?.data || error.message}`);
+        throw error;
+      }
     }
+
+    return mediaIds;
+  }
+
+  // ============================================================================
+  // CREATE POST (Status)
+  // ============================================================================
+
+  /*
+   * TODO: Implement status creation
+   * 
+   * POST {instanceUrl}/api/v1/statuses
+   * Headers: Authorization: Bearer {accessToken}
+   * Body (JSON):
+   * {
+   *   status: "Text content",
+   *   media_ids: ["id1", "id2"],  // Optional
+   *   visibility: "public",       // public, unlisted, private, direct
+   *   spoiler_text: "CW text"     // Optional content warning
+   * }
+   * 
+   * Returns:
+   * {
+   *   id: "status_id",
+   *   url: "https://instance.social/@user/status_id",
+   *   ...
+   * }
+   */
+
+  async createPost(
+    payload: PostQueueMessage,
+    credentials: any,
+    mediaIds: string[]
+  ): Promise<PostResult> {
+    const { instanceUrl, auth: { accessToken } } = credentials;
+    try {
+      const response = await axios.post(
+        `${instanceUrl}/api/v1/statuses`,
+        {
+          status: payload.content.text,
+          media_ids: mediaIds.length > 0 ? mediaIds : undefined,
+          visibility: "public"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      return {
+        success: true,
+        platformPostId: response.data.id,
+        platformPostUrl: response.data.url
+      };
+    } catch (error: any) {
+      return this.handleError(error);
+    }
+  }
 }
 
 // ============================================================================

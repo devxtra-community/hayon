@@ -122,53 +122,51 @@ export class TumblrPostingService extends BasePostingService {
         credentials: any,
         mediaUrls: string[]
     ): Promise<PostResult> {
-        // TODO: Implement using tumblrOAuth for signing
+        const { blogHostname, oauthToken, oauthTokenSecret } = credentials;
+        const axios = require('axios');
+        const { tumblrOAuth } = require("../../utils/tumblrOAuth");
 
-        // const { blogHostname, oauthToken, oauthTokenSecret } = credentials;
-        // 
-        // try {
-        //   const hasMedia = mediaUrls.length > 0;
-        //   
-        //   const requestData = {
-        //     url: `${this.apiUrl}/blog/${blogHostname}/post`,
-        //     method: "POST",
-        //     data: hasMedia ? {
-        //       type: "photo",
-        //       caption: payload.content.text,
-        //       source: mediaUrls[0]  // For single photo
-        //       // For multiple: source0, source1, etc.
-        //     } : {
-        //       type: "text",
-        //       body: payload.content.text
-        //     }
-        //   };
-        //   
-        //   // Sign request with OAuth
-        //   const headers = tumblrOAuth.toHeader(
-        //     tumblrOAuth.authorize(requestData, {
-        //       key: oauthToken,
-        //       secret: oauthTokenSecret
-        //     })
-        //   );
-        //   
-        //   const response = await axios.post(
-        //     requestData.url,
-        //     requestData.data,
-        //     { headers }
-        //   );
-        //   
-        //   const postId = response.data.response.id;
-        //   return {
-        //     success: true,
-        //     platformPostId: postId.toString(),
-        //     platformPostUrl: `https://${blogHostname}.tumblr.com/post/${postId}`
-        //   };
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+        try {
+            const hasMedia = mediaUrls.length > 0;
 
-        console.log(`[STUB] Would post to Tumblr: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+            const requestData = {
+                url: `${this.apiUrl}/blog/${blogHostname}/post`,
+                method: "POST",
+                data: hasMedia ? {
+                    type: "photo",
+                    caption: payload.content.text,
+                    source: mediaUrls[0] // For single photo
+                    // For multiple photos, use source[0], source[1] according to legacy API
+                } : {
+                    type: "text",
+                    body: payload.content.text
+                }
+            };
+
+            // Sign request with OAuth
+            const headers = tumblrOAuth.toHeader(
+                tumblrOAuth.authorize(requestData, {
+                    key: oauthToken,
+                    secret: oauthTokenSecret
+                })
+            );
+
+            const response = await axios.post(
+                requestData.url,
+                requestData.data,
+                { headers }
+            );
+
+            const postId = response.data.response.id;
+            return {
+                success: true,
+                platformPostId: postId.toString(),
+                platformPostUrl: `https://${blogHostname}.tumblr.com/post/${postId}`
+            };
+        } catch (error: any) {
+            console.error("Tumblr post creation failed:", error.response?.data || error.message);
+            return this.handleError(error);
+        }
     }
 }
 

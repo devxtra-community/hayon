@@ -7,7 +7,7 @@ import {
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
 import * as postRepository from '../../repositories/post.repository';
-import {Types} from "mongoose"
+import { Types } from "mongoose"
 import { Producer } from "../../lib/queues/producer";
 
 export const connectBluesky = async (req: Request, res: Response) => {
@@ -140,7 +140,7 @@ export const postToBluesky = async (req: Request, res: Response) => {
 
 
 
-    const { text, scheduledAt,mediaUrls } = req.body;
+    const { text, scheduledAt, mediaUrls } = req.body;
     const userId = "6953e6e11caa1dc50b6bf5a6" // req.auth.id; 
     const timezone = 'UTC';
 
@@ -151,7 +151,7 @@ export const postToBluesky = async (req: Request, res: Response) => {
         mediaItems: mediaUrls?.map((url: string) => ({
           s3Url: url,
           s3Key: url.split("/").pop() || "unknown", // Temporary logic until media handling is fully ready
-          mimeType: "image/jpeg" // Default for now
+          mimeType: `image/${url.split(".").pop()}` // Default for now
         })) || []
       },
       selectedPlatforms: ["bluesky"],
@@ -161,8 +161,10 @@ export const postToBluesky = async (req: Request, res: Response) => {
       platformStatuses: [] // Will be initialized by the model's pre-save hook
     })
 
+    const tess = JSON.stringify(post)
+    console.log(tess)
     const correlationId = Producer.queueSocialPost({
-       postId: post._id.toString(),
+      postId: post._id.toString(),
       userId,
       platform: "bluesky",
       content: {
@@ -171,9 +173,9 @@ export const postToBluesky = async (req: Request, res: Response) => {
       },
       scheduledAt,
     })
-   
 
-    return new SuccessResponse("Post queued successfully",{data:post}).send(res);
+
+    return new SuccessResponse("Post queued successfully", { data: post }).send(res);
   } catch (error) {
     logger.error("Failed to post to Bluesky", error);
     return new ErrorResponse("Failed to post to Bluesky", { status: 500 }).send(res);

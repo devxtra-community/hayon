@@ -33,11 +33,17 @@ class S3Service {
         success: true,
         key,
         etag: result.ETag || "",
-        location: `https://${this.bucketName}.s3.amazonaws.com/${key}`,
+        location: this.getS3Url(key),
       };
     } catch (error) {
       throw new Error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
+  }
+
+  private getS3Url(key: string): string {
+    const region = ENV.AWS.REGION;
+    // For ap-south-1 and others, use bucket.s3.region.amazonaws.com
+    return `https://${this.bucketName}.s3.${region}.amazonaws.com/${key}`;
   }
 
   async updateFile(
@@ -61,7 +67,7 @@ class S3Service {
         success: true,
         key,
         etag: result.ETag || "",
-        location: `https://${this.bucketName}.s3.amazonaws.com/${key}`,
+        location: this.getS3Url(key),
       };
     } catch (error) {
       throw new Error(`Update failed: ${error instanceof Error ? error.message : "Unknown error"}`);

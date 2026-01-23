@@ -100,51 +100,74 @@ export class FacebookPostingService extends BasePostingService {
         credentials: any,
         mediaUrls: string[]
     ): Promise<PostResult> {
-        // TODO: Implement
+        const { pageId, accessToken } = credentials;
+        const hasMedia = mediaUrls.length > 0;
+        const axios = require('axios'); // Ensure axios is available
 
-        // const { pageId, accessToken } = credentials;
-        // const hasMedia = mediaUrls.length > 0;
-        // 
-        // try {
-        //   if (!hasMedia) {
-        //     // Text-only post
-        //     const response = await axios.post(
-        //       `${this.graphApiUrl}/${pageId}/feed`,
-        //       {
-        //         message: payload.content.text,
-        //         access_token: accessToken
-        //       }
-        //     );
-        //     return {
-        //       success: true,
-        //       platformPostId: response.data.id,
-        //       platformPostUrl: `https://facebook.com/${response.data.id}`
-        //     };
-        //   } else if (mediaUrls.length === 1 && this.isImage(mediaUrls[0])) {
-        //     // Single photo
-        //     const response = await axios.post(
-        //       `${this.graphApiUrl}/${pageId}/photos`,
-        //       {
-        //         url: mediaUrls[0],
-        //         message: payload.content.text,
-        //         access_token: accessToken
-        //       }
-        //     );
-        //     return {
-        //       success: true,
-        //       platformPostId: response.data.id,
-        //       platformPostUrl: `https://facebook.com/${response.data.id}`
-        //     };
-        //   } else if (mediaUrls.length > 1) {
-        //     // Multiple photos
-        //     // ... upload each unpublished, then create feed post
-        //   }
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+        try {
+            if (!hasMedia) {
+                // Text-only post
+                const response = await axios.post(
+                    `${this.graphApiUrl}/${pageId}/feed`,
+                    {
+                        message: payload.content.text,
+                        access_token: accessToken
+                    }
+                );
+                return {
+                    success: true,
+                    platformPostId: response.data.id,
+                    platformPostUrl: `https://facebook.com/${response.data.id}`
+                };
+            } else if (mediaUrls.length === 1) {
+                // Single photo
+                const response = await axios.post(
+                    `${this.graphApiUrl}/${pageId}/photos`,
+                    {
+                        url: mediaUrls[0],
+                        message: payload.content.text,
+                        access_token: accessToken
+                    }
+                );
+                return {
+                    success: true,
+                    platformPostId: response.data.id,
+                    platformPostUrl: `https://facebook.com/${response.data.id}`
+                };
+            } else {
+                // Multiple photos (Carousel-like feed post)
+                const photoIds: string[] = [];
+                for (const url of mediaUrls) {
+                    const photoRes = await axios.post(
+                        `${this.graphApiUrl}/${pageId}/photos`,
+                        {
+                            url,
+                            published: false,
+                            access_token: accessToken
+                        }
+                    );
+                    photoIds.push(photoRes.data.id);
+                }
 
-        console.log(`[STUB] Would post to Facebook: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+                const response = await axios.post(
+                    `${this.graphApiUrl}/${pageId}/feed`,
+                    {
+                        message: payload.content.text,
+                        attached_media: photoIds.map(id => ({ media_fbid: id })),
+                        access_token: accessToken
+                    }
+                );
+
+                return {
+                    success: true,
+                    platformPostId: response.data.id,
+                    platformPostUrl: `https://facebook.com/${response.data.id}`
+                };
+            }
+        } catch (error: any) {
+            console.error("Facebook post creation failed:", error.response?.data || error.message);
+            return this.handleError(error);
+        }
     }
 }
 

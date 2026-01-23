@@ -159,66 +159,127 @@ export class InstagramPostingService extends BasePostingService {
         credentials: any,
         mediaUrls: string[]
     ): Promise<PostResult> {
-        // TODO: Implement based on flow above
+        const { igUserId, accessToken } = credentials;
+        const axios = require('axios');
 
-        // const { igUserId, accessToken } = credentials;
-        // const isSingleImage = mediaUrls.length === 1;
-        // const isVideo = mediaUrls[0]?.includes(".mp4");
-        // 
-        // try {
-        //   let containerId: string;
-        //   
-        //   if (isSingleImage && !isVideo) {
-        //     // Single image flow
-        //     containerId = await this.createImageContainer(igUserId, accessToken, {
-        //       imageUrl: mediaUrls[0],
-        //       caption: payload.content.text
-        //     });
-        //   } else if (mediaUrls.length > 1) {
-        //     // Carousel flow
-        //     containerId = await this.createCarouselContainer(igUserId, accessToken, {
-        //       mediaUrls,
-        //       caption: payload.content.text
-        //     });
-        //   } else if (isVideo) {
-        //     // Video/Reels flow
-        //     containerId = await this.createVideoContainer(igUserId, accessToken, {
-        //       videoUrl: mediaUrls[0],
-        //       caption: payload.content.text
-        //     });
-        //     // Wait for video processing
-        //     await this.waitForContainerReady(containerId, accessToken);
-        //   }
-        //   
-        //   // Publish the container
-        //   const mediaId = await this.publishContainer(igUserId, accessToken, containerId);
-        //   
-        //   return {
-        //     success: true,
-        //     platformPostId: mediaId,
-        //     platformPostUrl: `https://www.instagram.com/p/${mediaId}/`
-        //   };
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+        try {
+            let containerId: string;
+            const isVideo = mediaUrls[0]?.toLowerCase().match(/\.(mp4|mov|avi|wmv)$/);
 
-        console.log(`[STUB] Would post to Instagram: ${mediaUrls.length} media items`);
-        return { success: false, error: "Not implemented" };
+            if (mediaUrls.length === 1) {
+                if (isVideo) {
+                    // Video / Reels flow
+                    containerId = await this.createVideoContainer(igUserId, accessToken, {
+                        videoUrl: mediaUrls[0],
+                        caption: payload.content.text
+                    });
+                    await this.waitForContainerReady(containerId, accessToken);
+                } else {
+                    // Single image flow
+                    containerId = await this.createImageContainer(igUserId, accessToken, {
+                        imageUrl: mediaUrls[0],
+                        caption: payload.content.text
+                    });
+                }
+            } else {
+                // Carousel flow
+                containerId = await this.createCarouselContainer(igUserId, accessToken, {
+                    mediaUrls,
+                    caption: payload.content.text
+                });
+                // Carousels also need to be checked for ready status if they contain video
+                await this.waitForContainerReady(containerId, accessToken);
+            }
+
+            // Publish the container
+            const mediaId = await this.publishContainer(igUserId, accessToken, containerId);
+
+            return {
+                success: true,
+                platformPostId: mediaId,
+                platformPostUrl: `https://www.instagram.com/p/${mediaId}/`
+            };
+        } catch (error: any) {
+            console.error("Instagram post creation failed:", error.response?.data || error.message);
+            return this.handleError(error);
+        }
     }
 
-    // ============================================================================
-    // HELPER METHODS - TO IMPLEMENT
-    // ============================================================================
+    private async createImageContainer(igUserId: string, accessToken: string, { imageUrl, caption }: any): Promise<string> {
+        const axios = require('axios');
+        const response = await axios.post(`${this.graphApiUrl}/${igUserId}/media`, {
+            image_url: imageUrl,
+            caption: caption,
+            access_token: accessToken
+        });
+        return response.data.id;
+    }
 
-    /*
-     * TODO: Implement these helper methods:
-     * 
-     * private async createImageContainer(igUserId, accessToken, { imageUrl, caption }): Promise<string>
-     * private async createCarouselContainer(igUserId, accessToken, { mediaUrls, caption }): Promise<string>
-     * private async createVideoContainer(igUserId, accessToken, { videoUrl, caption }): Promise<string>
-     * private async waitForContainerReady(containerId, accessToken): Promise<void>
-     * private async publishContainer(igUserId, accessToken, containerId): Promise<string>
-     */
+    private async createVideoContainer(igUserId: string, accessToken: string, { videoUrl, caption }: any): Promise<string> {
+        const axios = require('axios');
+        const response = await axios.post(`${this.graphApiUrl}/${igUserId}/media`, {
+            video_url: videoUrl,
+            media_type: "REELS",
+            caption: caption,
+            access_token: accessToken
+        });
+        return response.data.id;
+    }
+
+    private async createCarouselContainer(igUserId: string, accessToken: string, { mediaUrls, caption }: any): Promise<string> {
+        const axios = require('axios');
+        const childIds: string[] = [];
+
+        for (const url of mediaUrls) {
+            const isVideo = url.toLowerCase().match(/\.(mp4|mov|avi|wmv)$/);
+            const res = await axios.post(`${this.graphApiUrl}/${igUserId}/media`, {
+                [isVideo ? 'video_url' : 'image_url']: url,
+                is_carousel_item: true,
+                access_token: accessToken
+            });
+            childIds.push(res.data.id);
+        }
+
+        const response = await axios.post(`${this.graphApiUrl}/${igUserId}/media`, {
+            media_type: "CAROUSEL",
+            children: childIds,
+            caption: caption,
+            access_token: accessToken
+        });
+        return response.data.id;
+    }
+
+    private async waitForContainerReady(containerId: string, accessToken: string): Promise<void> {
+        const axios = require('axios');
+        let attempts = 0;
+        const maxAttempts = 20;
+
+        while (attempts < maxAttempts) {
+            const response = await axios.get(`${this.graphApiUrl}/${containerId}`, {
+                params: {
+                    fields: "status_code",
+                    access_token: accessToken
+                }
+            });
+
+            const status = response.data.status_code;
+            if (status === "FINISHED") return;
+            if (status === "ERROR") throw new Error("Instagram media processing failed");
+
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+            attempts++;
+        }
+        throw new Error("Instagram media processing timed out");
+    }
+
+    private async publishContainer(igUserId: string, accessToken: string, containerId: string): Promise<string> {
+        const axios = require('axios');
+        const response = await axios.post(`${this.graphApiUrl}/${igUserId}/media_publish`, {
+            creation_id: containerId,
+            access_token: accessToken
+        });
+        return response.data.id;
+    }
 }
 
 // ============================================================================
