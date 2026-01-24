@@ -133,16 +133,18 @@ export const refreshBlueskyProfile = async (req: Request, res: Response) => {
 
 export const postToBluesky = async (req: Request, res: Response) => {
   try {
-    // if (!req.auth) {
-    //   return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
-    // }
+    if (!req.auth) {
+      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
+    }
 
 
 
 
     const { text, scheduledAt, mediaUrls } = req.body;
-    const userId = "6953e6e11caa1dc50b6bf5a6" // req.auth.id; 
+    const userId = req.auth.id; 
     const timezone = 'UTC';
+
+    console.log("media urls :::", mediaUrls);
 
     const post = await postRepository.createPost({
       userId: new Types.ObjectId(userId),

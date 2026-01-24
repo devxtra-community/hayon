@@ -83,12 +83,44 @@ export const retryPost = async (req: Request, res: Response) => {
     }
 };
 
+import { getPresignedUploadUrl } from "../services/s3/s3.upload";
+
 export const getUploadUrls = async (req: Request, res: Response) => {
     try {
         if (!req.auth) {
             return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
         }
-        return new ErrorResponse("Not implemented", { status: 501 }).send(res);
+
+        const userId = req.auth.id;
+        const { contentType } = req.body;
+
+        // Validate content type
+        const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "video/mp4", "video/quicktime"];
+        if (!contentType || !allowedTypes.includes(contentType)) {
+            return new ErrorResponse("Invalid media type", { status: 400 }).send(res);
+        }
+
+        // Generate presigned URL - defaulting to 'posts' folder as requested
+        // This will create keys like: posts/{userId}/{uuid}.{ext}
+        const ext = contentType.split("/")[1];
+        const filename = `post-media.${ext}`; // The name here doesn't matter much as s3.upload.ts generates UUID for non-profile folders
+
+        const { uploadUrl, s3Url, s3Key } = await getPresignedUploadUrl(
+            userId,
+            filename,
+            contentType,
+            "posts"
+        );
+
+        return new SuccessResponse("Upload URL generated", {
+            data: {
+                uploadUrl,
+                s3Url,
+                s3Key,
+                contentType
+            }
+        }).send(res);
+
     } catch (error) {
         logger.error("Get upload URLs error", error);
         return new ErrorResponse("Failed to generate upload URLs").send(res);

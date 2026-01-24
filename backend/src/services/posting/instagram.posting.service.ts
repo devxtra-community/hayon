@@ -98,7 +98,11 @@ export class InstagramPostingService extends BasePostingService {
      * For this skeleton, we assume S3 URLs are publicly accessible.
      */
 
-    async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
+    async uploadMedia(
+        mediaUrls: string[],
+        credentials: any,
+        payload: PostQueueMessage
+    ): Promise<string[]> {
         // Instagram doesn't need pre-upload
         // Just return the URLs, they'll be used in container creation
         return mediaUrls;

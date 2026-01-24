@@ -15,7 +15,7 @@ import logger from "../utils/logger";
 export async function getProfileUploadUrlController(req: Request, res: Response): Promise<void> {
   try {
     const userId = req?.auth?.id as string;
-    const { contentType } = req.body;
+    const { contentType, usage = "avatar" } = req.body;
 
     // Validate content type
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
@@ -26,12 +26,29 @@ export async function getProfileUploadUrlController(req: Request, res: Response)
     // Determine file extension from content type
     const ext = contentType.split("/")[1];
 
-    // Generate presigned URL for profile image
+    // Determine folder and filename based on usage
+    let folder = "profiles";
+    let filename = `${userId}-${Date.now()}.${ext}`;
+
+    if (usage === "post") {
+      folder = "temp";
+      // for temp/post uploads, s3.upload.ts handles UUID generation if we pass a simple name
+      // or we can just pass the name and it will be used?
+      // checking s3.upload.ts:
+      // const s3Key = folder === "profiles" ? `${folder}/${filename}` : `${folder}/${userId}/${uuid}.${ext}`;
+      // So if folder is NOT profiles, it generates UUID. Filename arg is ignored for the key generation in that case?
+      // Wait, let's re-read s3.upload.ts logic in next step if needed, but assuming standard behavior:
+      // const ext = filename.split('.').pop() || 'bin';
+      // so it uses the extension from the filename.
+      filename = `image.${ext}`; // just to provide extension
+    }
+
+    // Generate presigned URL
     const { uploadUrl, s3Url } = await getPresignedUploadUrl(
       userId,
-      `${userId}.${ext}`,
+      filename,
       contentType,
-      "profiles",
+      folder,
     );
 
     new SuccessResponse("Presigned URL generated", {

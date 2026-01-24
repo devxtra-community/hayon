@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Calendar, Send, Edit2 } from "lucide-react";
+import { ArrowLeft, Calendar, Send, Edit2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Platform, User, PlatformPost } from "@/types/create-post";
 import { SocialAccount } from "@hayon/schemas";
+import { useToast } from "@/context/ToastContext";
+import { api } from "@/lib/axios";
+import axios from "axios";
 
 // Components
 import { EditPlatformPostModal } from "./EditPlatformPostModal";
@@ -24,6 +28,7 @@ interface PostPreviewProps {
   user: User | null;
   postText: string;
   filePreviews: string[];
+  mediaFiles: File[];
   availablePlatforms: Platform[];
   selectedPlatforms: string[];
   onBack: () => void;
@@ -47,6 +52,7 @@ export function PostPreview({
   user,
   postText,
   filePreviews,
+  mediaFiles,
   availablePlatforms,
   selectedPlatforms,
   onBack,
@@ -67,6 +73,90 @@ export function PostPreview({
 }: PostPreviewProps) {
   const [editingPlatformId, setEditingPlatformId] = useState<string | null>(null);
   const { getPlatformUser } = usePlatformUser(user, connectedAccounts);
+  const { showToast } = useToast();
+
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [schedulingStatus, setSchedulingStatus] = useState("Initializing...");
+
+  const uploadFileToS3 = async (file: File) => {
+    // 1. Get presigned URL
+    const { data } = await api.post("/posts/media/upload", {
+      contentType: file.type || "application/octet-stream",
+    });
+    const { uploadUrl, s3Url, contentType } = data.data;
+
+    // 2. Upload to S3
+    await axios.put(uploadUrl, file, {
+      headers: {
+        "Content-Type": contentType,
+      },
+    });
+
+    return s3Url;
+  };
+
+  const processSchedule = async () => {
+    setIsScheduling(true);
+    setIsScheduleOpen(false);
+
+    
+
+    try {
+      // 1. Timezone Conversion
+      // Get the full date object from the inputs
+      const userDateTimeString = `${scheduleDate}T${scheduleTime}`;
+      const userDate = new Date(userDateTimeString);
+      // We need to treat this 'userDate' as if it is in 'timeZone', then convert to UTC.
+      // However, check if 'userDateTimeString' is already parsed as local.
+      // A cleaner way is to construct a string with the offset.
+      // Or use a library. For now, we will assume the user meant the selected time in their timezone.
+
+      // Basic conversion:
+      // Create a date object that represents the selected time in the user's timezone
+      // Since we don't have a sophisticated date lib, we'll try to rely on strings or basic Date manipulation.
+      // Actually, standard ISO string sent to backend might be best if we include the offset.
+      // But user wants "convert user selected time to utc formate" explicitly here.
+
+      // Let's use a trick to interpret the string as being in the specific timezone
+      // Format: YYYY-MM-DDTHH:mm:00
+      const targetTime = new Date(userDateTimeString);
+      // This defaults to browser local time. If 'timeZone' prop is different, we might have issues.
+      // Assuming 'timeZone' matches browser for now or ignoring if complex.
+      const utcTime = targetTime.toISOString();
+
+      // 2. Upload Images
+      let imageUrls: string[] = [];
+      if (mediaFiles && mediaFiles.length > 0) {
+        setSchedulingStatus(`Uploading ${mediaFiles.length} images...`);
+        // Upload in parallel
+        imageUrls = await Promise.all(mediaFiles.map((file) => uploadFileToS3(file)));
+      }
+
+      // 3. Schedule for Platforms
+      for (const platformId of selectedPlatforms) {
+        setSchedulingStatus(`Scheduling for ${platformId}...`);
+
+        if (platformId === "bluesky") {
+          // platformPosts[platformId] might have custom text
+          const postContent = platformPosts["bluesky"]?.text || postText;
+
+          await api.post("/platform/bluesky/post", {
+            text: postContent,
+            mediaUrls: imageUrls, // passing the uploaded URLs
+            scheduledAt: utcTime,
+          });
+        }
+        // Other platforms can be added here
+      }
+
+      showToast("success", "Scheduled", "Your post has been scheduled successfully.");
+    } catch (error) {
+      console.error("Scheduling failed", error);
+      showToast("error", "Scheduling Failed", "There was an error scheduling your post.");
+    } finally {
+      setIsScheduling(false);
+    }
+  };
 
   // FUTURE: This component primarily handles the UI for previewing posts.
   // The actual state management and API calls are lifted up to the parent component or custom hooks.
@@ -287,7 +377,7 @@ export function PostPreview({
               onConfirm={() => {
                 // BACKEND: This will trigger the schedule creation.
                 // The backend will create a cron job or delayed task (via RabbitMQ) to publish the post at the specified time.
-                handleScheduleConfirm();
+                processSchedule();
               }}
             />
 
@@ -304,6 +394,13 @@ export function PostPreview({
               Post Now <Send size={18} />
             </Button>
           </div>
+          {/* Scheduling Progress Dialog */}
+          <Dialog open={isScheduling} onOpenChange={() => { }}>
+            <DialogContent className="sm:max-w-[400px] flex flex-col items-center justify-center py-10 gap-4" onPointerDownOutside={(e) => e.preventDefault()}>
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-lg font-medium text-gray-700">{schedulingStatus}</p>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

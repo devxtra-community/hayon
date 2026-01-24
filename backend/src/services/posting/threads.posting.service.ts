@@ -62,7 +62,11 @@ export class ThreadsPostingService extends BasePostingService {
         return null;
     }
 
-    async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
+    async uploadMedia(
+        mediaUrls: string[],
+        credentials: any,
+        payload: PostQueueMessage
+    ): Promise<string[]> {
         // Like Instagram, Threads uses public URLs
         return mediaUrls;
     }

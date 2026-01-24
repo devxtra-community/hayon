@@ -54,7 +54,11 @@ export class FacebookPostingService extends BasePostingService {
         return null;
     }
 
-    async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
+    async uploadMedia(
+        mediaUrls: string[],
+        credentials: any,
+        payload: PostQueueMessage
+    ): Promise<string[]> {
         // Facebook can accept public URLs directly for photos
         // For multiple photos, need to upload each separately
         return mediaUrls;

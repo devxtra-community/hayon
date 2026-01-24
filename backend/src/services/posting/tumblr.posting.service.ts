@@ -69,7 +69,11 @@ export class TumblrPostingService extends BasePostingService {
         return null;
     }
 
-    async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
+    async uploadMedia(
+        mediaUrls: string[],
+        credentials: any,
+        payload: PostQueueMessage
+    ): Promise<string[]> {
         // Tumblr accepts URLs directly in the post request
         // No pre-upload needed
         return mediaUrls;

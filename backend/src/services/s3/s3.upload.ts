@@ -37,7 +37,8 @@ export async function getPresignedUploadUrl(
         Bucket: ENV.AWS.S3_BUCKET_NAME,
         Key: s3Key,
         ContentType: mimeType,
-        ACL: 'public-read', // Make uploaded files publicly accessible
+        // Removed ACL: 'public-read' as many buckets block public ACLs
+        // and it can cause 403 Forbidden errors.
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 min

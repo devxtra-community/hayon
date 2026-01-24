@@ -86,7 +86,11 @@ export class MastodonPostingService extends BasePostingService {
    * 4. Use media IDs in status creation
    */
 
-  async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
+  async uploadMedia(
+    mediaUrls: string[],
+    credentials: any,
+    payload: PostQueueMessage
+  ): Promise<string[]> {
     const { instanceUrl, auth: { accessToken } } = credentials;
     const mediaIds: string[] = [];
     const axios = require('axios');

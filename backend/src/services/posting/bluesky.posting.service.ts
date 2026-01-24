@@ -111,8 +111,44 @@ export class BlueskyPostingService extends BasePostingService {
    * }
    */
 
-  async uploadMedia(mediaUrls: string[], credentials: any): Promise<any[]> {
-    const agent = new AtpAgent({ service: "https://bsky.social" });
+  private agent: AtpAgent | null = null;
+
+  private async getAgent(userId: string, credentials: any): Promise<AtpAgent> {
+    if (this.agent) return this.agent;
+
+    this.agent = new AtpAgent({
+      service: "https://bsky.social",
+      persistSession: async (evt, session) => {
+        if (session) {
+          console.log("🔄 Bluesky session updated, saving to DB...");
+          // Update credentials object so subsequent calls in same execution use new tokens
+          if (credentials.auth) {
+            credentials.auth.accessJwt = session.accessJwt;
+            credentials.auth.refreshJwt = session.refreshJwt;
+          }
+
+          try {
+            // Import dynamically or use the model directly to avoid circular deps if they exist
+            const SocialAccountModel = (await import("../../models/socialAccount.model")).default;
+            await SocialAccountModel.updateOne(
+              { userId },
+              {
+                $set: {
+                  "bluesky.auth.accessJwt": session.accessJwt,
+                  "bluesky.auth.refreshJwt": session.refreshJwt,
+                  "bluesky.health.lastSuccessfulRefresh": new Date(),
+                  "bluesky.health.status": "active"
+                }
+              }
+            );
+            console.log("✅ Bluesky session saved to DB");
+          } catch (err) {
+            console.error("❌ Failed to save Bluesky session:", err);
+          }
+        }
+      }
+    });
+
     const session = {
       did: credentials.did,
       handle: credentials.handle,
@@ -120,7 +156,13 @@ export class BlueskyPostingService extends BasePostingService {
       refreshJwt: credentials.auth.refreshJwt,
       active: true,
     };
-    await agent.resumeSession(session);
+
+    await this.agent.resumeSession(session);
+    return this.agent;
+  }
+
+  async uploadMedia(mediaUrls: string[], credentials: any, payload: PostQueueMessage): Promise<any[]> {
+    const agent = await this.getAgent(payload.userId, credentials);
 
     const blobs = [];
     for (const url of mediaUrls) {
@@ -152,17 +194,8 @@ export class BlueskyPostingService extends BasePostingService {
     mediaBlobs: any[]
   ): Promise<PostResult> {
     try {
-
       console.log("mediaBlobs :::", mediaBlobs)
-      const agent = new AtpAgent({ service: "https://bsky.social" });
-      const session = {
-        did: credentials.did,
-        handle: credentials.handle,
-        accessJwt: credentials.auth.accessJwt,
-        refreshJwt: credentials.auth.refreshJwt,
-        active: true,
-      };
-      await agent.resumeSession(session);
+      const agent = await this.getAgent(payload.userId, credentials);
 
       // Detect facets (links, mentions, hashtags)
       // Note: Since we don't have RichText class imported, we'll use a simplified version

@@ -82,10 +82,10 @@ export abstract class BasePostingService {
       // Step 2: Upload media if present
       let mediaIds: string[] = [];
       if (payload.content.mediaUrls?.length) {
-        mediaIds = await this.uploadMedia(payload.content.mediaUrls, credentials);
+        mediaIds = await this.uploadMedia(payload.content.mediaUrls, credentials, payload);
       }
 
-      console.log("this is media ids",mediaIds)
+      console.log("this is media ids", mediaIds)
 
       // Step 3: Create the post
       const result = await this.createPost(payload, credentials, mediaIds);
@@ -131,7 +131,8 @@ export abstract class BasePostingService {
    */
   abstract uploadMedia(
     mediaUrls: string[],
-    credentials: any
+    credentials: any,
+    payload: PostQueueMessage
   ): Promise<string[]>;
 
   /*
