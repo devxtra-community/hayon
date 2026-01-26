@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.middleware";
-import { createPost, getPostStatus, getUploadUrls } from "../controllers/post.controller";
+import { 
+    // createPost, 
+    getPostStatus, getUploadUrls } from "../controllers/post.controller";
 
 const router = Router();
 

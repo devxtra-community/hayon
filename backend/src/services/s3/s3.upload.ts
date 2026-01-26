@@ -141,6 +141,33 @@ export async function downloadMedia(s3Key: string): Promise<Buffer> {
  * }
  */
 
+/**
+ * Extracts the S3 key from a full S3 URL.
+ * Example: https://bucket.s3.region.amazonaws.com/posts/user123/abc.jpg -> posts/user123/abc.jpg
+ */
+export function extractS3Key(s3Url: string): string {
+    if (!s3Url) return "";
+
+    // Handle formats:
+    // 1. https://bucket.s3.region.amazonaws.com/key
+    // 2. https://bucket.s3.amazonaws.com/key
+    const s3DomainMatch = s3Url.match(/\.s3[.-][^/]+\.amazonaws\.com\/(.+)$/) ||
+        s3Url.match(/\.s3\.amazonaws\.com\/(.+)$/);
+
+    if (s3DomainMatch && s3DomainMatch[1]) {
+        // Remove any query parameters (like presigned URL parts)
+        return s3DomainMatch[1].split('?')[0];
+    }
+
+    // Fallback: try to split by .amazonaws.com/
+    const parts = s3Url.split('.amazonaws.com/');
+    if (parts.length > 1) {
+        return parts[1].split('?')[0];
+    }
+
+    return s3Url; // Return as is if no match
+}
+
 // ============================================================================
 // EDGE CASES
 // ============================================================================

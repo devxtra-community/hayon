@@ -63,7 +63,7 @@ export function PostPreview({
   setScheduleDate,
   scheduleTime,
   setScheduleTime,
-  handleScheduleConfirm,
+  // handleScheduleConfirm,
   timeZone,
   connectedAccounts,
   platformPosts,
@@ -105,7 +105,7 @@ export function PostPreview({
       // 1. Timezone Conversion
       // Get the full date object from the inputs
       const userDateTimeString = `${scheduleDate}T${scheduleTime}`;
-      const userDate = new Date(userDateTimeString);
+      // const userDate = new Date(userDateTimeString);
       // We need to treat this 'userDate' as if it is in 'timeZone', then convert to UTC.
       // However, check if 'userDateTimeString' is already parsed as local.
       // A cleaner way is to construct a string with the offset.

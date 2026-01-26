@@ -8,6 +8,7 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
+import { downloadMedia, extractS3Key } from "../s3/s3.upload";
 
 // ============================================================================
 // MASTODON API SPECIFICS
@@ -78,27 +79,38 @@ export class MastodonPostingService extends BasePostingService {
     const mediaIds: string[] = [];
 
     for (const url of mediaUrls) {
-      // Download from S3
-      const response = await axios.get(url, { responseType: "arraybuffer" });
-      const buffer = Buffer.from(response.data);
+      try {
+        // Use S3 SDK to download (handles private access via IAM)
+        const s3Key = extractS3Key(url);
+        const buffer = await downloadMedia(s3Key);
 
-      // Create form data
-      const formData = new FormData();
-      const blob = new Blob([buffer], { type: response.headers["content-type"] as string });
-      formData.append("file", blob, "media");
+        // Infer mimeType from extension
+        const mimeType = url.endsWith(".png") ? "image/png" :
+          url.endsWith(".webp") ? "image/webp" :
+            url.endsWith(".gif") ? "image/gif" :
+              url.endsWith(".mp4") ? "video/mp4" : "image/jpeg";
 
-      // Upload to Mastodon
-      const uploadRes = await axios.post(
-        `${instanceUrl}/api/v2/media`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
+        // Create form data
+        const formData = new FormData();
+        const blob = new Blob([buffer], { type: mimeType });
+        formData.append("file", blob, "media");
+
+        // Upload to Mastodon
+        const uploadRes = await axios.post(
+          `${instanceUrl}/api/v2/media`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
           }
-        }
-      );
+        );
 
-      mediaIds.push(uploadRes.data.id);
+        mediaIds.push(uploadRes.data.id);
+      } catch (error) {
+        console.error(`Error uploading media to Mastodon: ${error}`);
+        throw error;
+      }
     }
 
     return mediaIds;

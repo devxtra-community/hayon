@@ -1,6 +1,7 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
+import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload";
 
 // ============================================================================
 // CONSTRAINTS
@@ -29,8 +30,15 @@ export class FacebookPostingService extends BasePostingService {
     }
 
     async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
-        // Facebook can accept public URLs directly
-        return mediaUrls;
+        // Facebook Graph API MUST have a publicly accessible URL to fetch the media.
+        // We convert our private S3 URLs into presigned download URLs (3 hour expiry).
+        const presignedUrls = await Promise.all(
+            mediaUrls.map(async (url) => {
+                const s3Key = extractS3Key(url);
+                return await getPresignedDownloadUrl(s3Key, 10800); // 3 hours
+            })
+        );
+        return presignedUrls;
     }
 
     async createPost(
