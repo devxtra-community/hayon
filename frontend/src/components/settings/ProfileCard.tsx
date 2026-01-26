@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Camera, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
 import { api } from "@/lib/axios";
 import { useToast } from "@/context/ToastContext";
 
@@ -89,15 +90,32 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
     if (!selectedFile || !previewImgRef.current) return;
 
     try {
+      // STEP 1: Process image (zoom, crop)
       const processedBlob = await getProcessedImage(previewImgRef.current, zoom);
       if (!processedBlob) throw new Error("Failed to process image");
 
-      const base64Image = await blobToBase64(processedBlob);
+      // Get the content type from the processed blob
+      const contentType = processedBlob.type || "image/png";
 
-      await api.put("/profile/update-avatar", {
-        image: base64Image,
+      // STEP 2: Request presigned upload URL from backend
+      const { data } = await api.post("/profile/upload-url", {
+        contentType,
+      });
+      const { uploadUrl, s3Url, contentType: responseContentType } = data.data;
+
+      // STEP 3: Upload blob directly to S3 using presigned URL
+      await axios.put(uploadUrl, processedBlob, {
+        headers: {
+          "Content-Type": responseContentType,
+        },
       });
 
+      // STEP 4: Notify backend that upload succeeded
+      await api.put("/profile/update-avatar", {
+        imageUrl: s3Url,
+      });
+
+      // STEP 5: Update UI and show success toast
       showToast("success", "Avatar Updated", "Your profile picture has been updated.");
       onUpdate();
       handleCancelUpload();
@@ -277,7 +295,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
             <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">Preview Avatar</h3>
 
             <div className="w-48 h-48 mx-auto rounded-full overflow-hidden border-4 border-gray-100 mb-6 relative">
-              <Image
+              <img
                 ref={previewImgRef}
                 src={previewUrl}
                 alt="Preview"

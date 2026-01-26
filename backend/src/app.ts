@@ -17,6 +17,7 @@ import fs from "fs";
 import path from "path";
 import platformRoutes from "./routes/platform.routes";
 import testRoutes from "./routes/test.routes"; // ⚠️ TESTING ONLY - REMOVE BEFORE PRODUCTION
+import postRoutes from "./routes/post.routes";
 import { connectRabbitMQ } from "./config/rabbitmq";
 
 const expressInstance: Application = express();
@@ -63,6 +64,7 @@ const bootstrap = async () => {
   appRouter.use("/payments", paymentRoutes);
   appRouter.use("/profile", profileRoutes);
   appRouter.use("/platform", platformRoutes);
+  appRouter.use("/posts", postRoutes);
   appRouter.use("/test", testRoutes); // ⚠️ TESTING ONLY - REMOVE BEFORE PRODUCTION
 
   expressInstance.use(notFoundHandler);

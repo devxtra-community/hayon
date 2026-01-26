@@ -41,6 +41,8 @@ export async function getCredentialsForPlatform(
         { [platform]: 1 } // Projection: only fetch the platform we need
     );
 
+    // console.log("social account :",socialAccount)
+
     if (!socialAccount) {
         return null;
     }
@@ -69,6 +71,7 @@ export async function validateCredentials(
             error: "Invalid user or platform"
         };
     }
+
 
     // Assume credentials exist for now
     return { valid: true };

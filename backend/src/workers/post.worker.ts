@@ -136,6 +136,7 @@ export class PostWorker {
         status: "processing",
         lastAttemptAt: new Date()
       });
+      console.log('changed to processing')
 
       // 4. Get credentials and posting service
 
@@ -148,6 +149,7 @@ export class PostWorker {
 
 
       const result = await service.execute(payload, credentials);
+      // console.log("this is the result :",result)
 
       if (result.success) {
         await updatePlatformStatus(payload.postId, payload.platform, {

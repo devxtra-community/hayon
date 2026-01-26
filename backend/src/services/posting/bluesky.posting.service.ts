@@ -33,10 +33,10 @@ import { AtpAgent } from "@atproto/api";
 // ============================================================================
 
 const BLUESKY_CONSTRAINTS = {
-    MAX_CHARS: 300,
-    MAX_IMAGES: 4,
-    MAX_IMAGE_SIZE: 1_000_000,  // 1MB
-    SUPPORTED_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"]
+  MAX_CHARS: 300,
+  MAX_IMAGES: 4,
+  MAX_IMAGE_SIZE: 1_000_000,  // 1MB
+  SUPPORTED_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"]
 };
 
 // ============================================================================
@@ -44,157 +44,193 @@ const BLUESKY_CONSTRAINTS = {
 // ============================================================================
 
 export class BlueskyPostingService extends BasePostingService {
-    constructor() {
-        super("bluesky");
+  constructor() {
+    super("bluesky");
+  }
+
+  // ============================================================================
+  // VALIDATE CONTENT
+  // ============================================================================
+
+  /*
+   * TODO: Implement validation
+   * 
+   * Checks:
+   * - Text length <= 300 chars
+   * - Image count <= 4
+   * - Image types are supported
+   * - Image sizes within limit
+   */
+
+  async validateContent(payload: PostQueueMessage): Promise<string | null> {
+    if (payload.content.text.length > BLUESKY_CONSTRAINTS.MAX_CHARS) {
+      return `Text exceeds ${BLUESKY_CONSTRAINTS.MAX_CHARS} character limit`;
     }
 
-    // ============================================================================
-    // VALIDATE CONTENT
-    // ============================================================================
-
-    /*
-     * TODO: Implement validation
-     * 
-     * Checks:
-     * - Text length <= 300 chars
-     * - Image count <= 4
-     * - Image types are supported
-     * - Image sizes within limit
-     */
-
-    async validateContent(payload: PostQueueMessage): Promise<string | null> {
-        // if (payload.content.text.length > BLUESKY_CONSTRAINTS.MAX_CHARS) {
-        //   return `Text exceeds ${BLUESKY_CONSTRAINTS.MAX_CHARS} character limit`;
-        // }
-        // 
-        // const mediaCount = payload.content.mediaUrls?.length || 0;
-        // if (mediaCount > BLUESKY_CONSTRAINTS.MAX_IMAGES) {
-        //   return `Maximum ${BLUESKY_CONSTRAINTS.MAX_IMAGES} images allowed`;
-        // }
-        // 
-        // return null;
-
-        return null;
+    const mediaCount = payload.content.mediaUrls?.length || 0;
+    if (mediaCount > BLUESKY_CONSTRAINTS.MAX_IMAGES) {
+      return `Maximum ${BLUESKY_CONSTRAINTS.MAX_IMAGES} images allowed`;
     }
 
-    // ============================================================================
-    // UPLOAD MEDIA
-    // ============================================================================
+    return null;
 
-    /*
-     * TODO: Implement media upload
-     * 
-     * Bluesky media upload flow:
-     * 1. Download image from S3 URL
-     * 2. Call agent.uploadBlob() with image buffer
-     * 3. Store returned blob reference for post creation
-     * 
-     * Returns: Array of blob references (not IDs - Bluesky uses blob objects)
-     * 
-     * Code outline:
-     * async uploadMedia(mediaUrls: string[], credentials: BlueskyCredentials): Promise<any[]> {
-     *   const agent = new AtpAgent({ service: "https://bsky.social" });
-     *   await agent.resumeSession(credentials.session);
-     *   
-     *   const blobs = [];
-     *   for (const url of mediaUrls) {
-     *     // Download from S3
-     *     const response = await axios.get(url, { responseType: "arraybuffer" });
-     *     const buffer = Buffer.from(response.data);
-     *     const mimeType = response.headers["content-type"];
-     *     
-     *     // Upload to Bluesky
-     *     const { data } = await agent.uploadBlob(buffer, { encoding: mimeType });
-     *     blobs.push(data.blob);
-     *   }
-     *   return blobs;
-     * }
-     */
+    // return null;
+  }
 
-    async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
-        // TODO: Implement - returns blob references
-        return [];
+  // ============================================================================
+  // UPLOAD MEDIA
+  // ============================================================================
+
+  /*
+   * TODO: Implement media upload
+   * 
+   * Bluesky media upload flow:
+   * 1. Download image from S3 URL
+   * 2. Call agent.uploadBlob() with image buffer
+   * 3. Store returned blob reference for post creation
+   * 
+   * Returns: Array of blob references (not IDs - Bluesky uses blob objects)
+   * 
+   * Code outline:
+   * async uploadMedia(mediaUrls: string[], credentials: BlueskyCredentials): Promise<any[]> {
+   *   const agent = new AtpAgent({ service: "https://bsky.social" });
+   *   await agent.resumeSession(credentials.session);
+   *   
+   *   const blobs = [];
+   *   for (const url of mediaUrls) {
+   *     // Download from S3
+   *     const response = await axios.get(url, { responseType: "arraybuffer" });
+   *     const buffer = Buffer.from(response.data);
+   *     const mimeType = response.headers["content-type"];
+   *     
+   *     // Upload to Bluesky
+   *     const { data } = await agent.uploadBlob(buffer, { encoding: mimeType });
+   *     blobs.push(data.blob);
+   *   }
+   *   return blobs;
+   * }
+   */
+
+  private agent: AtpAgent | null = null;
+
+  private async getAgent(userId: string, credentials: any): Promise<AtpAgent> {
+    if (this.agent) return this.agent;
+
+    this.agent = new AtpAgent({
+      service: "https://bsky.social",
+      persistSession: async (evt, session) => {
+        if (session) {
+          console.log("🔄 Bluesky session updated, saving to DB...");
+          // Update credentials object so subsequent calls in same execution use new tokens
+          if (credentials.auth) {
+            credentials.auth.accessJwt = session.accessJwt;
+            credentials.auth.refreshJwt = session.refreshJwt;
+          }
+
+          try {
+            // Import dynamically or use the model directly to avoid circular deps if they exist
+            const SocialAccountModel = (await import("../../models/socialAccount.model")).default;
+            await SocialAccountModel.updateOne(
+              { userId },
+              {
+                $set: {
+                  "bluesky.auth.accessJwt": session.accessJwt,
+                  "bluesky.auth.refreshJwt": session.refreshJwt,
+                  "bluesky.health.lastSuccessfulRefresh": new Date(),
+                  "bluesky.health.status": "active"
+                }
+              }
+            );
+            console.log("✅ Bluesky session saved to DB");
+          } catch (err) {
+            console.error("❌ Failed to save Bluesky session:", err);
+          }
+        }
+      }
+    });
+
+    const session = {
+      did: credentials.did,
+      handle: credentials.handle,
+      accessJwt: credentials.auth.accessJwt,
+      refreshJwt: credentials.auth.refreshJwt,
+      active: true,
+    };
+
+    await this.agent.resumeSession(session);
+    return this.agent;
+  }
+
+  async uploadMedia(mediaUrls: string[], credentials: any, payload: PostQueueMessage): Promise<any[]> {
+    const agent = await this.getAgent(payload.userId, credentials);
+
+    const blobs = [];
+    for (const url of mediaUrls) {
+      try {
+        // Download from S3 (assuming url is a signed URL or public URL)
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mimeType = response.headers.get("content-type") || "image/jpeg";
+
+        // Upload to Bluesky
+        const { data } = await agent.uploadBlob(buffer, { encoding: mimeType });
+        blobs.push(data.blob);
+      } catch (error) {
+        console.error(`Error uploading media to Bluesky: ${error}`);
+        throw error;
+      }
     }
+    return blobs;
+  }
 
-    // ============================================================================
-    // CREATE POST
-    // ============================================================================
+  // ============================================================================
+  // CREATE POST
+  // ============================================================================
 
-    /*
-     * TODO: Implement post creation
-     * 
-     * Bluesky post structure:
-     * {
-     *   $type: "app.bsky.feed.post",
-     *   text: "Hello world!",
-     *   createdAt: new Date().toISOString(),
-     *   embed?: {
-     *     $type: "app.bsky.embed.images",
-     *     images: [{ alt: "", image: blobRef }]
-     *   },
-     *   facets?: [...] // For mentions, links, hashtags
-     * }
-     * 
-     * IMPORTANT: Facets for rich text
-     * - Bluesky requires explicit byte ranges for links/mentions
-     * - Use detectFacets() helper or parse manually
-     * - Links: { $type: "app.bsky.richtext.facet#link", uri: "..." }
-     * - Mentions: { $type: "app.bsky.richtext.facet#mention", did: "..." }
-     * - Hashtags: { $type: "app.bsky.richtext.facet#tag", tag: "..." }
-     */
+  async createPost(
+    payload: PostQueueMessage,
+    credentials: any,
+    mediaBlobs: any[]
+  ): Promise<PostResult> {
+    try {
+      console.log("mediaBlobs :::", mediaBlobs)
+      const agent = await this.getAgent(payload.userId, credentials);
 
-    async createPost(
-        payload: PostQueueMessage,
-        credentials: any,
-        mediaBlobs: any[]
-    ): Promise<PostResult> {
-        // TODO: Implement actual Bluesky posting
+      // Detect facets (links, mentions, hashtags)
+      // Note: Since we don't have RichText class imported, we'll use a simplified version
+      // or assume facets are handled elsewhere. For now, let's keep it simple.
 
-        // try {
-        //   const agent = new AtpAgent({ service: "https://bsky.social" });
-        //   await agent.resumeSession(credentials.session);
-        //   
-        //   // Build post record
-        //   const postRecord: any = {
-        //     $type: "app.bsky.feed.post",
-        //     text: payload.content.text,
-        //     createdAt: new Date().toISOString()
-        //   };
-        //   
-        //   // Add images embed if media exists
-        //   if (mediaBlobs.length > 0) {
-        //     postRecord.embed = {
-        //       $type: "app.bsky.embed.images",
-        //       images: mediaBlobs.map(blob => ({
-        //         alt: "", // TODO: Add alt text support
-        //         image: blob
-        //       }))
-        //     };
-        //   }
-        //   
-        //   // Detect and add facets (links, mentions, hashtags)
-        //   // const rt = new RichText({ text: payload.content.text });
-        //   // await rt.detectFacets(agent);
-        //   // postRecord.facets = rt.facets;
-        //   
-        //   // Create the post
-        //   const { data } = await agent.post(postRecord);
-        //   
-        //   // Construct post URL
-        //   const postUrl = `https://bsky.app/profile/${credentials.handle}/post/${data.uri.split('/').pop()}`;
-        //   
-        //   return {
-        //     success: true,
-        //     platformPostId: data.uri,
-        //     platformPostUrl: postUrl
-        //   };
-        // } catch (error: any) {
-        //   return this.handleError(error);
-        // }
+      const postRecord: any = {
+        $type: "app.bsky.feed.post",
+        text: payload.content.text,
+        createdAt: new Date().toISOString()
+      };
 
-        console.log(`[STUB] Would post to Bluesky: ${payload.content.text.substring(0, 50)}...`);
-        return { success: false, error: "Not implemented" };
+      if (mediaBlobs.length > 0) {
+        postRecord.embed = {
+          $type: "app.bsky.embed.images",
+          images: mediaBlobs.map(blob => ({
+            alt: "", // Could be passed from payload in future
+            image: blob
+          }))
+        };
+      }
+
+      const data = await agent.post(postRecord);
+
+      const postUrl = `https://bsky.app/profile/${credentials.handle}/post/${data.uri.split('/').pop()}`;
+
+      return {
+        success: true,
+        platformPostId: data.uri,
+        platformPostUrl: postUrl
+      };
+    } catch (error: any) {
+      console.error("Bluesky post creation failed:", error);
+      return this.handleError(error);
     }
+  }
 }
 
 // ============================================================================

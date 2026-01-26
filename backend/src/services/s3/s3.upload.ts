@@ -5,220 +5,96 @@
 // Purpose: Handle media uploads for social media posts
 // ============================================================================
 
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ENV } from "../../config/env";
+import crypto from "crypto";
+import { Readable } from "stream";
 
-// ============================================================================
-// S3 KEY STRUCTURE
-// ============================================================================
-
-/*
- * KEY NAMING CONVENTION:
- * 
- * Temporary uploads (before post created):
- *   temp/{userId}/{uuid}.{ext}
- *   - Used for draft media
- *   - S3 lifecycle rule: delete after 24 hours
- * 
- * Permanent uploads (after post created):
- *   posts/{userId}/{postId}/{uuid}.{ext}
- *   - Moved from temp/ when post is submitted
- *   - Retained as long as post exists
- * 
- * Example:
- *   temp/user123/550e8400-e29b-41d4-a716-446655440000.jpg
- *   posts/user123/post456/550e8400-e29b-41d4-a716-446655440000.jpg
- */
-
-// ============================================================================
-// PRESIGNED URL GENERATION
-// ============================================================================
-
-/*
- * TODO: getPresignedUploadUrl
- * 
- * Generates a pre-signed PUT URL for direct frontend upload.
- * 
- * Parameters:
- * - userId: string
- * - filename: string
- * - mimeType: string
- * 
- * Returns:
- * - uploadUrl: Pre-signed URL for PUT request
- * - s3Key: The key where file will be stored
- * - s3Url: Final public URL after upload
- * 
- * Flow:
- * 1. Frontend calls POST /api/posts/media/upload with file metadata
- * 2. Backend generates pre-signed URL (expires in 15 min)
- * 3. Frontend uploads directly to S3 using PUT request
- * 4. Frontend sends s3Url in createPost request
- */
+const s3Client = new S3Client({
+    region: ENV.AWS.REGION,
+    credentials: {
+        accessKeyId: ENV.AWS.ACCESS_KEY_ID,
+        secretAccessKey: ENV.AWS.SECRET_ACCESS_KEY,
+    },
+});
 
 export async function getPresignedUploadUrl(
     userId: string,
     filename: string,
-    mimeType: string
+    mimeType: string,
+    folder: string = "temp"
 ): Promise<{ uploadUrl: string; s3Key: string; s3Url: string }> {
-    // TODO: Implement
+    const uuid = crypto.randomUUID();
+    const ext = filename.split('.').pop() || 'bin';
 
-    // const s3Client = new S3Client({
-    //   region: ENV.AWS.REGION,
-    //   credentials: {
-    //     accessKeyId: ENV.AWS.ACCESS_KEY_ID,
-    //     secretAccessKey: ENV.AWS.SECRET_ACCESS_KEY,
-    //   },
-    // });
-    // 
-    // // Generate unique key
-    // const uuid = crypto.randomUUID();
-    // const ext = filename.split('.').pop() || 'bin';
-    // const s3Key = `temp/${userId}/${uuid}.${ext}`;
-    // 
-    // const command = new PutObjectCommand({
-    //   Bucket: ENV.AWS.S3_BUCKET_NAME,
-    //   Key: s3Key,
-    //   ContentType: mimeType,
-    // });
-    // 
-    // const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 min
-    // const s3Url = `https://${ENV.AWS.S3_BUCKET_NAME}.s3.amazonaws.com/${s3Key}`;
-    // 
-    // return { uploadUrl, s3Key, s3Url };
+    // If folder is "profiles", we use a fixed name instead of UUID to keep one image per user
+    const s3Key = folder === "profiles"
+        ? `${folder}/${filename}`
+        : `${folder}/${userId}/${uuid}.${ext}`;
 
-    return { uploadUrl: "", s3Key: "", s3Url: "" };
+    const command = new PutObjectCommand({
+        Bucket: ENV.AWS.S3_BUCKET_NAME,
+        Key: s3Key,
+        ContentType: mimeType,
+        // Removed ACL: 'public-read' as many buckets block public ACLs
+        // and it can cause 403 Forbidden errors.
+    });
+
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 min
+    const s3Url = `https://${ENV.AWS.S3_BUCKET_NAME}.s3.${ENV.AWS.REGION}.amazonaws.com/${s3Key}`;
+
+    return { uploadUrl, s3Key, s3Url };
 }
-
-// ============================================================================
-// MOVE MEDIA FROM TEMP TO PERMANENT
-// ============================================================================
-
-/*
- * TODO: moveMediaToPermanent
- * 
- * Called when post is created - moves media from temp/ to posts/
- * 
- * This is important because:
- * - temp/ has lifecycle rule (auto-delete)
- * - posts/ is permanent storage
- * - Maintains clean organization
- * 
- * Flow:
- * 1. Copy object to new key
- * 2. Delete old object
- * 3. Return new URL
- */
 
 export async function moveMediaToPermanent(
     tempKey: string,
     userId: string,
     postId: string
 ): Promise<string> {
-    // TODO: Implement
+    const filename = tempKey.split('/').pop();
+    const newKey = `posts/${userId}/${postId}/${filename}`;
 
-    // const s3Client = new S3Client({...});
-    // 
-    // // Extract filename from temp key
-    // const filename = tempKey.split('/').pop();
-    // const newKey = `posts/${userId}/${postId}/${filename}`;
-    // 
-    // // Copy
-    // await s3Client.send(new CopyObjectCommand({
-    //   Bucket: ENV.AWS.S3_BUCKET_NAME,
-    //   CopySource: `${ENV.AWS.S3_BUCKET_NAME}/${tempKey}`,
-    //   Key: newKey,
-    // }));
-    // 
-    // // Delete original
-    // await s3Client.send(new DeleteObjectCommand({
-    //   Bucket: ENV.AWS.S3_BUCKET_NAME,
-    //   Key: tempKey,
-    // }));
-    // 
-    // return `https://${ENV.AWS.S3_BUCKET_NAME}.s3.amazonaws.com/${newKey}`;
+    // Copy
+    await s3Client.send(new CopyObjectCommand({
+        Bucket: ENV.AWS.S3_BUCKET_NAME,
+        CopySource: `${ENV.AWS.S3_BUCKET_NAME}/${tempKey}`,
+        Key: newKey,
+    }));
 
-    return "";
+    // Delete original
+    await s3Client.send(new DeleteObjectCommand({
+        Bucket: ENV.AWS.S3_BUCKET_NAME,
+        Key: tempKey,
+    }));
+
+    return `https://${ENV.AWS.S3_BUCKET_NAME}.s3.${ENV.AWS.REGION}.amazonaws.com/${newKey}`;
 }
-
-// ============================================================================
-// GET PRESIGNED DOWNLOAD URL
-// ============================================================================
-
-/*
- * TODO: getPresignedDownloadUrl
- * 
- * For private buckets - generate signed URL for reading.
- * 
- * IMPORTANT FOR INSTAGRAM/THREADS:
- * Instagram requires PUBLIC URLs for media.
- * Options:
- * A) Make bucket public (security concern)
- * B) Use signed URL with LONG expiry (1+ hour) - recommended
- * C) Use CloudFront with signed URLs
- * 
- * For posting workflow:
- * - Generate signed URL with 1 hour expiry
- * - Instagram container creation takes time
- * - URL must remain valid during processing
- */
 
 export async function getPresignedDownloadUrl(
     s3Key: string,
     expiresIn: number = 3600  // 1 hour default
 ): Promise<string> {
-    // TODO: Implement for private buckets
+    const command = new GetObjectCommand({
+        Bucket: ENV.AWS.S3_BUCKET_NAME,
+        Key: s3Key,
+    });
 
-    // const s3Client = new S3Client({...});
-    // 
-    // const command = new GetObjectCommand({
-    //   Bucket: ENV.AWS.S3_BUCKET_NAME,
-    //   Key: s3Key,
-    // });
-    // 
-    // return await getSignedUrl(s3Client, command, { expiresIn });
-
-    return "";
+    return await getSignedUrl(s3Client, command, { expiresIn });
 }
 
-// ============================================================================
-// DOWNLOAD MEDIA (For worker - platform upload)
-// ============================================================================
-
-/*
- * TODO: downloadMedia
- * 
- * Downloads media from S3 for uploading to platforms.
- * 
- * Needed by platforms that require direct upload:
- * - Bluesky: uploadBlob() needs buffer
- * - Mastodon: /api/v2/media needs multipart
- * 
- * NOT needed by:
- * - Instagram: accepts public URLs
- * - Facebook: accepts public URLs
- * - Threads: accepts public URLs
- */
-
 export async function downloadMedia(s3Key: string): Promise<Buffer> {
-    // TODO: Implement
+    const response = await s3Client.send(new GetObjectCommand({
+        Bucket: ENV.AWS.S3_BUCKET_NAME,
+        Key: s3Key,
+    }));
 
-    // const s3Client = new S3Client({...});
-    // 
-    // const response = await s3Client.send(new GetObjectCommand({
-    //   Bucket: ENV.AWS.S3_BUCKET_NAME,
-    //   Key: s3Key,
-    // }));
-    // 
-    // const stream = response.Body as Readable;
-    // const chunks: Buffer[] = [];
-    // for await (const chunk of stream) {
-    //   chunks.push(chunk);
-    // }
-    // return Buffer.concat(chunks);
-
-    return Buffer.from([]);
+    const stream = response.Body as Readable;
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+        chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
 }
 
 // ============================================================================

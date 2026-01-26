@@ -165,6 +165,7 @@ export default function CreatePostPage() {
               platformPosts={platformPosts}
               updatePlatformPost={updatePlatformPost}
               refinePlatformPostWithLLM={refinePlatformPostWithLLM}
+              mediaFiles={mediaFiles}
               isGenerating={isGenerating}
             />
           )}
