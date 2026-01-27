@@ -176,8 +176,8 @@ export function useCreatePost() {
           const apiKey = p.id;
           let isConnected = false;
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((data as any)[apiKey]?.connected) isConnected = true;
+           
+          if (data[apiKey]?.connected) isConnected = true;
 
           return {
             ...p,
@@ -378,7 +378,8 @@ export function useCreatePost() {
           let pMediaItems: any[] = [];
 
           // Simple equality check for exact file arrays
-          const isSameFiles = pPost.mediaFiles.length === mediaFiles.length &&
+          const isSameFiles =
+            pPost.mediaFiles.length === mediaFiles.length &&
             pPost.mediaFiles.every((f, i) => f === mediaFiles[i]);
 
           if (isSameFiles) {
@@ -390,7 +391,7 @@ export function useCreatePost() {
 
           platformSpecificContent[platformId] = {
             text: pPost.text,
-            mediaItems: pMediaItems
+            mediaItems: pMediaItems,
           };
         }
       });
@@ -401,7 +402,7 @@ export function useCreatePost() {
       const payload = {
         content: {
           text: postText, // Global text fallback
-          mediaItems: globalMediaItems
+          mediaItems: globalMediaItems,
         },
         selectedPlatforms,
         platformSpecificContent,
@@ -427,7 +428,6 @@ export function useCreatePost() {
       setIsSubmitting(false);
     }
   };
-
 
   const handleScheduleConfirm = () => {
     setIsScheduleOpen(false);

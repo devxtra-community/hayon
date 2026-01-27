@@ -1,14 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Calendar, Send, Edit2, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Send, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Platform, User, PlatformPost } from "@/types/create-post";
 import { SocialAccount } from "@hayon/schemas";
-import { useToast } from "@/context/ToastContext";
-import { api } from "@/lib/axios";
-import axios from "axios";
+// import { useToast } from "@/context/ToastContext";
 
 // Components
 import { EditPlatformPostModal } from "./EditPlatformPostModal";
@@ -52,7 +49,6 @@ export function PostPreview({
   user,
   postText,
   filePreviews,
-  mediaFiles,
   availablePlatforms,
   selectedPlatforms,
   onBack,
@@ -73,7 +69,7 @@ export function PostPreview({
 }: PostPreviewProps) {
   const [editingPlatformId, setEditingPlatformId] = useState<string | null>(null);
   const { getPlatformUser } = usePlatformUser(user, connectedAccounts);
-  const { showToast } = useToast();
+  // const { showToast } = useToast();
 
   // Removed local scheduling logic to use centralized handleScheduleConfirm from useCreatePost
 
@@ -315,6 +311,6 @@ export function PostPreview({
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

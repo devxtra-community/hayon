@@ -77,14 +77,14 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
     });
   };
 
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  // const blobToBase64 = (blob: Blob): Promise<string> => {
+  //   return new Promise((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => resolve(reader.result as string);
+  //     reader.onerror = reject;
+  //     reader.readAsDataURL(blob);
+  //   });
+  // };
 
   const handleConfirmUpload = async () => {
     if (!selectedFile || !previewImgRef.current) return;
@@ -294,9 +294,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
             <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">Preview Avatar</h3>
 
             <div className="w-48 h-48 mx-auto rounded-full overflow-hidden border-4 border-gray-100 mb-6 relative">
-              <img
+              <Image
                 ref={previewImgRef}
                 src={previewUrl}
+                width={100}
+                height={100}
                 alt="Preview"
                 className="w-full h-full object-cover transition-transform duration-100"
                 style={{ transform: `scale(${zoom})` }}

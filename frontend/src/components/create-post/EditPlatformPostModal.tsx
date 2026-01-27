@@ -5,6 +5,8 @@ import { Upload, Trash2, Send, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
+
 import {
   Dialog,
   DialogContent,
@@ -147,7 +149,13 @@ export function EditPlatformPostModal({
                   key={idx}
                   className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 group"
                 >
-                  <img src={src} alt="Preview" className="w-full h-full object-cover" />
+                  <Image
+                    width={100}
+                    height={100}
+                    src={src}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
                   <button
                     onClick={() => removeFile(idx)}
                     className="absolute top-1 right-1 bg-white/90 backdrop-blur-md p-1.5 rounded-full text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
