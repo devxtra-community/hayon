@@ -88,6 +88,7 @@ jobs:
 
             pm2 delete backend || true
             pm2 start dist/app.js --name "backend"
+            pm2 start dist/workers/index.js --name "worker"
             pm2 save
           EOF
 
