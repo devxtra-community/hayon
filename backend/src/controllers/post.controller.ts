@@ -57,14 +57,13 @@ export const createPost = async (req: Request, res: Response) => {
             // If platformSpecificContent exists, merge/override
             const specificContent = platformSpecificContent?.[platform] || {};
 
-            // Allow overriding text. 
-            // TODO: Ensure media overrides are also handled if we support per-platform media in frontend
+            // Allow overriding text.
             const finalContentText = specificContent.text || content.text;
 
-            // Extract media URLs for the worker (which expects simple string[] currently)
-            // If specific media is implemented later, logic goes here.
-            // For now, use global media items.
-            const mediaUrls = (content.mediaItems || []).map((item: any) => item.s3Url);
+            // Extract media URLs for the worker.
+            // Prefer platform-specific media items if they exist, otherwise fallback to global content.
+            const sourceMediaItems = specificContent.mediaItems || content.mediaItems || [];
+            const mediaUrls = sourceMediaItems.map((item: any) => item.s3Url);
 
 
             await Producer.queueSocialPost({
