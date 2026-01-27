@@ -33,6 +33,7 @@ export default [
       ...next.configs.recommended.rules,
       ...next.configs["core-web-vitals"].rules,
       "@next/next/no-html-link-for-pages": ["error", "frontend/src/app"],
+       "@typescript-eslint/no-explicit-any": "warn",
     },
     languageOptions: {
       parserOptions: {
