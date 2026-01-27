@@ -133,6 +133,7 @@ export const getUserPosts = async (req: Request, res: Response) => {
         if (!req.auth) {
             return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
         }
+        // TODO: Future Milestone - Implement User Post History
         return new ErrorResponse("Not implemented", { status: 501 }).send(res);
     } catch (error) {
         logger.error("Get user posts error", error);
@@ -145,6 +146,7 @@ export const cancelPost = async (req: Request, res: Response) => {
         if (!req.auth) {
             return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
         }
+        // TODO: Future Milestone - Implement Post Cancellation
         return new ErrorResponse("Not implemented", { status: 501 }).send(res);
     } catch (error) {
         logger.error("Cancel post error", error);
@@ -157,6 +159,7 @@ export const retryPost = async (req: Request, res: Response) => {
         if (!req.auth) {
             return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
         }
+        // TODO: Future Milestone - Implement Post Retry
         return new ErrorResponse("Not implemented", { status: 501 }).send(res);
     } catch (error) {
         logger.error("Retry post error", error);
@@ -213,6 +216,7 @@ export const deleteMedia = async (req: Request, res: Response) => {
         if (!req.auth) {
             return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
         }
+        // TODO: Future Milestone - Implement Media Deletion
         return new ErrorResponse("Not implemented", { status: 501 }).send(res);
     } catch (error) {
         logger.error("Delete media error", error);

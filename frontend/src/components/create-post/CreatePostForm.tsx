@@ -47,7 +47,7 @@ export function CreatePostForm({
   postText,
   setPostText,
   handleFileChange,
-  filePreviews,
+  filePreviews, 
   removeFile,
   errors,
   selectedPlatforms,

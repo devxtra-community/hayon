@@ -28,6 +28,9 @@ export interface PlatformPost {
   text: string;
   mediaFiles: File[];
   filePreviews: string[];
+  status?: string;
+  error?: string;
+  platformPostUrl?: string;
 }
 
 export type ViewMode = "create" | "preview";

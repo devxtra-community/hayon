@@ -35,6 +35,7 @@ export function useCreatePost() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [timeZone, setTimeZone] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
+  const [postId, setPostId] = useState<string | null>(null);
 
   // --- Configurations ---
   const PLATFORM_CONSTRAINTS: Record<string, Platform["constraints"]> = {
@@ -195,10 +196,57 @@ export function useCreatePost() {
     fetchData();
   }, []);
 
+  // Polling Effect
+  useEffect(() => {
+    if (!postId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/posts/${postId}/status`);
+        const { status, platformStatuses } = res.data.data;
+
+        setPlatformPosts((prev) => {
+          const next = { ...prev };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          platformStatuses.forEach((ps: any) => {
+            if (next[ps.platform]) {
+              next[ps.platform] = {
+                ...next[ps.platform],
+                status: ps.status,
+                error: ps.error,
+                platformPostUrl: ps.platformPostUrl,
+              };
+            }
+          });
+          return next;
+        });
+
+        if (["COMPLETED", "FAILED", "PARTIAL_SUCCESS", "CANCELLED"].includes(status)) {
+          setIsSuccess(true);
+          setPostId(null);
+          clearInterval(interval);
+
+          setTimeout(() => {
+            setIsSuccess(false);
+            setViewMode("create");
+            setPostText("");
+            setMediaFiles([]);
+            setFilePreviews([]);
+            setPlatformPosts({});
+            setErrors([]);
+          }, 3000);
+        }
+      } catch (error) {
+        console.error("Polling error", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [postId]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-
       // Edge Case: Max images limit (e.g., 20 globally for threads, but we stick to a reasonable max)
       const MAX_GLOBAL_IMAGES = 20;
       if (mediaFiles.length + newFiles.length > MAX_GLOBAL_IMAGES) {
@@ -409,19 +457,16 @@ export function useCreatePost() {
         scheduledAt: scheduleDate && scheduleTime ? `${scheduleDate}T${scheduleTime}` : undefined,
       };
 
-      await api.post("/posts", payload);
+      const res = await api.post("/posts", payload);
+
+      if (res.data?.data?.postId) {
+        setPostId(res.data.data.postId);
+      }
 
       setIsSubmitting(false);
-      setIsSuccess(true);
+      // setIsSuccess(true); // Handled by polling
 
-      setTimeout(() => {
-        setIsSuccess(false);
-        setViewMode("create");
-        setPostText("");
-        setMediaFiles([]);
-        setFilePreviews([]);
-        setPlatformPosts({});
-      }, 2000);
+      // Removed immediate reset to allow polling to show progress
     } catch (error) {
       console.error("Failed to post", error);
       setErrors(["Failed to create post. Please try again."]);

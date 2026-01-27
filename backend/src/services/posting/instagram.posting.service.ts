@@ -8,6 +8,7 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload";
+import axios from "axios";
 
 // ============================================================================
 // INSTAGRAM API SPECIFICS - IMPORTANT!
@@ -171,7 +172,6 @@ export class InstagramPostingService extends BasePostingService {
         mediaUrls: string[]
     ): Promise<PostResult> {
         const { igUserId, accessToken } = credentials;
-        const axios = require('axios');
 
         try {
             let containerId: string;
@@ -217,7 +217,6 @@ export class InstagramPostingService extends BasePostingService {
     }
 
     private async createImageContainer(igUserId: string, accessToken: string, { imageUrl, caption }: any): Promise<string> {
-        const axios = require('axios');
         const response = await axios.post(`${this.graphApiUrl}/${igUserId}/media`, {
             image_url: imageUrl,
             caption: caption,
@@ -227,7 +226,6 @@ export class InstagramPostingService extends BasePostingService {
     }
 
     private async createVideoContainer(igUserId: string, accessToken: string, { videoUrl, caption }: any): Promise<string> {
-        const axios = require('axios');
         const response = await axios.post(`${this.graphApiUrl}/${igUserId}/media`, {
             video_url: videoUrl,
             media_type: "REELS",
@@ -238,7 +236,6 @@ export class InstagramPostingService extends BasePostingService {
     }
 
     private async createCarouselContainer(igUserId: string, accessToken: string, { mediaUrls, caption }: any): Promise<string> {
-        const axios = require('axios');
         const childIds: string[] = [];
 
         for (const url of mediaUrls) {
@@ -261,7 +258,6 @@ export class InstagramPostingService extends BasePostingService {
     }
 
     private async waitForContainerReady(containerId: string, accessToken: string): Promise<void> {
-        const axios = require('axios');
         let attempts = 0;
         const maxAttempts = 20;
 
@@ -284,7 +280,6 @@ export class InstagramPostingService extends BasePostingService {
     }
 
     private async publishContainer(igUserId: string, accessToken: string, containerId: string): Promise<string> {
-        const axios = require('axios');
         const response = await axios.post(`${this.graphApiUrl}/${igUserId}/media_publish`, {
             creation_id: containerId,
             access_token: accessToken

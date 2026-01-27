@@ -138,7 +138,8 @@ export const findByUserId = async (
     sortOrder?: "asc" | "desc";
   }
 ) => {
-  // TODO: Implement with proper pagination
+  // TODO: Future Milestone - Implement User Post History
+
   // const { page = 1, limit = 20, status, sortBy = "createdAt", sortOrder = "desc" } = options;
   // 
   // const query: any = { userId: new Types.ObjectId(userId) };
@@ -153,6 +154,7 @@ export const findByUserId = async (
   // ]);
   // 
   // return { posts, total };
+  return { posts: [], total: 0 };
 };
 
 // ============================================================================
@@ -166,7 +168,7 @@ export const findByUserId = async (
  */
 
 export const findByCorrelationId = async (correlationId: string) => {
-  // return await PostModel.findOne({ correlationId });
+  return await PostModel.findOne({ correlationId });
 };
 
 
@@ -187,10 +189,12 @@ export const findByCorrelationId = async (correlationId: string) => {
  */
 
 export const findScheduledPostsDue = async () => {
+  // TODO: Future Milestone - Implement Scheduled Post Safety Net
   // return await PostModel.find({
   //   status: "SCHEDULED",
   //   scheduledAt: { $lte: new Date() }
   // });
+  return [];
 };
 
 // ============================================================================
@@ -205,8 +209,10 @@ export const findScheduledPostsDue = async () => {
  */
 
 export const findPostsWithFailedPlatforms = async (maxAttempts: number = 3) => {
+  // TODO: Future Milestone - Implement Auto-Retry Logic
   // return await PostModel.find({
   //   "platformStatuses.status": "failed",
   //   "platformStatuses.attemptCount": { $lt: maxAttempts }
   // });
+  return [];
 };
