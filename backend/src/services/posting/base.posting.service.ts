@@ -1,33 +1,16 @@
 import { PostQueueMessage } from "../../lib/queues/types";
 
 // ============================================================================
-// WHY A BASE CLASS?
-// ============================================================================
-
-/*
- * Each platform has different:
- * - API endpoints and authentication
- * - Media upload requirements (size limits, formats)
- * - Content constraints (character limits, hashtag handling)
- * - Rate limiting rules
- * 
- * A base class ensures:
- * - Consistent interface for the worker
- * - Shared error handling and logging
- * - Easy addition of new platforms
- */
-
-// ============================================================================
 // POST RESULT INTERFACE
 // ============================================================================
 
 export interface PostResult {
   success: boolean;
-  platformPostId?: string;    // ID returned by platform
-  platformPostUrl?: string;   // Direct URL to the post
-  error?: string;             // Error message if failed
-  rateLimited?: boolean;      // If rate limited, worker can delay retry
-  retryAfter?: number;        // Seconds to wait if rate limited
+  platformPostId?: string; // ID returned by platform
+  platformPostUrl?: string; // Direct URL to the post
+  error?: string; // Error message if failed
+  rateLimited?: boolean; // If rate limited, worker can delay retry
+  retryAfter?: number; // Seconds to wait if rate limited
 }
 
 // ============================================================================
@@ -39,7 +22,7 @@ export interface PostResult {
  * - post(): Main posting logic
  * - uploadMedia(): Platform-specific media upload
  * - validateContent(): Pre-flight content validation
- * 
+ *
  * The worker calls these methods polymorphically.
  */
 
@@ -61,12 +44,11 @@ export abstract class BasePostingService {
    * 2. Upload media (if any)
    * 3. Create post
    * 4. Return result
-   * 
+   *
    * Concrete platform classes override specific steps.
    */
 
   async execute(payload: PostQueueMessage, credentials: any): Promise<PostResult> {
-
     try {
       // Step 1: Validate content before posting
       const validationError = await this.validateContent(payload);
@@ -74,15 +56,11 @@ export abstract class BasePostingService {
         return { success: false, error: validationError };
       }
 
-      // console.log("validtion error", validationError)
-
       // Step 2: Upload media if present
       let mediaIds: string[] = [];
       if (payload.content.mediaUrls?.length) {
         mediaIds = await this.uploadMedia(payload.content.mediaUrls, credentials, payload);
       }
-
-      console.log("this is media ids", mediaIds)
 
       // Step 3: Create the post
       const result = await this.createPost(payload, credentials, mediaIds);
@@ -98,7 +76,6 @@ export abstract class BasePostingService {
     } catch (error: any) {
       return this.handleError(error);
     }
-    // return { success: false, error: "Not implemented" };
   }
 
   // ============================================================================
@@ -107,7 +84,7 @@ export abstract class BasePostingService {
 
   /*
    * createPost: Actual API call to create the post
-   * 
+   *
    * Parameters:
    * - payload: The queue message with content
    * - credentials: Platform-specific auth (tokens, session, etc.)
@@ -116,15 +93,15 @@ export abstract class BasePostingService {
   abstract createPost(
     payload: PostQueueMessage,
     credentials: any,
-    mediaIds: string[]
+    mediaIds: string[],
   ): Promise<PostResult>;
 
   /*
    * uploadMedia: Upload media files to platform
-   * 
+   *
    * Most platforms require media to be uploaded separately before posting.
    * Returns array of platform-specific media IDs.
-   * 
+   *
    * Flow:
    * 1. Download from S3 URL
    * 2. Upload to platform API
@@ -133,17 +110,17 @@ export abstract class BasePostingService {
   abstract uploadMedia(
     mediaUrls: string[],
     credentials: any,
-    payload: PostQueueMessage
+    payload: PostQueueMessage,
   ): Promise<string[]>;
 
   /*
    * validateContent: Pre-flight validation
-   * 
+   *
    * Checks:
    * - Character count within limit
    * - Media count/type/size within limits
    * - Required fields present
-   * 
+   *
    * Returns null if valid, error message if invalid.
    */
   abstract validateContent(payload: PostQueueMessage): Promise<string | null>;
@@ -153,34 +130,65 @@ export abstract class BasePostingService {
   // ============================================================================
 
   protected handleError(error: any): PostResult {
-    // TODO: Implement common error handling
+    // 1. Log full error for developers
+    // console.error(`[${this.platformName}] Raw Error:`, error);
 
-    // Check for rate limiting
-    if (error.response?.status === 429) {
-      const retryAfter = parseInt(error.response.headers["retry-after"]) || 60;
-      return {
-        success: false,
-        error: "Rate limited",
-        rateLimited: true,
-        retryAfter
-      };
+    // 2. Map common axios/network errors
+    if (error.code === "ECONNABORTED") {
+      return { success: false, error: "Connection timeout - platform API might be slow" };
     }
 
-    // Check for auth errors (token expired)
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // TODO: Mark account as needing reconnection
-      return {
-        success: false,
-        error: "Authentication failed - account needs reconnection"
-      };
+    // 3. Map platform response errors
+    if (error.response?.status) {
+      const status = error.response.status;
+      const data = error.response.data;
+
+      // Rate limiting
+      if (status === 429) {
+        const retryAfter = parseInt(error.response.headers["retry-after"]) || 60;
+        return {
+          success: false,
+          error: "Rate limited by platform. Please try again later.",
+          rateLimited: true,
+          retryAfter,
+        };
+      }
+
+      // Auth errors
+      if (status === 401 || status === 403) {
+        return {
+          success: false,
+          error: "Authentication failed. Please disconnect and reconnect your account.",
+        };
+      }
+
+      // Bluesky specific errors
+      if (this.platformName === "bluesky") {
+        if (data?.error === "BlobTooLarge") {
+          return { success: false, error: "Image is too large for Bluesky (max 976KB)." };
+        }
+      }
+
+      // Meta (Instagram/Threads/Facebook) specific errors
+      if (["instagram", "threads", "facebook"].includes(this.platformName)) {
+        const metaError = data?.error;
+        if (metaError) {
+          // Map common Meta error codes
+          if (metaError.code === 100 && metaError.error_subcode === 33) {
+            return {
+              success: false,
+              error: "Invalid account ID. Please try reconnecting your account.",
+            };
+          }
+          return { success: false, error: `Platform error: ${metaError.message}` };
+        }
+      }
     }
 
-    // Generic error
+    // 4. Fallback to generic error
     return {
       success: false,
-      error: error.message || "Unknown error"
+      error: error.message || "An unexpected error occurred while posting.",
     };
   }
 }
-
-// Factory is now in index.ts to prevent circular dependencies

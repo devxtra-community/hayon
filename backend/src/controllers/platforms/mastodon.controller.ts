@@ -7,9 +7,6 @@ import {
   findPlatformAccountByUserId,
 } from "../../repositories/platform.repository";
 import logger from "../../utils/logger";
-import { createPost } from "../../repositories/post.repository";
-import { Types } from "mongoose";
-import { Producer } from "../../lib/queues/producer";
 
 export const connectMastodon = (req: Request, res: Response) => {
   try {
@@ -109,56 +106,5 @@ export const refreshMastodonProfile = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Failed to refresh Mastodon profile", error);
     return new ErrorResponse("Failed to refresh profile", { status: 500 }).send(res);
-  }
-};
-
-export const postToMastodon = async (req: Request, res: Response) => {
-  try {
-    if (!req.auth) {
-      return new ErrorResponse("User not authenticated", { status: 401 }).send(res);
-    }
-
-    const { text, mediaUrls, scheduledAt, timezone } = req.body;
-    const userId = req.auth.id;
-
-    // 1. Create a persistent Post record in MongoDB
-    const post = await createPost({
-      userId: new Types.ObjectId(userId),
-      content: {
-        text,
-        mediaItems: mediaUrls?.map((url: string) => ({
-          s3Url: url,
-          s3Key: url.split("/").pop() || "unknown", // Temporary logic until media handling is fully ready
-          mimeType: "image/jpeg" // Default for now
-        })) || []
-      },
-      selectedPlatforms: ["mastodon"],
-      status: scheduledAt ? "SCHEDULED" : "PENDING",
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
-      timezone: timezone || "UTC",
-      platformStatuses: []
-    });
-
-    // 2. Queue the message in RabbitMQ with the real Post ID
-    const correlationId = await Producer.queueSocialPost({
-      postId: post._id.toString(),
-      userId,
-      platform: "mastodon",
-      content: {
-        text,
-        mediaUrls: mediaUrls || []
-      },
-      scheduledAt,
-    });
-
-    return new SuccessResponse("Post created and queued successfully", {
-      data: {
-        postId: post._id,
-        correlationId
-      }
-    }).send(res);
-  } catch (error) {
-    logger.error("Failed to post to Mastodon", error);
-    return new ErrorResponse("Failed to post to Mastodon", { status: 500 }).send(res);
   }
 };

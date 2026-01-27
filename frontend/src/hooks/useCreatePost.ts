@@ -62,6 +62,7 @@ export function useCreatePost() {
       maxChars: 300,
       requiresImage: false,
       previewType: "grid",
+      maxFileSize: 900 * 1024, // 900KB safety limit
     },
     mastodon: {
       maxImages: 4,
@@ -177,7 +178,6 @@ export function useCreatePost() {
           const apiKey = p.id;
           let isConnected = false;
 
-           
           if (data[apiKey]?.connected) isConnected = true;
 
           return {
@@ -306,6 +306,15 @@ export function useCreatePost() {
       // Required Image Validation (Instagram)
       if (requiresImage && mediaFiles.length === 0) {
         newErrors.push(`${platform.name} requires at least one image/video.`);
+      }
+
+      // File Size Validation (Bluesky)
+      if (platform.constraints.maxFileSize) {
+        const oversizedFiles = mediaFiles.filter((f) => f.size > platform.constraints.maxFileSize!);
+        if (oversizedFiles.length > 0) {
+          const limitKB = Math.floor(platform.constraints.maxFileSize! / 1024);
+          newErrors.push(`${platform.name} allows maximum ${limitKB}KB per file.`);
+        }
       }
     });
 
@@ -454,7 +463,11 @@ export function useCreatePost() {
         },
         selectedPlatforms,
         platformSpecificContent,
-        scheduledAt: scheduleDate && scheduleTime ? `${scheduleDate}T${scheduleTime}` : undefined,
+        scheduledAt:
+          scheduleDate && scheduleTime
+            ? new Date(`${scheduleDate}T${scheduleTime}`).toISOString()
+            : undefined,
+        timezone: timeZone,
       };
 
       const res = await api.post("/posts", payload);
