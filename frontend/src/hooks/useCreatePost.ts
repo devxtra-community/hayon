@@ -321,23 +321,95 @@ export function useCreatePost() {
     }
   };
 
+  const uploadFiles = async (files: File[]) => {
+    if (files.length === 0) return [];
+
+    const uploadPromises = files.map(async (file) => {
+      // 1. Get Presigned URL
+      const { data } = await api.post("/posts/media/upload", {
+        contentType: file.type,
+      });
+
+      const { uploadUrl, s3Url, s3Key } = data.data;
+
+      // 2. Upload to S3
+      await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        },
+      });
+
+      return {
+        s3Url,
+        s3Key,
+        mimeType: file.type,
+      };
+    });
+
+    return Promise.all(uploadPromises);
+  };
+
   const handlePostNow = async () => {
     setIsSubmitting(true);
     setErrors([]);
 
     try {
-      const postPromises = selectedPlatforms.map(async (platformId) => {
-        const content = platformPosts[platformId] || { text: postText };
-        const scheduledAt =
-          scheduleDate && scheduleTime ? `${scheduleDate}T${scheduleTime}` : undefined;
+      // 1. Upload Global Media (if any)
+      // Note: If platformSpecificContent is fully used, we might not strictly need global media,
+      // but we send it as the default 'content'.
+      const globalMediaItems = await uploadFiles(mediaFiles);
 
-        return api.post(`/${platformId}/post`, {
-          text: content.text,
-          scheduledAt,
-        });
+      // 2. Prepare Platform Specific Content
+      const platformSpecificContent: Record<string, any> = {};
+
+      // If we are in preview mode, platformPosts is populated.
+      // We need to upload files for each platform if they are different/new.
+      // Optimization: We could track if files are the same as global to avoid re-uploading,
+      // but for now, to ensure correctness of per-platform edits, we upload what is in platformPost.
+      // A better optimization would be deduping based on file object reference or hash.
+
+      const platformPromises = selectedPlatforms.map(async (platformId) => {
+        const pPost = platformPosts[platformId];
+        if (pPost) {
+          // Check if files are exactly the same objects as global mediaFiles
+          // If so, reuse globalMediaItems
+          let pMediaItems: any[] = [];
+
+          // Simple equality check for exact file arrays
+          const isSameFiles = pPost.mediaFiles.length === mediaFiles.length &&
+            pPost.mediaFiles.every((f, i) => f === mediaFiles[i]);
+
+          if (isSameFiles) {
+            pMediaItems = globalMediaItems;
+          } else {
+            // Upload platform specific files
+            pMediaItems = await uploadFiles(pPost.mediaFiles);
+          }
+
+          platformSpecificContent[platformId] = {
+            text: pPost.text,
+            mediaItems: pMediaItems
+          };
+        }
       });
 
-      await Promise.all(postPromises);
+      await Promise.all(platformPromises);
+
+      // 3. Send Create Post Request
+      const payload = {
+        content: {
+          text: postText, // Global text fallback
+          mediaItems: globalMediaItems
+        },
+        selectedPlatforms,
+        platformSpecificContent,
+        scheduledAt: scheduleDate && scheduleTime ? `${scheduleDate}T${scheduleTime}` : undefined,
+      };
+
+      await api.post("/posts", payload);
+
       setIsSubmitting(false);
       setIsSuccess(true);
 
@@ -351,7 +423,7 @@ export function useCreatePost() {
       }, 2000);
     } catch (error) {
       console.error("Failed to post", error);
-      setErrors(["Failed to post to one or more platforms"]);
+      setErrors(["Failed to create post. Please try again."]);
       setIsSubmitting(false);
     }
   };

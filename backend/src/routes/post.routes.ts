@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.middleware";
-import { 
-    // createPost, 
-    getPostStatus, getUploadUrls } from "../controllers/post.controller";
+import {
+    createPost,
+    getPostStatus, getUploadUrls
+} from "../controllers/post.controller";
 
 const router = Router();
 
@@ -10,6 +11,7 @@ router.use(authenticate);
 
 // Status tracking
 router.get("/:postId/status", getPostStatus);
+router.post("/", createPost);
 // router.get("/", getUserPosts);
 // router.delete("/:postId", cancelPost);
 // router.post("/:postId/retry", retryPost);

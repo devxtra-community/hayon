@@ -154,7 +154,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
       setIsEditingName(false);
       return;
     }
-
     setIsUpdatingName(true);
     try {
       await api.patch("/profile/change-name", {

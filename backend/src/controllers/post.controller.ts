@@ -2,12 +2,94 @@ import { Request, Response } from "express";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import logger from "../utils/logger";
 import * as postRepository from "../repositories/post.repository";
+import { Producer } from "../lib/queues/producer";
+import { PostStatus, PlatformStatus } from "../interfaces/post.interface";
+import { Types } from "mongoose";
 export const createPost = async (req: Request, res: Response) => {
     try {
         if (!req.auth) {
             return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
         }
-        return new ErrorResponse("Not implemented", { status: 501 }).send(res);
+
+        const userId = req.auth.id;
+        const {
+            content, // { text: string, mediaItems: [] }
+            selectedPlatforms, // ["bluesky", "mastodon"]
+            platformSpecificContent, // { bluesky: { text: "..." } }
+            scheduledAt
+        } = req.body;
+
+        // 1. Basic Validation
+        if (!content || !content.text) {
+            return new ErrorResponse("Post content is required", { status: 400 }).send(res);
+        }
+
+        if (!selectedPlatforms || !Array.isArray(selectedPlatforms) || selectedPlatforms.length === 0) {
+            return new ErrorResponse("At least one platform must be selected", { status: 400 }).send(res);
+        }
+
+        // 2. Create Post Document
+        const postData = {
+            userId: new Types.ObjectId(userId),
+            content: {
+                text: content.text,
+                mediaItems: content.mediaItems || []
+            },
+            selectedPlatforms,
+            platformSpecificContent: platformSpecificContent || {},
+            scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+            status: (scheduledAt ? "SCHEDULED" : "PENDING") as PostStatus,
+            platformStatuses: selectedPlatforms.map((p: any) => ({
+                platform: p,
+                status: "pending" as PlatformStatus,
+                attemptCount: 0
+            })),
+            timezone: "UTC" // Default to UTC for now
+        };
+
+        const post = await postRepository.createPost(postData);
+
+        // 3. Enqueue Jobs for each Platform
+        // We use Producer.queueSocialPost which handles delayed publishing if scheduledAt is set
+
+        const queuePromises = selectedPlatforms.map(async (platform) => {
+            // Determine content for this specific platform
+            // If platformSpecificContent exists, merge/override
+            const specificContent = platformSpecificContent?.[platform] || {};
+
+            // Allow overriding text. 
+            // TODO: Ensure media overrides are also handled if we support per-platform media in frontend
+            const finalContentText = specificContent.text || content.text;
+
+            // Extract media URLs for the worker (which expects simple string[] currently)
+            // If specific media is implemented later, logic goes here.
+            // For now, use global media items.
+            const mediaUrls = (content.mediaItems || []).map((item: any) => item.s3Url);
+
+
+            await Producer.queueSocialPost({
+                postId: post._id.toString(),
+                userId,
+                platform: platform as any, // Type cast to allowed platform union
+                content: {
+                    text: finalContentText,
+                    mediaUrls
+                },
+                scheduledAt: post.scheduledAt
+            });
+        });
+
+        await Promise.all(queuePromises);
+
+        return new SuccessResponse("Post created successfully", {
+            data: {
+                postId: post._id,
+                status: post.status,
+                scheduledAt: post.scheduledAt
+            },
+            status: 201
+        }).send(res);
+
     } catch (error) {
         logger.error("Create post error", error);
         return new ErrorResponse("Failed to create post").send(res);
