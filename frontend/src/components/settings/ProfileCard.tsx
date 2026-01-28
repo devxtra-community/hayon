@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Camera, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
 import { api } from "@/lib/axios";
 import { useToast } from "@/context/ToastContext";
 
@@ -76,28 +77,45 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
     });
   };
 
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  // const blobToBase64 = (blob: Blob): Promise<string> => {
+  //   return new Promise((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => resolve(reader.result as string);
+  //     reader.onerror = reject;
+  //     reader.readAsDataURL(blob);
+  //   });
+  // };
 
   const handleConfirmUpload = async () => {
     if (!selectedFile || !previewImgRef.current) return;
 
     try {
+      // STEP 1: Process image (zoom, crop)
       const processedBlob = await getProcessedImage(previewImgRef.current, zoom);
       if (!processedBlob) throw new Error("Failed to process image");
 
-      const base64Image = await blobToBase64(processedBlob);
+      // Get the content type from the processed blob
+      const contentType = processedBlob.type || "image/png";
 
-      await api.put("/profile/update-avatar", {
-        image: base64Image,
+      // STEP 2: Request presigned upload URL from backend
+      const { data } = await api.post("/profile/upload-url", {
+        contentType,
+      });
+      const { uploadUrl, s3Url, contentType: responseContentType } = data.data;
+
+      // STEP 3: Upload blob directly to S3 using presigned URL
+      await axios.put(uploadUrl, processedBlob, {
+        headers: {
+          "Content-Type": responseContentType,
+        },
       });
 
+      // STEP 4: Notify backend that upload succeeded
+      await api.put("/profile/update-avatar", {
+        imageUrl: s3Url,
+      });
+
+      // STEP 5: Update UI and show success toast
       showToast("success", "Avatar Updated", "Your profile picture has been updated.");
       onUpdate();
       handleCancelUpload();
@@ -136,7 +154,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
       setIsEditingName(false);
       return;
     }
-
     setIsUpdatingName(true);
     try {
       await api.patch("/profile/change-name", {
@@ -280,6 +297,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
               <Image
                 ref={previewImgRef}
                 src={previewUrl}
+                width={100}
+                height={100}
                 alt="Preview"
                 className="w-full h-full object-cover transition-transform duration-100"
                 style={{ transform: `scale(${zoom})` }}

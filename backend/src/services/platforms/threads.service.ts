@@ -43,4 +43,6 @@ export class ThreadsService {
   }
 }
 
+export const createPostServiceThreads = () => {};
+
 export const threadsService = new ThreadsService();

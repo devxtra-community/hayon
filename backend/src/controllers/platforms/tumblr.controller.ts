@@ -40,10 +40,14 @@ export const tumblrCallback = async (req: Request, res: Response) => {
       oauth_verifier,
     );
 
-    const { handle, avatar } = await tumblrService.getUserInfo(accessToken, accessSecret);
+    const { handle, blogHostname, avatar } = await tumblrService.getUserInfo(
+      accessToken,
+      accessSecret,
+    );
 
     await updateTumblerDetails(userId, {
       connected: true,
+      blogHostname,
       auth: {
         oauthToken: accessToken,
         oauthTokenSecret: accessSecret,
@@ -109,10 +113,14 @@ export const refreshTumblrProfile = async (req: Request, res: Response) => {
     }
 
     const { oauthToken, oauthTokenSecret } = tumblrAuth;
-    const { handle, avatar } = await tumblrService.getUserInfo(oauthToken, oauthTokenSecret);
+    const { handle, blogHostname, avatar } = await tumblrService.getUserInfo(
+      oauthToken,
+      oauthTokenSecret,
+    );
 
     await updateTumblerDetails(userId, {
       connected: true,
+      blogHostname,
       profile: {
         handle,
         avatar,

@@ -8,12 +8,30 @@ export interface User {
   avatar: string;
 }
 
+export interface PlatformConstraints {
+  maxImages: number;
+  maxChars: number;
+  requiresImage: boolean;
+  previewType: "carousel" | "scroll" | "grid" | "column" | "stack";
+  maxFileSize?: number;
+}
+
 export interface Platform {
   id: string;
   name: string;
   icon: ReactNode;
   color: string;
   connected: boolean;
+  constraints?: PlatformConstraints;
+}
+
+export interface PlatformPost {
+  text: string;
+  mediaFiles: File[];
+  filePreviews: string[];
+  status?: string;
+  error?: string;
+  platformPostUrl?: string;
 }
 
 export type ViewMode = "create" | "preview";

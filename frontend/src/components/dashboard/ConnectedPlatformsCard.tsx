@@ -159,7 +159,7 @@ export default function ConnectedPlatformsCard() {
                 className="flex items-center justify-between group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-200 shadow-sm transition-transform group-hover:scale-105">
+                  <div className="relative w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 border border-gray-200 shadow-sm transition-transform group-hover:scale-105">
                     {account.avatar ? (
                       <Image
                         src={account.avatar}
@@ -168,7 +168,14 @@ export default function ConnectedPlatformsCard() {
                         className="object-cover"
                       />
                     ) : (
-                      <span className="text-xs font-bold text-gray-500">{account.platform[0]}</span>
+                      <div className="relative w-full h-full scale-[0.6]">
+                        <Image
+                          src={`/images/logos/${account.platform.toLowerCase()}.png`}
+                          alt={account.platform}
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                     )}
                   </div>
                   <div className="flex flex-col min-w-0">
@@ -179,7 +186,7 @@ export default function ConnectedPlatformsCard() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 transition-opacity">
                   <button
                     onClick={() => handleRefresh(account.platform)}
                     disabled={refreshing[account.platform.toLowerCase()]}

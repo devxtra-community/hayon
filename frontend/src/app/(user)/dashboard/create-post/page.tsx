@@ -41,6 +41,12 @@ export default function CreatePostPage() {
     handleGeneratePosts,
     handlePostNow,
     handleScheduleConfirm,
+    connectedAccounts,
+    errors,
+    platformWarnings,
+    platformPosts,
+    updatePlatformPost,
+    refinePlatformPostWithLLM,
   } = useCreatePost();
 
   if (!user) {
@@ -121,6 +127,10 @@ export default function CreatePostPage() {
                 handleFileChange={handleFileChange}
                 filePreviews={filePreviews}
                 removeFile={removeFile}
+                errors={errors}
+                platformWarnings={platformWarnings}
+                selectedPlatforms={selectedPlatforms}
+                availablePlatforms={availablePlatforms}
               />
 
               {/* Right Column: Platform Selection */}
@@ -153,6 +163,13 @@ export default function CreatePostPage() {
               setScheduleTime={setScheduleTime}
               handleScheduleConfirm={handleScheduleConfirm}
               timeZone={timeZone}
+              connectedAccounts={connectedAccounts}
+              platformPosts={platformPosts}
+              updatePlatformPost={updatePlatformPost}
+              refinePlatformPostWithLLM={refinePlatformPostWithLLM}
+              mediaFiles={mediaFiles}
+              isGenerating={isGenerating}
+              platformWarnings={platformWarnings}
             />
           )}
         </main>

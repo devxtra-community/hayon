@@ -18,6 +18,8 @@ export const connectFacebook = (req: Request, res: Response) => {
     "instagram_manage_insights",
     "pages_show_list",
     "pages_read_engagement",
+    "pages_manage_posts",
+    "pages_manage_metadata",
     "public_profile",
     "business_management",
   ].join(",");
@@ -85,12 +87,15 @@ export const facebookCallback = async (req: Request, res: Response) => {
     const userId = req.query.state as string;
 
     if (userId) {
+      const page = pages && pages.length > 0 ? pages[0] : null;
+      const pageAccessToken = page?.access_token || longToken;
+
       await updateFacebookDetails(userId, {
         connected: true,
         platformId: linkedPageId || fbUser.id,
         profile: fbProfile,
         auth: {
-          accessToken: longToken,
+          accessToken: pageAccessToken, // Store PAGE token here
           refreshToken: "",
           expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
         },
@@ -103,7 +108,7 @@ export const facebookCallback = async (req: Request, res: Response) => {
           platformId: linkedIgId,
           profile: igProfile,
           auth: {
-            accessToken: longToken,
+            accessToken: longToken, // Instagram uses USER token
             refreshToken: "",
             expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
           },
@@ -182,9 +187,12 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
     // Also refresh Linked Instagram if exists
     // We re-check pages to find connected IG
     const pages = await facebookService.getFacebookPages(longToken);
+    let pageAccessToken = longToken;
+
     if (pages && pages.length > 0) {
       const page = pages[0];
       fbPlatformId = page.id;
+      pageAccessToken = page.access_token || longToken;
       fbProfile = {
         displayName: page.name,
         avatar: page.picture?.data?.url,
@@ -205,6 +213,9 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
           connected: true,
           profile: igProfile,
           platformId: igData.id,
+          auth: {
+            accessToken: longToken, // IG uses User token
+          },
         });
       }
     }
@@ -213,6 +224,9 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
       connected: true,
       platformId: fbPlatformId,
       profile: fbProfile,
+      auth: {
+        accessToken: pageAccessToken, // FB uses Page token
+      },
     });
 
     return new SuccessResponse("Facebook & Instagram profiles refreshed").send(res);

@@ -13,5 +13,6 @@ const router = express.Router();
 router.post("/connect", authenticate, validate(blueskyConnectSchema), connectBluesky);
 router.get("/refresh", authenticate, refreshBlueskyProfile);
 router.delete("/disconnect", authenticate, disconnectBluesky);
+router.delete("/disconnect", authenticate, disconnectBluesky);
 
 export default router;

@@ -13,5 +13,6 @@ router.get("/connect", authenticate, connectMastodon);
 router.get("/callback", mastodonCallback);
 router.delete("/disconnect", authenticate, disconnectMastodon);
 router.get("/refresh", authenticate, refreshMastodonProfile);
+router.get("/refresh", authenticate, refreshMastodonProfile);
 
 export default router;

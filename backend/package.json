@@ -7,7 +7,7 @@
     "dev": "nodemon src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
-    "worker": "ts-node src/workers/post.worker.ts",
+    "worker": "ts-node src/workers/index.ts",
     "lint": "npx eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
@@ -28,9 +28,11 @@
   "dependencies": {
     "@atproto/api": "^0.18.9",
     "@aws-sdk/client-s3": "^3.956.0",
+    "@aws-sdk/client-sts": "^3.974.0",
     "@aws-sdk/s3-request-presigner": "^3.956.0",
     "@google/generative-ai": "^0.24.1",
     "@hayon/schemas": "workspace:*",
+    "amqplib": "^0.10.9",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.63.2",
@@ -59,6 +61,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@types/amqplib": "^0.10.8",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",

@@ -110,4 +110,8 @@ export const ENV = {
     CALLBACK_URL: required("MASTODON_CALLBACK_URL"),
     INSTANCE_URL: required("MASTODON_INSTANCE_URL"),
   },
+
+  RABBITMQ: {
+    URL: required("RABBITMQ_URL"),
+  },
 } as const;
