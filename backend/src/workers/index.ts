@@ -34,7 +34,7 @@ async function startWorker(): Promise<void> {
       await channel.assertExchange(EXCHANGES.POST_DELAYED_EXCHANGE, "x-delayed-message", {
         durable: true,
         arguments: {
-          "x-delayed-type": "topic",  // Underlying routing type
+          "x-delayed-type": "topic", // Underlying routing type
         },
       });
       console.log(`✅ Delayed exchange ready: ${EXCHANGES.POST_DELAYED_EXCHANGE}`);
@@ -58,7 +58,7 @@ async function startWorker(): Promise<void> {
     // Main processing queue - receives from both immediate and delayed exchanges
     await channel.assertQueue(QUEUES.SOCIAL_POSTS, {
       durable: true,
-      deadLetterExchange: EXCHANGES.DLX_EXCHANGE,  // Failed messages go here
+      deadLetterExchange: EXCHANGES.DLX_EXCHANGE, // Failed messages go here
       deadLetterRoutingKey: "dead",
     });
 
@@ -77,7 +77,9 @@ async function startWorker(): Promise<void> {
     // Parking lot for permanently failed messages
     await channel.assertQueue(QUEUES.PARKING_LOT, { durable: true });
 
-    console.log(`✅ Queues ready: ${QUEUES.SOCIAL_POSTS}, ${QUEUES.DEAD_LETTERS}, ${QUEUES.RETRY_QUEUE}, ${QUEUES.PARKING_LOT}`);
+    console.log(
+      `✅ Queues ready: ${QUEUES.SOCIAL_POSTS}, ${QUEUES.DEAD_LETTERS}, ${QUEUES.RETRY_QUEUE}, ${QUEUES.PARKING_LOT}`,
+    );
 
     // ========================================================================
     // STEP 4: Bind Queues to Exchanges
@@ -87,16 +89,12 @@ async function startWorker(): Promise<void> {
     await channel.bindQueue(
       QUEUES.SOCIAL_POSTS,
       EXCHANGES.POST_EXCHANGE,
-      "post.create.*",  // Matches post.create.bluesky, post.create.facebook, etc.
+      "post.create.*", // Matches post.create.bluesky, post.create.facebook, etc.
     );
 
     // Main queue ALSO receives from POST_DELAYED_EXCHANGE (scheduled posts)
     // When delay expires, plugin routes message here
-    await channel.bindQueue(
-      QUEUES.SOCIAL_POSTS,
-      EXCHANGES.POST_DELAYED_EXCHANGE,
-      "post.create.*",
-    );
+    await channel.bindQueue(QUEUES.SOCIAL_POSTS, EXCHANGES.POST_DELAYED_EXCHANGE, "post.create.*");
 
     // DLX bindings
     await channel.bindQueue(QUEUES.DEAD_LETTERS, EXCHANGES.DLX_EXCHANGE, "dead");
@@ -140,7 +138,6 @@ async function startWorker(): Promise<void> {
       await closeRabbitMQ();
       process.exit(0);
     });
-
   } catch (error) {
     console.error("❌ Worker failed to start:", error);
     process.exit(1);
@@ -153,7 +150,7 @@ async function startWorker(): Promise<void> {
 
 /*
  * MESSAGE FLOW:
- * 
+ *
  *   ┌─────────────────────────────────────────────────────────────────────┐
  *   │                        PRODUCER (Backend)                          │
  *   └───────────────────┬─────────────────────────┬───────────────────────┘

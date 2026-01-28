@@ -1,48 +1,12 @@
 import { Channel, ConsumeMessage } from "amqplib";
 import { PostQueueMessage } from "../lib/queues/types";
 import { handleDeadLetter } from "../lib/queues/dlx.setup";
-import { getPostingService, getCredentialsForPlatform, validateCredentials } from "../services/posting";
+import {
+  getPostingService,
+  getCredentialsForPlatform,
+  validateCredentials,
+} from "../services/posting";
 import { findById, updatePlatformStatus } from "../repositories/post.repository";
-
-// ============================================================================
-// WORKER FLOW OVERVIEW
-// ============================================================================
-
-/*
- * Message arrives from queue → processMessage() handles it:
- * 
- * 1. PARSE MESSAGE
- *    - Extract postId, userId, platform, content
- * 
- * 2. CHECK IF CANCELLED (Edge Case!)
- *    - Fetch post from DB
- *    - If status === "CANCELLED", ACK and skip
- *    - Race condition: user cancelled while message was in queue
- * 
- * 3. VALIDATE CREDENTIALS
- *    - Check user's platform account is connected
- *    - Check token hasn't expired
- *    - If invalid → fail with reconnection message
- * 
- * 4. UPDATE STATUS TO "PROCESSING"
- *    - postRepository.updatePlatformStatus(postId, platform, { status: "processing" })
- * 
- * 5. GET POSTING SERVICE
- *    - const service = getPostingService(platform);
- *    - Factory returns correct platform implementation
- * 
- * 6. EXECUTE POST
- *    - const result = await service.execute(payload, credentials);
- * 
- * 7. UPDATE DB WITH RESULT
- *    - If success: status=completed, store platformPostId, platformPostUrl
- *    - If failed: status=failed, store error message
- * 
- * 8. HANDLE RABBITMQ ACK
- *    - Success or permanent failure → ACK
- *    - Retryable failure → DLX handling
- */
-
 
 const isRetryableError = (error: any): boolean => {
   if (!error) return false;
@@ -73,7 +37,6 @@ export class PostWorker {
 
       // 1. Check if post was cancelled
 
-
       const post = await findById(payload.postId);
       if (!post) {
         console.log(`⚠️ Post ${payload.postId} not found, skipping`);
@@ -86,35 +49,18 @@ export class PostWorker {
         channel.ack(msg);
         return;
       }
-
-      // ============================================================================
-      // STEP 1.5 - Idempotency check (VERY IMPORTANT)
-      // ============================================================================
-      /*
-       * RabbitMQ is at-least-once delivery.
-       * If worker crashes or ACK is delayed, message may be redelivered.
-       * If this platform is already completed, skip safely.
-       */
-
       const platformStatus = post.platformStatuses.find(
-        (p: any) => p.platform === payload.platform
+        (p: any) => p.platform === payload.platform,
       );
 
       if (platformStatus?.status === "completed") {
         console.log(
-          `🔁 Duplicate message detected for ${payload.postId} / ${payload.platform}, skipping`
+          `🔁 Duplicate message detected for ${payload.postId} / ${payload.platform}, skipping`,
         );
         channel.ack(msg);
         return;
       }
-
-
-      // 2. Validate credentials
-
-      const credentialCheck = await validateCredentials(
-        payload.userId,
-        payload.platform
-      );
+      const credentialCheck = await validateCredentials(payload.userId, payload.platform);
 
       if (!credentialCheck.valid) {
         console.log(`❌ Credentials invalid: ${credentialCheck.error}`);
@@ -122,7 +68,7 @@ export class PostWorker {
         await updatePlatformStatus(payload.postId, payload.platform, {
           status: "failed",
           error: credentialCheck.error,
-          lastAttemptAt: new Date()
+          lastAttemptAt: new Date(),
         });
 
         // Permanent failure → do NOT retry
@@ -130,37 +76,29 @@ export class PostWorker {
         return;
       }
 
-      // 3. Update status to processing
-
       await updatePlatformStatus(payload.postId, payload.platform, {
         status: "processing",
-        lastAttemptAt: new Date()
+        lastAttemptAt: new Date(),
       });
-      console.log('changed to processing')
-
-      // 4. Get credentials and posting service
-
+      console.log("changed to processing");
 
       const credentials = await getCredentialsForPlatform(payload.userId, payload.platform);
       const service = getPostingService(payload.platform);
 
-
-      // 5. Execute the post
-
-
       const result = await service.execute(payload, credentials);
-      // console.log("this is the result :",result)
 
       if (result.success) {
         await updatePlatformStatus(payload.postId, payload.platform, {
           status: "completed",
           platformPostId: result.platformPostId,
           platformPostUrl: result.platformPostUrl,
-          completedAt: new Date()
+          completedAt: new Date(),
         });
 
         channel.ack(msg);
-        console.log(`✅ [ACK] Finished: ${payload.postId} for ${payload.platform} in ${Date.now() - startTime}ms`);
+        console.log(
+          `✅ [ACK] Finished: ${payload.postId} for ${payload.platform} in ${Date.now() - startTime}ms`,
+        );
         return;
       } else {
         if (result.rateLimited) {
@@ -170,12 +108,14 @@ export class PostWorker {
         await updatePlatformStatus(payload.postId, payload.platform, {
           status: "failed",
           error: result.error,
-          lastAttemptAt: new Date()
+          lastAttemptAt: new Date(),
         });
 
         // Permanent failure - ACK so it leaves the queue
         channel.ack(msg);
-        console.log(`🪦 [ACK] Permanent failure for ${payload.postId} / ${payload.platform}: ${result.error}`);
+        console.log(
+          `🪦 [ACK] Permanent failure for ${payload.postId} / ${payload.platform}: ${result.error}`,
+        );
         return;
       }
     } catch (error: any) {
@@ -185,17 +125,16 @@ export class PostWorker {
       const post = await findById(payload.postId);
 
       const platformStatus = post?.platformStatuses.find(
-        (p: any) => p.platform === payload.platform
+        (p: any) => p.platform === payload.platform,
       );
 
       const attempts = platformStatus?.attemptCount ?? 0;
 
-      const shouldRetry =
-        attempts < 3 && isRetryableError(error);
+      const shouldRetry = attempts < 3 && isRetryableError(error);
 
       if (shouldRetry) {
         console.log(
-          `🔁 Retrying ${payload.postId} / ${payload.platform} (attempt ${attempts + 1})`
+          `🔁 Retrying ${payload.postId} / ${payload.platform} (attempt ${attempts + 1})`,
         );
 
         await handleDeadLetter({
@@ -203,7 +142,7 @@ export class PostWorker {
           originalMessage: msg.content,
           routingKey: msg.fields.routingKey,
           error,
-          headers: msg.properties.headers
+          headers: msg.properties.headers,
         });
 
         channel.ack(msg);
@@ -211,14 +150,12 @@ export class PostWorker {
       }
 
       // Permanent failure
-      console.log(
-        `🪦 Permanent failure for ${payload.postId} / ${payload.platform}`
-      );
+      console.log(`🪦 Permanent failure for ${payload.postId} / ${payload.platform}`);
 
       await updatePlatformStatus(payload.postId, payload.platform, {
         status: "failed",
         error: error.message,
-        lastAttemptAt: new Date()
+        lastAttemptAt: new Date(),
       });
 
       channel.ack(msg);
@@ -235,33 +172,33 @@ export class PostWorker {
  *    - User posts rapidly → potential rate limit
  *    - Consider: global rate limit tracker per platform
  *    - Solution: Add delay between posts or use rate limit headers
- * 
+ *
  * 2. SESSION REFRESH DURING POSTING
  *    - Token expires mid-execution
  *    - For Bluesky: catch 401, call refreshSession, retry once
  *    - Update stored tokens after refresh
- * 
+ *
  * 3. S3 MEDIA URL EXPIRED
  *    - If using signed URLs, they may expire
  *    - Generate fresh URLs before posting
  *    - Or use public bucket with long-lived URLs
- * 
+ *
  * 4. PARTIAL PLATFORM SUCCESS
  *    - User selected 3 platforms, 1 fails
  *    - Each platform message is independent
  *    - DB tracks per-platform status
  *    - Overall post status = "PARTIAL_SUCCESS"
- * 
+ *
  * 5. DUPLICATE MESSAGES (At-Least-Once Delivery)
  *    - RabbitMQ may redeliver if ACK times out
  *    - Check if platform already has status=completed
  *    - Idempotency key: postId + platform
- * 
+ *
  * 6. WORKER CRASH MID-PROCESSING
  *    - Message not ACKed → RabbitMQ redelivers
  *    - Check DB status before processing
  *    - If status=completed, skip duplicate
- * 
+ *
  * 7. LONG VIDEO PROCESSING (Instagram/Threads)
  *    - Video containers need time to process
  *    - Poll for ready status before publishing

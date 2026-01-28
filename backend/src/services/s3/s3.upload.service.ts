@@ -35,8 +35,6 @@ export async function getPresignedUploadUrl(
     Bucket: ENV.AWS.S3_BUCKET_NAME,
     Key: s3Key,
     ContentType: mimeType,
-    // Removed ACL: 'public-read' as many buckets block public ACLs
-    // and it can cause 403 Forbidden errors.
   });
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 min
@@ -101,16 +99,9 @@ export async function downloadMedia(s3Key: string): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
-/**
- * Extracts the S3 key from a full S3 URL.
- * Example: https://bucket.s3.region.amazonaws.com/posts/user123/abc.jpg -> posts/user123/abc.jpg
- */
 export function extractS3Key(s3Url: string): string {
   if (!s3Url) return "";
 
-  // Handle formats:
-  // 1. https://bucket.s3.region.amazonaws.com/key
-  // 2. https://bucket.s3.amazonaws.com/key
   const s3DomainMatch =
     s3Url.match(/\.s3[.-][^/]+\.amazonaws\.com\/(.+)$/) ||
     s3Url.match(/\.s3\.amazonaws\.com\/(.+)$/);

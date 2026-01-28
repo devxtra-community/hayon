@@ -18,11 +18,7 @@ export class Producer {
     console.log(`📤 Published to ${exchange}/${routingKey}`);
   }
 
-  static async publishDelayed(
-    routingKey: string,
-    payload: object,
-    delayMs: number
-  ): Promise<void> {
+  static async publishDelayed(routingKey: string, payload: object, delayMs: number): Promise<void> {
     const channel = getChannel();
 
     await channel.assertExchange(EXCHANGES.POST_DELAYED_EXCHANGE, "x-delayed-message", {
@@ -46,7 +42,7 @@ export class Producer {
   }
 
   static async queueSocialPost(
-    data: Omit<PostQueueMessage, "timestamp" | "correlationId">
+    data: Omit<PostQueueMessage, "timestamp" | "correlationId">,
   ): Promise<string> {
     const correlationId = uuidv4();
     const message: PostQueueMessage = {

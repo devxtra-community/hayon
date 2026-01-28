@@ -215,7 +215,7 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
           platformId: igData.id,
           auth: {
             accessToken: longToken, // IG uses User token
-          }
+          },
         });
       }
     }
@@ -226,7 +226,7 @@ export const refreshFacebookProfile = async (req: Request, res: Response) => {
       profile: fbProfile,
       auth: {
         accessToken: pageAccessToken, // FB uses Page token
-      }
+      },
     });
 
     return new SuccessResponse("Facebook & Instagram profiles refreshed").send(res);

@@ -1,7 +1,7 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
-import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload";
+import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload.service";
 
 const FACEBOOK_CONSTRAINTS = {
   MAX_CHARS: 63206,

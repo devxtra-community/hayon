@@ -1,7 +1,7 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
-import { downloadMedia, extractS3Key } from "../s3/s3.upload";
+import { downloadMedia, extractS3Key } from "../s3/s3.upload.service";
 
 const MASTODON_CONSTRAINTS = {
   MAX_CHARS: 500, // Default, some instances allow more
@@ -10,10 +10,6 @@ const MASTODON_CONSTRAINTS = {
   MAX_VIDEO_SIZE: 40_000_000, // 40MB
   SUPPORTED_TYPES: ["image/jpeg", "image/png", "image/gif", "video/webm", "video/mp4"],
 };
-
-// ============================================================================
-// MASTODON POSTING SERVICE
-// ============================================================================
 
 export class MastodonPostingService extends BasePostingService {
   constructor() {
@@ -32,14 +28,6 @@ export class MastodonPostingService extends BasePostingService {
 
     return null;
   }
-
-  // ============================================================================
-  // UPLOAD MEDIA
-  // ============================================================================
-
-  /**
-   * Uploads media to Mastodon instance before creating a status.
-   */
 
   async uploadMedia(mediaUrls: string[], credentials: any): Promise<string[]> {
     const {
@@ -86,15 +74,6 @@ export class MastodonPostingService extends BasePostingService {
 
     return mediaIds;
   }
-
-  // ============================================================================
-  // CREATE POST (Status)
-  // ============================================================================
-
-  /**
-   * Creates a status (post) on Mastodon.
-   */
-
   async createPost(
     payload: PostQueueMessage,
     credentials: any,

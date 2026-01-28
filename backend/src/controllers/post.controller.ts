@@ -6,7 +6,7 @@ import { Producer } from "../lib/queues/producer";
 import { PostStatus, PlatformStatus } from "../interfaces/post.interface";
 import { Types } from "mongoose";
 import { z } from "zod";
-import { getPresignedUploadUrl } from "../services/s3/s3.upload";
+import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
 
 const createPostSchema = z.object({
   content: z.object({

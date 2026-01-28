@@ -1,5 +1,5 @@
 import s3Service from "../services/s3/s3.service";
-import { getPresignedUploadUrl } from "../services/s3/s3.upload";
+import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
 import { ENV } from "../config/env";
 import { Request, Response } from "express";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
@@ -44,12 +44,7 @@ export async function getProfileUploadUrlController(req: Request, res: Response)
     }
 
     // Generate presigned URL
-    const { uploadUrl, s3Url } = await getPresignedUploadUrl(
-      userId,
-      filename,
-      contentType,
-      folder,
-    );
+    const { uploadUrl, s3Url } = await getPresignedUploadUrl(userId, filename, contentType, folder);
 
     new SuccessResponse("Presigned URL generated", {
       data: {
@@ -83,7 +78,9 @@ export async function updateProfileController(req: Request, res: Response): Prom
     if (user?.avatar && user.avatar !== imageUrl && user.avatar.includes(ENV.AWS.S3_BUCKET_NAME)) {
       const s3Key = user.avatar.split(".amazonaws.com/")[1];
       if (s3Key) {
-        await s3Service.deleteFile(s3Key).catch(err => logger.error(`Failed to delete old avatar: ${err.message}`));
+        await s3Service
+          .deleteFile(s3Key)
+          .catch((err) => logger.error(`Failed to delete old avatar: ${err.message}`));
       }
     }
 

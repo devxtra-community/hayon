@@ -13,6 +13,7 @@ export interface PlatformConstraints {
   maxChars: number;
   requiresImage: boolean;
   previewType: "carousel" | "scroll" | "grid" | "column" | "stack";
+  maxFileSize?: number;
 }
 
 export interface Platform {

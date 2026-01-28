@@ -43,6 +43,7 @@ interface PostPreviewProps {
   updatePlatformPost: (id: string, updates: Partial<PlatformPost>) => void;
   refinePlatformPostWithLLM: (id: string, prompt: string) => Promise<void>;
   isGenerating: boolean;
+  platformWarnings: Record<string, string[]>;
 }
 
 export function PostPreview({
@@ -66,6 +67,7 @@ export function PostPreview({
   updatePlatformPost,
   refinePlatformPostWithLLM,
   isGenerating,
+  platformWarnings,
 }: PostPreviewProps) {
   const [editingPlatformId, setEditingPlatformId] = useState<string | null>(null);
   const { getPlatformUser } = usePlatformUser(user, connectedAccounts);
@@ -111,6 +113,7 @@ export function PostPreview({
                 filePreviews,
                 mediaFiles: [],
               };
+              const warnings = platformWarnings[platform.id] || [];
 
               return (
                 <div
@@ -119,6 +122,11 @@ export function PostPreview({
                 >
                   {/* Platform Header */}
                   <div className="flex items-center justify-between px-4 py-3 mb-4">
+                    {warnings.length > 0 && (
+                      <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-xs font-semibold px-4 py-1 rounded-t-[2.5rem] flex items-center justify-center z-10">
+                        {warnings[0]}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2.5">
                       <div className="relative w-8 h-8 rounded-full bg-white shadow-sm border border-slate-100 p-1.5 flex items-center justify-center">
                         {/* 

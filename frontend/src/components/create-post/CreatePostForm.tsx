@@ -13,6 +13,7 @@ interface CreatePostFormProps {
   filePreviews: string[];
   removeFile: (index: number) => void;
   errors: string[];
+  platformWarnings: Record<string, string[]>;
   selectedPlatforms: string[];
   availablePlatforms: Platform[];
 }
@@ -47,9 +48,10 @@ export function CreatePostForm({
   postText,
   setPostText,
   handleFileChange,
-  filePreviews, 
+  filePreviews,
   removeFile,
   errors,
+  platformWarnings,
   selectedPlatforms,
   availablePlatforms,
 }: CreatePostFormProps) {
@@ -104,11 +106,30 @@ export function CreatePostForm({
         </div>
       )}
 
+      {/* Validation Warnings */}
+      {Object.keys(platformWarnings).length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 flex flex-col gap-2">
+          {Object.entries(platformWarnings).map(([platformId, warnings]) => (
+            <div key={platformId} className="flex flex-col gap-1">
+              <span className="font-semibold text-yellow-700 text-xs uppercase tracking-wide">
+                {availablePlatforms.find((p) => p.id === platformId)?.name || platformId}
+              </span>
+              {warnings.map((warning, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-yellow-700 text-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0" />
+                  {warning}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Upload Area */}
       <div className="bg-white rounded-3xl p-8 border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors cursor-pointer group relative">
         <input
           type="file"
-          multiple
+          multiple={true}
           accept="image/*,video/*"
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           onChange={handleFileChange}

@@ -1,6 +1,6 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
-import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload";
+import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload.service";
 import axios from "axios";
 
 // ============================================================================

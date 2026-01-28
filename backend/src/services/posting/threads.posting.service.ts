@@ -1,7 +1,7 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
-import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload";
+import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload.service";
 
 const THREADS_CONSTRAINTS = {
   MAX_CHARS: 500,
@@ -75,9 +75,27 @@ export class ThreadsPostingService extends BasePostingService {
           containerParams.image_url = mediaUrls[0];
         }
       } else {
-        // Carousel logic (complex, requires item containers)
-        // For now, let's focus on text/single media
-        return { success: false, error: "Carousels not yet implemented for Threads" };
+        // Carousel logic
+        const childIds: string[] = [];
+
+        for (const url of mediaUrls) {
+          const isVideo = url.includes(".mp4") || url.includes(".mov");
+          const itemRes = await axios.post(`${this.graphApiUrl}/${threadsUserId}/threads`, null, {
+            params: {
+              access_token: accessToken,
+              media_type: isVideo ? "VIDEO" : "IMAGE",
+              [isVideo ? "video_url" : "image_url"]: url,
+              is_carousel_item: true,
+            },
+          });
+          const childId = itemRes.data.id;
+          // Wait for child container to be ready
+          await this.waitForContainerReady(childId, accessToken);
+          childIds.push(childId);
+        }
+
+        containerParams.media_type = "CAROUSEL";
+        containerParams.children = childIds.join(",");
       }
 
       const containerResponse = await axios.post(
@@ -88,9 +106,8 @@ export class ThreadsPostingService extends BasePostingService {
 
       const containerId = containerResponse.data.id;
 
-      // 2. Publish Container
-      // Note: For videos, might need to wait for processing.
-      // For text/images, it's usually immediate.
+      // 2. Wait for container to be ready (especially for videos/carousels)
+      await this.waitForContainerReady(containerId, accessToken);
 
       const publishResponse = await axios.post(
         `${this.graphApiUrl}/${threadsUserId}/threads_publish`,
@@ -115,5 +132,31 @@ export class ThreadsPostingService extends BasePostingService {
       console.error("Threads post creation failed:", JSON.stringify(errorData, null, 2));
       return this.handleError(error);
     }
+  }
+
+  private async waitForContainerReady(containerId: string, accessToken: string): Promise<void> {
+    let attempts = 0;
+    const maxAttempts = 30; // 5 mins max
+
+    while (attempts < maxAttempts) {
+      const response = await axios.get(`${this.graphApiUrl}/${containerId}`, {
+        params: {
+          fields: "status",
+          access_token: accessToken,
+        },
+      });
+
+      const status = response.data.status;
+      if (status === "FINISHED") return;
+      if (status === "ERROR") {
+        throw new Error(
+          `Threads media processing failed: ${response.data.error_message || "Unknown error"}`,
+        );
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait 10 seconds
+      attempts++;
+    }
+    throw new Error("Threads media processing timed out");
   }
 }

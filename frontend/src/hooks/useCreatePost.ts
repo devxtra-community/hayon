@@ -35,7 +35,7 @@ export function useCreatePost() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [timeZone, setTimeZone] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
-  const [postId, setPostId] = useState<string | null>(null);
+  const [platformWarnings, setPlatformWarnings] = useState<Record<string, string[]>>({});
 
   // --- Configurations ---
   const PLATFORM_CONSTRAINTS: Record<string, Platform["constraints"]> = {
@@ -196,54 +196,6 @@ export function useCreatePost() {
     fetchData();
   }, []);
 
-  // Polling Effect
-  useEffect(() => {
-    if (!postId) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await api.get(`/posts/${postId}/status`);
-        const { status, platformStatuses } = res.data.data;
-
-        setPlatformPosts((prev) => {
-          const next = { ...prev };
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          platformStatuses.forEach((ps: any) => {
-            if (next[ps.platform]) {
-              next[ps.platform] = {
-                ...next[ps.platform],
-                status: ps.status,
-                error: ps.error,
-                platformPostUrl: ps.platformPostUrl,
-              };
-            }
-          });
-          return next;
-        });
-
-        if (["COMPLETED", "FAILED", "PARTIAL_SUCCESS", "CANCELLED"].includes(status)) {
-          setIsSuccess(true);
-          setPostId(null);
-          clearInterval(interval);
-
-          setTimeout(() => {
-            setIsSuccess(false);
-            setViewMode("create");
-            setPostText("");
-            setMediaFiles([]);
-            setFilePreviews([]);
-            setPlatformPosts({});
-            setErrors([]);
-          }, 3000);
-        }
-      } catch (error) {
-        console.error("Polling error", error);
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [postId]);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -285,41 +237,52 @@ export function useCreatePost() {
   };
 
   const validatePost = () => {
-    const newErrors: string[] = [];
+    const globalErrors: string[] = [];
+    const newWarnings: Record<string, string[]> = {};
+
+    if (!postText && mediaFiles.length === 0) {
+      globalErrors.push("Post must have text or media.");
+    }
 
     selectedPlatforms.forEach((platformId) => {
       const platform = ALL_SUPPORTED_PLATFORMS.find((p) => p.id === platformId);
       if (!platform || !platform.constraints) return;
 
-      const { maxChars, maxImages, requiresImage } = platform.constraints;
+      const { maxChars, maxImages, requiresImage, maxFileSize } = platform.constraints;
+      const pWarnings: string[] = [];
 
       // Character Count Validation
       if (postText.length > maxChars) {
-        newErrors.push(`${platform.name} allows maximum ${maxChars} characters.`);
+        pWarnings.push(`Text exceeds ${maxChars} chars.`);
       }
 
       // Image Count Validation
       if (mediaFiles.length > maxImages) {
-        newErrors.push(`${platform.name} allows maximum ${maxImages} images.`);
+        pWarnings.push(`Max ${maxImages} images/videos.`);
       }
 
       // Required Image Validation (Instagram)
       if (requiresImage && mediaFiles.length === 0) {
-        newErrors.push(`${platform.name} requires at least one image/video.`);
+        pWarnings.push(`Requires at least one media item.`);
       }
 
-      // File Size Validation (Bluesky)
-      if (platform.constraints.maxFileSize) {
-        const oversizedFiles = mediaFiles.filter((f) => f.size > platform.constraints.maxFileSize!);
+      // File Size Validation
+      if (maxFileSize) {
+        const oversizedFiles = mediaFiles.filter((f) => f.size > maxFileSize);
         if (oversizedFiles.length > 0) {
-          const limitKB = Math.floor(platform.constraints.maxFileSize! / 1024);
-          newErrors.push(`${platform.name} allows maximum ${limitKB}KB per file.`);
+          const limitKB = Math.floor(maxFileSize / 1024);
+          pWarnings.push(`File too large (max ${limitKB}KB).`);
         }
+      }
+
+      if (pWarnings.length > 0) {
+        newWarnings[platformId] = pWarnings;
       }
     });
 
-    setErrors(newErrors);
-    return newErrors.length === 0;
+    setErrors(globalErrors);
+    setPlatformWarnings(newWarnings);
+    return globalErrors.length === 0;
   };
 
   const handleGeneratePosts = async () => {
@@ -355,6 +318,11 @@ export function useCreatePost() {
     }));
     // Clear global errors as we are now in per-platform edit mode
     setErrors([]);
+    setPlatformWarnings((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const refinePlatformPostWithLLM = async (id: string, prompt: string) => {
@@ -409,6 +377,34 @@ export function useCreatePost() {
   };
 
   const handlePostNow = async () => {
+    // 1. Validate again specifically for blocking errors
+    const isValid = validatePost(); // Re-runs validation and updates state
+    if (!isValid) return;
+
+    // Check if any selected platform has warnings (which are effectively errors for posting)
+    // We need to re-derive them because state updates (setPlatformWarnings) might not be immediate available
+    // in this closure if we rely just on the state variable 'platformWarnings'.
+    // However, since we are inside a function, we can check logic directly or use a synchronous check helper.
+
+    // Let's do a synchronous check for blocking constraints
+    const blockingPlatforms: string[] = [];
+    selectedPlatforms.forEach((pId) => {
+      const platform = ALL_SUPPORTED_PLATFORMS.find((p) => p.id === pId);
+      if (!platform?.constraints) return;
+      const { maxChars, maxImages, requiresImage, maxFileSize } = platform.constraints;
+
+      if (postText.length > maxChars) blockingPlatforms.push(platform.name);
+      if (mediaFiles.length > maxImages) blockingPlatforms.push(platform.name);
+      if (requiresImage && mediaFiles.length === 0) blockingPlatforms.push(platform.name);
+      if (maxFileSize && mediaFiles.some((f) => f.size > maxFileSize))
+        blockingPlatforms.push(platform.name);
+    });
+
+    if (blockingPlatforms.length > 0) {
+      setErrors([`Cannot post: Fix issues for ${blockingPlatforms.join(", ")}`]);
+      return;
+    }
+
     setIsSubmitting(true);
     setErrors([]);
 
@@ -473,13 +469,22 @@ export function useCreatePost() {
       const res = await api.post("/posts", payload);
 
       if (res.data?.data?.postId) {
-        setPostId(res.data.data.postId);
+        // Post created successfully
       }
 
       setIsSubmitting(false);
-      // setIsSuccess(true); // Handled by polling
+      setIsSuccess(true);
 
-      // Removed immediate reset to allow polling to show progress
+      // Auto-reset and navigate back after 3 seconds
+      setTimeout(() => {
+        setIsSuccess(false);
+        setViewMode("create");
+        setPostText("");
+        setMediaFiles([]);
+        setFilePreviews([]);
+        setPlatformPosts({});
+        setErrors([]);
+      }, 3000);
     } catch (error) {
       console.error("Failed to post", error);
       setErrors(["Failed to create post. Please try again."]);
@@ -524,6 +529,7 @@ export function useCreatePost() {
     connectedAccounts,
     errors,
     setErrors,
+    platformWarnings,
     platformPosts,
     updatePlatformPost,
     refinePlatformPostWithLLM,

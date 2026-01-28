@@ -64,4 +64,3 @@ export const ROUTING_KEYS = {
   POST_CREATE_MASTODON: "post.create.mastodon",
   POST_CREATE_TUMBLR: "post.create.tumblr",
 } as const;
-

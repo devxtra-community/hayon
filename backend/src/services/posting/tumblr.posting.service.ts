@@ -43,7 +43,6 @@ export class TumblrPostingService extends BasePostingService {
     const { oauthToken, oauthTokenSecret } = auth;
 
     try {
-      // Using NPF (Neue Post Format) for modern posting
       const content: any[] = [];
 
       if (payload.content.text) {
@@ -67,8 +66,6 @@ export class TumblrPostingService extends BasePostingService {
         method: "POST",
       };
 
-      // Sign request with OAuth 1.0a
-      // IMPORTANT: Do NOT include JSON body in authorize() if it's not form-encoded parameters
       const headers = tumblrOAuth.toHeader(
         tumblrOAuth.authorize(requestData, {
           key: oauthToken,
