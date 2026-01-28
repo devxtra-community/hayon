@@ -2,14 +2,9 @@ import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
 import { downloadMedia, extractS3Key } from "../s3/s3.upload.service";
+import { PLATFORM_CONSTRAINTS } from "@hayon/schemas";
 
-const MASTODON_CONSTRAINTS = {
-  MAX_CHARS: 500, // Default, some instances allow more
-  MAX_MEDIA: 4,
-  MAX_IMAGE_SIZE: 10_000_000, // 10MB
-  MAX_VIDEO_SIZE: 40_000_000, // 40MB
-  SUPPORTED_TYPES: ["image/jpeg", "image/png", "image/gif", "video/webm", "video/mp4"],
-};
+const constraints = PLATFORM_CONSTRAINTS.mastodon;
 
 export class MastodonPostingService extends BasePostingService {
   constructor() {
@@ -17,13 +12,13 @@ export class MastodonPostingService extends BasePostingService {
   }
 
   async validateContent(payload: PostQueueMessage): Promise<string | null> {
-    if (payload.content.text.length > MASTODON_CONSTRAINTS.MAX_CHARS) {
-      return `Text exceeds ${MASTODON_CONSTRAINTS.MAX_CHARS} characters`;
+    if (payload.content.text.length > constraints.maxChars) {
+      return `Text exceeds ${constraints.maxChars} characters`;
     }
 
     const mediaCount = payload.content.mediaUrls?.length || 0;
-    if (mediaCount > MASTODON_CONSTRAINTS.MAX_MEDIA) {
-      return `Maximum ${MASTODON_CONSTRAINTS.MAX_MEDIA} media attachments allowed`;
+    if (mediaCount > constraints.maxImages) {
+      return `Maximum ${constraints.maxImages} media attachments allowed`;
     }
 
     return null;

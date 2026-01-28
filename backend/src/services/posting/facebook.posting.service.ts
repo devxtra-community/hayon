@@ -2,10 +2,9 @@ import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
 import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload.service";
+import { PLATFORM_CONSTRAINTS } from "@hayon/schemas";
 
-const FACEBOOK_CONSTRAINTS = {
-  MAX_CHARS: 63206,
-};
+const constraints = PLATFORM_CONSTRAINTS.facebook;
 
 export class FacebookPostingService extends BasePostingService {
   private graphApiUrl = "https://graph.facebook.com/v24.0";
@@ -15,9 +14,10 @@ export class FacebookPostingService extends BasePostingService {
   }
 
   async validateContent(payload: PostQueueMessage): Promise<string | null> {
-    if (payload.content.text.length > FACEBOOK_CONSTRAINTS.MAX_CHARS) {
-      return `Text exceeds ${FACEBOOK_CONSTRAINTS.MAX_CHARS} character limit`;
+    if (payload.content.text.length > constraints.maxChars) {
+      return `Text exceeds ${constraints.maxChars} character limit`;
     }
+
     return null;
   }
 

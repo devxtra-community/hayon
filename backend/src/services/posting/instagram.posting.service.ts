@@ -2,23 +2,13 @@ import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload.service";
 import axios from "axios";
+import { PLATFORM_CONSTRAINTS } from "@hayon/schemas";
+
+const constraints = PLATFORM_CONSTRAINTS.instagram;
 
 // ============================================================================
 // CONSTRAINTS
 // ============================================================================
-
-const INSTAGRAM_CONSTRAINTS = {
-  MAX_CAPTION_CHARS: 2200,
-  MAX_HASHTAGS: 30,
-  MAX_IMAGES_CAROUSEL: 10,
-  MIN_IMAGE_WIDTH: 320,
-  MAX_IMAGE_WIDTH: 1440,
-  ASPECT_RATIO_MIN: 0.8, // 4:5
-  ASPECT_RATIO_MAX: 1.91, // 1.91:1
-  SUPPORTED_TYPES: ["image/jpeg", "image/png"],
-  MAX_VIDEO_DURATION: 60, // seconds for feed
-  MAX_VIDEO_SIZE: 100_000_000, // 100MB
-};
 
 // ============================================================================
 // INSTAGRAM POSTING SERVICE
@@ -40,13 +30,13 @@ export class InstagramPostingService extends BasePostingService {
       return "Instagram requires at least one image or video";
     }
 
-    if (payload.content.text.length > INSTAGRAM_CONSTRAINTS.MAX_CAPTION_CHARS) {
-      return `Caption exceeds ${INSTAGRAM_CONSTRAINTS.MAX_CAPTION_CHARS} character limit`;
+    if (payload.content.text.length > constraints.maxChars) {
+      return `Caption exceeds ${constraints.maxChars} character limit`;
     }
 
     const mediaCount = payload.content.mediaUrls?.length || 0;
-    if (mediaCount > INSTAGRAM_CONSTRAINTS.MAX_IMAGES_CAROUSEL) {
-      return `Maximum ${INSTAGRAM_CONSTRAINTS.MAX_IMAGES_CAROUSEL} images allowed for carousel`;
+    if (mediaCount > constraints.maxImages) {
+      return `Maximum ${constraints.maxImages} images allowed for carousel`;
     }
 
     return null;

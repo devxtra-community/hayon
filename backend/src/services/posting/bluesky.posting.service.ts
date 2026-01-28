@@ -1,13 +1,9 @@
 import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import { AtpAgent } from "@atproto/api";
+import { PLATFORM_CONSTRAINTS } from "@hayon/schemas";
 
-const BLUESKY_CONSTRAINTS = {
-  MAX_CHARS: 300,
-  MAX_IMAGES: 4,
-  MAX_IMAGE_SIZE: 1_000_000, // 1MB
-  SUPPORTED_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"],
-};
+const constraints = PLATFORM_CONSTRAINTS.bluesky;
 
 // ============================================================================
 // BLUESKY POSTING SERVICE
@@ -23,13 +19,13 @@ export class BlueskyPostingService extends BasePostingService {
   // ============================================================================
 
   async validateContent(payload: PostQueueMessage): Promise<string | null> {
-    if (payload.content.text.length > BLUESKY_CONSTRAINTS.MAX_CHARS) {
-      return `Text exceeds ${BLUESKY_CONSTRAINTS.MAX_CHARS} character limit`;
+    if (payload.content.text.length > constraints.maxChars) {
+      return `Text exceeds ${constraints.maxChars} character limit`;
     }
 
     const mediaCount = payload.content.mediaUrls?.length || 0;
-    if (mediaCount > BLUESKY_CONSTRAINTS.MAX_IMAGES) {
-      return `Maximum ${BLUESKY_CONSTRAINTS.MAX_IMAGES} images allowed`;
+    if (mediaCount > constraints.maxImages) {
+      return `Maximum ${constraints.maxImages} images allowed`;
     }
 
     return null;
@@ -105,9 +101,13 @@ export class BlueskyPostingService extends BasePostingService {
         const mimeType = response.headers.get("content-type") || "image/jpeg";
 
         // Bluesky has a strict ~1MB limit (976.56KB)
-        if (buffer.length > BLUESKY_CONSTRAINTS.MAX_IMAGE_SIZE) {
+        const maxFileSize = constraints.maxFileSize || 1_000_000;
+        if (buffer.length > maxFileSize) {
           const sizeMB = (buffer.length / (1024 * 1024)).toFixed(2);
-          throw new Error(`Media file too large for Bluesky (${sizeMB}MB). Max allowed is 1MB.`);
+          const limitMB = (maxFileSize / (1024 * 1024)).toFixed(2);
+          throw new Error(
+            `Media file too large for Bluesky (${sizeMB}MB). Max allowed is ${limitMB}MB.`,
+          );
         }
 
         const { data } = await agent.uploadBlob(buffer, { encoding: mimeType });

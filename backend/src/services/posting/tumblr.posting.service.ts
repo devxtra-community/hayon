@@ -2,12 +2,9 @@ import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import { tumblrOAuth } from "../../utils/tumblrOAuth";
 import axios from "axios";
+import { PLATFORM_CONSTRAINTS } from "@hayon/schemas";
 
-const TUMBLR_CONSTRAINTS = {
-  MAX_CHARS: 4096,
-  MAX_PHOTOS: 10,
-  MAX_PHOTO_SIZE: 20_000_000, // 20MB
-};
+const constraints = PLATFORM_CONSTRAINTS.tumblr;
 
 export class TumblrPostingService extends BasePostingService {
   private apiUrl = "https://api.tumblr.com/v2";
@@ -17,13 +14,13 @@ export class TumblrPostingService extends BasePostingService {
   }
 
   async validateContent(payload: PostQueueMessage): Promise<string | null> {
-    if (payload.content.text && payload.content.text.length > TUMBLR_CONSTRAINTS.MAX_CHARS) {
-      return `Text exceeds ${TUMBLR_CONSTRAINTS.MAX_CHARS} characters`;
+    if (payload.content.text && payload.content.text.length > constraints.maxChars) {
+      return `Text exceeds ${constraints.maxChars} characters`;
     }
 
     const mediaCount = payload.content.mediaUrls?.length || 0;
-    if (mediaCount > TUMBLR_CONSTRAINTS.MAX_PHOTOS) {
-      return `Maximum ${TUMBLR_CONSTRAINTS.MAX_PHOTOS} photos allowed`;
+    if (mediaCount > constraints.maxImages) {
+      return `Maximum ${constraints.maxImages} photos allowed`;
     }
 
     return null;

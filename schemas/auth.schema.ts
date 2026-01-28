@@ -45,6 +45,26 @@ export const nameSchema = z
   .max(100, "Name must be at most 100 characters")
   .trim();
 
+/**
+ * Validates that a string is a valid IANA timezone.
+ * Uses Intl.DateTimeFormat to check if the timezone is valid.
+ * This is more robust than supportedValuesOf as it handles aliases (e.g., Asia/Kolkata vs Asia/Calcutta).
+ */
+export const timezoneSchema = z.string().refine(
+  (tz) => {
+    try {
+      // If the timezone is not valid, this will throw an error.
+      Intl.DateTimeFormat(undefined, { timeZone: tz });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  {
+    message: "Invalid IANA timezone",
+  },
+);
+
 // =============================================================================
 // Auth Endpoint Schemas
 // =============================================================================
