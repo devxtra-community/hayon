@@ -7,6 +7,7 @@ import { PostStatus, PlatformStatus } from "../interfaces/post.interface";
 import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
+import { timezoneSchema, platformSpecificPostSchema } from "@hayon/schemas";
 
 const createPostSchema = z.object({
   content: z.object({
@@ -25,9 +26,9 @@ const createPostSchema = z.object({
   selectedPlatforms: z
     .array(z.enum(["bluesky", "threads", "instagram", "facebook", "mastodon", "tumblr"]))
     .min(1, "At least one platform must be selected"),
-  platformSpecificContent: z.record(z.any()).optional(),
+  platformSpecificContent: platformSpecificPostSchema.optional(),
   scheduledAt: z.string().datetime().optional(),
-  timezone: z.string().optional(),
+  timezone: timezoneSchema.optional(),
 });
 
 export const createPost = async (req: Request, res: Response) => {
@@ -84,7 +85,7 @@ export const createPost = async (req: Request, res: Response) => {
 
     // 3. Enqueue Jobs for each Platform
     const queuePromises = selectedPlatforms.map(async (platform: any) => {
-      const specificContent = platformSpecificContent?.[platform] || {};
+      const specificContent = (platformSpecificContent as any)?.[platform] || {};
       const finalContentText = specificContent.text || content.text;
 
       // Prefer platform-specific media items if they exist

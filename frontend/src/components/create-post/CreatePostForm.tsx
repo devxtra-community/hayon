@@ -295,11 +295,17 @@ export function CreatePostForm({
           <span
             className={cn(
               "text-xs font-medium",
-              postText.length > 280 ? "text-orange-500" : "text-gray-400",
+              selectedPlatforms.some((id) => {
+                const p = availablePlatforms.find((plat) => plat.id === id);
+                return p?.constraints && postText.length > p.constraints.maxChars;
+              })
+                ? "text-orange-500"
+                : "text-gray-400",
             )}
           >
             {postText.length} characters
           </span>
+
           {selectedPlatforms.length > 0 && (
             <div className="flex gap-2 items-center">
               {selectedPlatforms.map((id) => {

@@ -8,12 +8,10 @@ export interface User {
   avatar: string;
 }
 
-export interface PlatformConstraints {
-  maxImages: number;
-  maxChars: number;
-  requiresImage: boolean;
+import { PlatformConstraints as BasePlatformConstraints } from "@hayon/schemas";
+
+export interface PlatformConstraints extends BasePlatformConstraints {
   previewType: "carousel" | "scroll" | "grid" | "column" | "stack";
-  maxFileSize?: number;
 }
 
 export interface Platform {

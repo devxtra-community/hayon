@@ -2,11 +2,9 @@ import { BasePostingService, PostResult } from "./base.posting.service";
 import { PostQueueMessage } from "../../lib/queues/types";
 import axios from "axios";
 import { getPresignedDownloadUrl, extractS3Key } from "../s3/s3.upload.service";
+import { PLATFORM_CONSTRAINTS } from "@hayon/schemas";
 
-const THREADS_CONSTRAINTS = {
-  MAX_CHARS: 500,
-  MAX_IMAGES: 20,
-};
+const constraints = PLATFORM_CONSTRAINTS.threads;
 
 export class ThreadsPostingService extends BasePostingService {
   private graphApiUrl = "https://graph.threads.net/v1.0";
@@ -16,13 +14,13 @@ export class ThreadsPostingService extends BasePostingService {
   }
 
   async validateContent(payload: PostQueueMessage): Promise<string | null> {
-    if (payload.content.text.length > THREADS_CONSTRAINTS.MAX_CHARS) {
-      return `Text exceeds ${THREADS_CONSTRAINTS.MAX_CHARS} character limit`;
+    if (payload.content.text.length > constraints.maxChars) {
+      return `Text exceeds ${constraints.maxChars} character limit`;
     }
 
     const mediaCount = payload.content.mediaUrls?.length || 0;
-    if (mediaCount > THREADS_CONSTRAINTS.MAX_IMAGES) {
-      return `Maximum ${THREADS_CONSTRAINTS.MAX_IMAGES} media items allowed`;
+    if (mediaCount > constraints.maxImages) {
+      return `Maximum ${constraints.maxImages} media items allowed`;
     }
 
     return null;

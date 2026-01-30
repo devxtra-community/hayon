@@ -4,8 +4,14 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/axios";
 import { Facebook, Instagram } from "lucide-react";
 import Image from "next/image";
-import { Platform, User, ViewMode, PlatformPost } from "@/types/create-post";
-import { SocialAccount } from "@hayon/schemas";
+import { Platform, User, ViewMode, PlatformPost, PlatformConstraints } from "@/types/create-post";
+import {
+  SocialAccount,
+  PLATFORM_CONSTRAINTS,
+  GLOBAL_CONSTRAINTS,
+  PlatformType,
+} from "@hayon/schemas";
+
 import React from "react";
 
 export function useCreatePost() {
@@ -38,44 +44,23 @@ export function useCreatePost() {
   const [platformWarnings, setPlatformWarnings] = useState<Record<string, string[]>>({});
 
   // --- Configurations ---
-  const PLATFORM_CONSTRAINTS: Record<string, Platform["constraints"]> = {
-    facebook: {
-      maxImages: 10,
-      maxChars: 63206,
-      requiresImage: false,
-      previewType: "grid",
-    },
-    instagram: {
-      maxImages: 10,
-      maxChars: 2200,
-      requiresImage: true,
-      previewType: "carousel",
-    },
-    threads: {
-      maxImages: 20,
-      maxChars: 500,
-      requiresImage: false,
-      previewType: "scroll",
-    },
-    bluesky: {
-      maxImages: 4,
-      maxChars: 300,
-      requiresImage: false,
-      previewType: "grid",
-      maxFileSize: 900 * 1024, // 900KB safety limit
-    },
-    mastodon: {
-      maxImages: 4,
-      maxChars: 500,
-      requiresImage: false,
-      previewType: "grid",
-    },
-    tumblr: {
-      maxImages: 10,
-      maxChars: 4096,
-      requiresImage: false,
-      previewType: "column",
-    },
+  const FRONTEND_PLATFORM_CONFIG: Record<
+    string,
+    { previewType: PlatformConstraints["previewType"] }
+  > = {
+    facebook: { previewType: "grid" },
+    instagram: { previewType: "carousel" },
+    threads: { previewType: "scroll" },
+    bluesky: { previewType: "grid" },
+    mastodon: { previewType: "grid" },
+    tumblr: { previewType: "column" },
+  };
+
+  const getPlatformConstraints = (id: string): PlatformConstraints | undefined => {
+    const base = PLATFORM_CONSTRAINTS[id as PlatformType];
+    const fe = FRONTEND_PLATFORM_CONFIG[id];
+    if (!base || !fe) return undefined;
+    return { ...base, previewType: fe.previewType };
   };
 
   const ALL_SUPPORTED_PLATFORMS = [
@@ -84,14 +69,14 @@ export function useCreatePost() {
       name: "Facebook",
       icon: React.createElement(Facebook, { className: "w-5 h-5" }),
       color: "bg-blue-600",
-      constraints: PLATFORM_CONSTRAINTS.facebook,
+      constraints: getPlatformConstraints("facebook"),
     },
     {
       id: "instagram",
       name: "Instagram",
       icon: React.createElement(Instagram, { className: "w-5 h-5" }),
       color: "bg-pink-600",
-      constraints: PLATFORM_CONSTRAINTS.instagram,
+      constraints: getPlatformConstraints("instagram"),
     },
     {
       id: "threads",
@@ -107,7 +92,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
-      constraints: PLATFORM_CONSTRAINTS.threads,
+      constraints: getPlatformConstraints("threads"),
     },
     {
       id: "bluesky",
@@ -123,7 +108,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
-      constraints: PLATFORM_CONSTRAINTS.bluesky,
+      constraints: getPlatformConstraints("bluesky"),
     },
     {
       id: "tumblr",
@@ -139,7 +124,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
-      constraints: PLATFORM_CONSTRAINTS.tumblr,
+      constraints: getPlatformConstraints("tumblr"),
     },
     {
       id: "mastodon",
@@ -155,7 +140,7 @@ export function useCreatePost() {
         }),
       ),
       color: "bg-white border border-gray-100",
-      constraints: PLATFORM_CONSTRAINTS.mastodon,
+      constraints: getPlatformConstraints("mastodon"),
     },
   ];
 
@@ -199,21 +184,20 @@ export function useCreatePost() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      // Edge Case: Max images limit (e.g., 20 globally for threads, but we stick to a reasonable max)
-      const MAX_GLOBAL_IMAGES = 20;
-      if (mediaFiles.length + newFiles.length > MAX_GLOBAL_IMAGES) {
+      // Edge Case: Max images limit
+      if (mediaFiles.length + newFiles.length > GLOBAL_CONSTRAINTS.maxGlobalImages) {
         setErrors((prev) => [
           ...prev,
-          `Maximum of ${MAX_GLOBAL_IMAGES} images allowed across all platforms.`,
+          `Maximum of ${GLOBAL_CONSTRAINTS.maxGlobalImages} images allowed across all platforms.`,
         ]);
         return;
       }
 
-      // Edge Case: File size check (e.g., 10MB)
-      const MAX_FILE_SIZE = 10 * 1024 * 1024;
-      const oversizedFiles = newFiles.filter((f) => f.size > MAX_FILE_SIZE);
+      // Edge Case: File size check
+      const oversizedFiles = newFiles.filter((f) => f.size > GLOBAL_CONSTRAINTS.maxGlobalFileSize);
       if (oversizedFiles.length > 0) {
-        setErrors((prev) => [...prev, "Some files are too large (max 10MB)."]);
+        const limitMB = Math.floor(GLOBAL_CONSTRAINTS.maxGlobalFileSize / (1024 * 1024));
+        setErrors((prev) => [...prev, `Some files are too large (max ${limitMB}MB).`]);
         return;
       }
 
@@ -389,15 +373,14 @@ export function useCreatePost() {
     // Let's do a synchronous check for blocking constraints
     const blockingPlatforms: string[] = [];
     selectedPlatforms.forEach((pId) => {
-      const platform = ALL_SUPPORTED_PLATFORMS.find((p) => p.id === pId);
-      if (!platform?.constraints) return;
-      const { maxChars, maxImages, requiresImage, maxFileSize } = platform.constraints;
+      const constraints = PLATFORM_CONSTRAINTS[pId as PlatformType];
+      if (!constraints) return;
+      const { maxChars, maxImages, requiresImage, maxFileSize } = constraints;
 
-      if (postText.length > maxChars) blockingPlatforms.push(platform.name);
-      if (mediaFiles.length > maxImages) blockingPlatforms.push(platform.name);
-      if (requiresImage && mediaFiles.length === 0) blockingPlatforms.push(platform.name);
-      if (maxFileSize && mediaFiles.some((f) => f.size > maxFileSize))
-        blockingPlatforms.push(platform.name);
+      if (postText.length > maxChars) blockingPlatforms.push(pId);
+      if (mediaFiles.length > maxImages) blockingPlatforms.push(pId);
+      if (requiresImage && mediaFiles.length === 0) blockingPlatforms.push(pId);
+      if (maxFileSize && mediaFiles.some((f) => f.size > maxFileSize)) blockingPlatforms.push(pId);
     });
 
     if (blockingPlatforms.length > 0) {

@@ -11,6 +11,7 @@ import {
   findUserByIdSafe,
 } from "../repositories/user.repository";
 import logger from "../utils/logger";
+import { timezoneSchema } from "@hayon/schemas";
 
 export async function getProfileUploadUrlController(req: Request, res: Response): Promise<void> {
   try {
@@ -140,9 +141,20 @@ export async function changeTimezoneController(req: Request, res: Response): Pro
     const userId = req?.auth?.id as string;
     const { timezone } = req.body;
 
-    await changeUserTimezone(userId, timezone);
+    // Validation
+    const validationResult = timezoneSchema.safeParse(timezone);
+    if (!validationResult.success) {
+      new ErrorResponse("Invalid timezone", {
+        status: 400,
+        data: validationResult.error.format(),
+      }).send(res);
+      return;
+    }
+
+    await changeUserTimezone(userId, validationResult.data);
 
     new SuccessResponse("Timezone updated successfully").send(res);
+    return;
   } catch (err: unknown) {
     if (err instanceof Error) {
       logger.info("Error updating timezone:", err.message);
