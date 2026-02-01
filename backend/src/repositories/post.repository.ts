@@ -99,6 +99,32 @@ export const cancelPost = async (postId: string, userId: string) => {
   );
 };
 
+export const updatePost = async (postId: string, userId: string, updates: Partial<Post>) => {
+  if (!Types.ObjectId.isValid(postId)) {
+    return null;
+  }
+
+  return await PostModel.findOneAndUpdate(
+    {
+      _id: postId,
+      userId: new Types.ObjectId(userId),
+    },
+    { $set: updates },
+    { new: true },
+  );
+};
+
+export const deletePost = async (postId: string, userId: string) => {
+  if (!Types.ObjectId.isValid(postId)) {
+    return null;
+  }
+
+  return await PostModel.findOneAndDelete({
+    _id: postId,
+    userId: new Types.ObjectId(userId),
+  });
+};
+
 // ============================================================================
 // FIND BY USER (Paginated)
 // ============================================================================
@@ -124,30 +150,29 @@ export const cancelPost = async (postId: string, userId: string) => {
  */
 
 export const findByUserId = async (
-  _userId: string,
-  _options: {
+  userId: string,
+  options: {
     page?: number;
     limit?: number;
     status?: string;
     sortBy?: string;
     sortOrder?: "asc" | "desc";
-  },
+  } = {},
 ) => {
-  // const { page = 1, limit = 20, status, sortBy = "createdAt", sortOrder = "desc" } = options;
-  //
-  // const query: any = { userId: new Types.ObjectId(userId) };
-  // if (status) query.status = status;
-  //
-  // const [posts, total] = await Promise.all([
-  //   PostModel.find(query)
-  //     .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
-  //     .skip((page - 1) * limit)
-  //     .limit(limit),
-  //   PostModel.countDocuments(query)
-  // ]);
-  //
-  // return { posts, total };
-  return { posts: [], total: 0 };
+  const { page = 1, limit = 20, status, sortBy = "createdAt", sortOrder = "desc" } = options;
+
+  const query: any = { userId: new Types.ObjectId(userId) };
+  if (status) query.status = status;
+
+  const [posts, total] = await Promise.all([
+    PostModel.find(query)
+      .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    PostModel.countDocuments(query),
+  ]);
+
+  return { posts, total };
 };
 
 // ============================================================================

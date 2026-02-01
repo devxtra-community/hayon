@@ -164,8 +164,10 @@ postSchema.pre<IPostDocument>("save", function (next) {
     attemptCount: 0,
   })) as any; // Cast to any to satisfy Mongoose DocumentArray
 
-  // Set initial overall status
-  this.status = this.scheduledAt ? "SCHEDULED" : "PENDING";
+  // Set initial overall status - respect DRAFT if explicitly set
+  if (this.status !== "DRAFT") {
+    this.status = this.scheduledAt ? "SCHEDULED" : "PENDING";
+  }
 
   next();
 });

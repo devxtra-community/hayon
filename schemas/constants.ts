@@ -27,11 +27,13 @@ export const PLATFORM_CONSTRAINTS: Record<PlatformType, PlatformConstraints> = {
     maxImages: 10,
     maxChars: 2200,
     requiresImage: true,
+    allowedMimeTypes: ["image/jpeg", "image/png", "video/mp4", "video/quicktime"],
   },
   threads: {
     maxImages: 20,
     maxChars: 500,
     requiresImage: false,
+    allowedMimeTypes: ["image/jpeg", "image/png", "video/mp4", "video/quicktime"],
   },
   bluesky: {
     maxImages: 4,

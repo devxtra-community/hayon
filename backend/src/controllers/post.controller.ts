@@ -3,7 +3,7 @@ import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import logger from "../utils/logger";
 import * as postRepository from "../repositories/post.repository";
 import { Producer } from "../lib/queues/producer";
-import { PostStatus, PlatformStatus } from "../interfaces/post.interface";
+import { PostStatus, PlatformStatus, Post } from "../interfaces/post.interface";
 import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
@@ -11,7 +11,7 @@ import { timezoneSchema, platformSpecificPostSchema } from "@hayon/schemas";
 
 const createPostSchema = z.object({
   content: z.object({
-    text: z.string().min(1, "Post content is required"),
+    text: z.string(),
     mediaItems: z
       .array(
         z.object({
@@ -29,6 +29,7 @@ const createPostSchema = z.object({
   platformSpecificContent: platformSpecificPostSchema.optional(),
   scheduledAt: z.string().datetime().optional(),
   timezone: timezoneSchema.optional(),
+  status: z.enum(["DRAFT", "PENDING", "SCHEDULED"]).optional(),
 });
 
 export const createPost = async (req: Request, res: Response) => {
@@ -52,8 +53,18 @@ export const createPost = async (req: Request, res: Response) => {
       }).send(res);
     }
 
-    const { content, selectedPlatforms, platformSpecificContent, scheduledAt, timezone } =
+    const { content, selectedPlatforms, platformSpecificContent, scheduledAt, timezone, status } =
       validationResult.data;
+
+    // Determine the post status
+    let postStatus: PostStatus;
+    if (status === "DRAFT") {
+      postStatus = "DRAFT";
+    } else if (scheduledAt) {
+      postStatus = "SCHEDULED";
+    } else {
+      postStatus = "PENDING";
+    }
 
     // 2. Create Post Document
     const postData = {
@@ -72,7 +83,7 @@ export const createPost = async (req: Request, res: Response) => {
       selectedPlatforms,
       platformSpecificContent: platformSpecificContent || {},
       scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
-      status: (scheduledAt ? "SCHEDULED" : "PENDING") as PostStatus,
+      status: postStatus,
       platformStatuses: selectedPlatforms.map((p: any) => ({
         platform: p,
         status: "pending" as PlatformStatus,
@@ -83,29 +94,31 @@ export const createPost = async (req: Request, res: Response) => {
 
     const post = await postRepository.createPost(postData);
 
-    // 3. Enqueue Jobs for each Platform
-    const queuePromises = selectedPlatforms.map(async (platform: any) => {
-      const specificContent = (platformSpecificContent as any)?.[platform] || {};
-      const finalContentText = specificContent.text || content.text;
+    // 3. Enqueue Jobs for each Platform (skip for drafts)
+    if (postStatus !== "DRAFT") {
+      const queuePromises = selectedPlatforms.map(async (platform: any) => {
+        const specificContent = (platformSpecificContent as any)?.[platform] || {};
+        const finalContentText = specificContent.text || content.text;
 
-      // Prefer platform-specific media items if they exist
-      // Important: validation schema ensures structure, but here we merge logic
-      const sourceMediaItems = specificContent.mediaItems || content.mediaItems || [];
-      const mediaUrls = sourceMediaItems.map((item: any) => item.s3Url);
+        // Prefer platform-specific media items if they exist
+        // Important: validation schema ensures structure, but here we merge logic
+        const sourceMediaItems = specificContent.mediaItems || content.mediaItems || [];
+        const mediaUrls = sourceMediaItems.map((item: any) => item.s3Url);
 
-      await Producer.queueSocialPost({
-        postId: post._id.toString(),
-        userId,
-        platform: platform as any,
-        content: {
-          text: finalContentText,
-          mediaUrls,
-        },
-        scheduledAt: post.scheduledAt,
+        await Producer.queueSocialPost({
+          postId: post._id.toString(),
+          userId,
+          platform: platform as any,
+          content: {
+            text: finalContentText,
+            mediaUrls,
+          },
+          scheduledAt: post.scheduledAt,
+        });
       });
-    });
 
-    await Promise.all(queuePromises);
+      await Promise.all(queuePromises);
+    }
 
     return new SuccessResponse("Post created successfully", {
       data: {
@@ -153,13 +166,58 @@ export const getPostStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const getPostById = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+    }
+    const { postId } = req.params;
+    const userId = req.auth.id;
+    const post = await postRepository.findById(postId);
+
+    if (!post) {
+      return new ErrorResponse("Post not found", { status: 404 }).send(res);
+    }
+
+    if (post.userId.toString() !== userId) {
+      return new ErrorResponse("Unauthorized", { status: 403 }).send(res);
+    }
+
+    return new SuccessResponse("Post fetched successfully", {
+      data: { post },
+    }).send(res);
+  } catch (error) {
+    logger.error("Get post by ID error", error);
+    return new ErrorResponse("Failed to get post").send(res);
+  }
+};
+
 export const getUserPosts = async (req: Request, res: Response) => {
   try {
     if (!req.auth) {
       return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
     }
 
-    return new ErrorResponse("Not implemented", { status: 501 }).send(res);
+    const userId = req.auth.id;
+    const { page = 1, limit = 20, status, sortBy = "createdAt", sortOrder = "desc" } = req.query;
+
+    const { posts, total } = await postRepository.findByUserId(userId, {
+      page: Number(page),
+      limit: Number(limit),
+      status: status as string,
+      sortBy: sortBy as string,
+      sortOrder: sortOrder as "asc" | "desc",
+    });
+
+    return new SuccessResponse("Posts fetched successfully", {
+      data: {
+        posts,
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit)),
+      },
+    }).send(res);
   } catch (error) {
     logger.error("Get user posts error", error);
     return new ErrorResponse("Failed to get posts").send(res);
@@ -247,5 +305,145 @@ export const deleteMedia = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Delete media error", error);
     return new ErrorResponse("Failed to delete media").send(res);
+  }
+};
+
+export const updatePost = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+    }
+
+    const { postId } = req.params;
+    const userId = req.auth.id;
+
+    // Validate the update data using the same schema as createPost
+    const validationResult = createPostSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      logger.warn("Update post validation failed", {
+        errors: JSON.stringify(validationResult.error.format(), null, 2),
+        body: JSON.stringify(req.body, null, 2),
+      });
+      return new ErrorResponse("Invalid request data", {
+        status: 400,
+        data: validationResult.error.format(),
+      }).send(res);
+    }
+
+    const { content, selectedPlatforms, platformSpecificContent, scheduledAt, timezone, status } =
+      validationResult.data;
+
+    // Fetch the existing post
+    const existingPost = await postRepository.findById(postId);
+    if (!existingPost) {
+      return new ErrorResponse("Post not found", { status: 404 }).send(res);
+    }
+
+    if (existingPost.userId.toString() !== userId) {
+      return new ErrorResponse("Unauthorized", { status: 403 }).send(res);
+    }
+
+    // Determine the new status
+    let newStatus: PostStatus;
+    if (status === "DRAFT") {
+      newStatus = "DRAFT";
+    } else if (scheduledAt) {
+      newStatus = "SCHEDULED";
+    } else {
+      newStatus = "PENDING";
+    }
+
+    // Check if status is changing from DRAFT to PENDING/SCHEDULED
+    const statusChangedFromDraft = existingPost.status === "DRAFT" && newStatus !== "DRAFT";
+
+    // Update the post
+    const updateData: Partial<Post> = {
+      content: {
+        text: content.text,
+        mediaItems:
+          content.mediaItems.map((item) => ({
+            ...item,
+            originalFilename: "uploaded_file",
+            sizeBytes: 0,
+            s3Key: item.s3Key || "unknown",
+            mimeType: item.mimeType || "application/octet-stream",
+          })) || [],
+      },
+      selectedPlatforms,
+      platformSpecificContent: platformSpecificContent || {},
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+      status: newStatus,
+      platformStatuses: selectedPlatforms.map((p: any) => ({
+        platform: p,
+        status: "pending" as PlatformStatus,
+        attemptCount: 0,
+      })),
+      timezone: timezone || "UTC",
+    };
+
+    const updatedPost = await postRepository.updatePost(postId, userId, updateData);
+
+    if (!updatedPost) {
+      return new ErrorResponse("Failed to update post", { status: 500 }).send(res);
+    }
+
+    // If status changed from DRAFT to PENDING/SCHEDULED, enqueue jobs
+    if (statusChangedFromDraft) {
+      const queuePromises = selectedPlatforms.map(async (platform: any) => {
+        const specificContent = (platformSpecificContent as any)?.[platform] || {};
+        const finalContentText = specificContent.text || content.text;
+        const sourceMediaItems = specificContent.mediaItems || content.mediaItems || [];
+        const mediaUrls = sourceMediaItems.map((item: any) => item.s3Url);
+
+        await Producer.queueSocialPost({
+          postId: updatedPost._id.toString(),
+          userId,
+          platform: platform as any,
+          content: {
+            text: finalContentText,
+            mediaUrls,
+          },
+          scheduledAt: updatedPost.scheduledAt,
+        });
+      });
+
+      await Promise.all(queuePromises);
+    }
+
+    return new SuccessResponse("Post updated successfully", {
+      data: {
+        postId: updatedPost._id,
+        status: updatedPost.status,
+        scheduledAt: updatedPost.scheduledAt,
+      },
+    }).send(res);
+  } catch (error) {
+    logger.error("Update post error", error);
+    return new ErrorResponse("Failed to update post").send(res);
+  }
+};
+
+export const deletePost = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+    }
+
+    const { postId } = req.params;
+    const userId = req.auth.id;
+
+    const deletedPost = await postRepository.deletePost(postId, userId);
+
+    if (!deletedPost) {
+      return new ErrorResponse("Post not found or unauthorized", { status: 404 }).send(res);
+    }
+
+    return new SuccessResponse("Post deleted successfully", {
+      data: { postId: deletedPost._id },
+    }).send(res);
+  } catch (error) {
+    logger.error("Delete post error", error);
+    return new ErrorResponse("Failed to delete post").send(res);
   }
 };
