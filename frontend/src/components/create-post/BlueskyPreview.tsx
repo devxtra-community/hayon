@@ -4,6 +4,7 @@ import { MessageSquare, Repeat, Heart, Bookmark, Share, MoreHorizontal } from "l
 import { cn } from "@/lib/utils";
 import { User } from "@/types/create-post";
 import { ReadMoreText } from "./ReadMoreText";
+import { PreviewImage } from "./PreviewImage";
 
 interface BlueskyPreviewProps {
   user: User | null;
@@ -56,8 +57,7 @@ export const BlueskyPreview: React.FC<BlueskyPreviewProps> = ({ user, postText, 
           >
             {filePreviews.slice(0, 4).map((src, idx) => (
               <div key={idx} className="relative aspect-square">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`Post ${idx + 1}`} className="w-full h-full object-cover" />
+                <PreviewImage src={src} alt={`Post ${idx + 1}`} />
                 <div className="absolute bottom-3 right-3 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
                   ALT
                 </div>

@@ -138,6 +138,17 @@ export class InstagramPostingService extends BasePostingService {
     } catch (error: any) {
       const errorData = error.response?.data || error.message;
       console.error("Instagram post creation failed:", JSON.stringify(errorData, null, 2));
+
+      // Extract specific error user message if available
+      const metaMsg =
+        error.response?.data?.error?.error_user_msg || error.response?.data?.error?.message;
+      if (metaMsg) {
+        return {
+          success: false,
+          error: `Platform error: ${metaMsg}`,
+        };
+      }
+
       return this.handleError(error);
     }
   }

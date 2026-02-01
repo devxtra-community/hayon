@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Heart, MessageCircle, Share } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { User, Platform } from "@/types/create-post";
+import { PreviewImage } from "./PreviewImage";
 
 interface GenericPreviewProps {
   platform: Platform;
@@ -49,8 +50,7 @@ export const GenericPreview: React.FC<GenericPreviewProps> = ({
                   key={idx}
                   className="relative rounded-lg overflow-hidden border border-gray-100 bg-gray-50 aspect-square"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={`Post ${idx + 1}`} className="w-full h-full object-cover" />
+                  <PreviewImage src={src} alt={`Post ${idx + 1}`} />
                 </div>
               ))}
             </div>

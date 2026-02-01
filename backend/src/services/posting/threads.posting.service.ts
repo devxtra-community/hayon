@@ -87,8 +87,14 @@ export class ThreadsPostingService extends BasePostingService {
             },
           });
           const childId = itemRes.data.id;
+
           // Wait for child container to be ready
           await this.waitForContainerReady(childId, accessToken);
+
+          // Meta API eventually consistency safety: small delay after "FINISHED"
+          // before we use this child ID in a carousel container creation.
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
           childIds.push(childId);
         }
 
@@ -128,18 +134,29 @@ export class ThreadsPostingService extends BasePostingService {
     } catch (error: any) {
       const errorData = error.response?.data || error.message;
       console.error("Threads post creation failed:", JSON.stringify(errorData, null, 2));
+
+      // Extract specific error user message if available (could be in Malayalam etc.)
+      const metaMsg =
+        error.response?.data?.error?.error_user_msg || error.response?.data?.error?.message;
+      if (metaMsg) {
+        return {
+          success: false,
+          error: `Platform error: ${metaMsg}`,
+        };
+      }
+
       return this.handleError(error);
     }
   }
 
   private async waitForContainerReady(containerId: string, accessToken: string): Promise<void> {
     let attempts = 0;
-    const maxAttempts = 30; // 5 mins max
+    const maxAttempts = 40; // ~6-7 mins max
 
     while (attempts < maxAttempts) {
       const response = await axios.get(`${this.graphApiUrl}/${containerId}`, {
         params: {
-          fields: "status",
+          fields: "status,error_message",
           access_token: accessToken,
         },
       });
@@ -148,7 +165,7 @@ export class ThreadsPostingService extends BasePostingService {
       if (status === "FINISHED") return;
       if (status === "ERROR") {
         throw new Error(
-          `Threads media processing failed: ${response.data.error_message || "Unknown error"}`,
+          `Threads media processing failed: ${response.data.error_message || "Meta processing error"}`,
         );
       }
 

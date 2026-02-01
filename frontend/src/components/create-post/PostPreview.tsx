@@ -30,6 +30,7 @@ interface PostPreviewProps {
   selectedPlatforms: string[];
   onBack: () => void;
   onPostNow: () => void;
+  onSaveDraft: () => void;
   isScheduleOpen: boolean;
   setIsScheduleOpen: (open: boolean) => void;
   scheduleDate: string;
@@ -54,6 +55,7 @@ export function PostPreview({
   selectedPlatforms,
   onBack,
   onPostNow,
+  onSaveDraft,
   isScheduleOpen,
   setIsScheduleOpen,
   scheduleDate,
@@ -257,7 +259,13 @@ export function PostPreview({
           isOpen={!!editingPlatformId}
           onClose={() => setEditingPlatformId(null)}
           platform={availablePlatforms.find((p) => p.id === editingPlatformId)!}
-          post={platformPosts[editingPlatformId]}
+          post={
+            platformPosts[editingPlatformId] || {
+              text: postText,
+              filePreviews,
+              mediaFiles: [],
+            }
+          }
           onUpdate={(updates) => updatePlatformPost(editingPlatformId, updates)}
           onRefine={(prompt) => refinePlatformPostWithLLM(editingPlatformId, prompt)}
           isGenerating={isGenerating}
@@ -267,14 +275,24 @@ export function PostPreview({
       {/* Bottom Action Bar */}
       <div className="pt-6 border-t border-gray-200">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="gap-2 rounded-full h-12 px-6 border-gray-300 hover:bg-white text-gray-700 font-medium w-full sm:w-auto order-2 sm:order-1"
-          >
-            {/* Logic: Navigates back to the creation form */}
-            Back to Edit
-          </Button>
+          <div className="flex gap-3 w-full sm:w-auto order-2 sm:order-1">
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="flex-1 sm:flex-none gap-2 rounded-full h-12 px-6 border-gray-300 hover:bg-white text-gray-700 font-medium"
+            >
+              {/* Logic: Navigates back to the creation form */}
+              Back to Edit
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={onSaveDraft}
+              className="flex-1 sm:flex-none gap-2 rounded-full h-12 px-6 border-gray-300 hover:bg-gray-50 text-gray-700 font-medium"
+            >
+              Save as Draft
+            </Button>
+          </div>
 
           <div className="flex gap-3 w-full sm:w-auto order-1 sm:order-2">
             {/* Schedule trigger button */}
