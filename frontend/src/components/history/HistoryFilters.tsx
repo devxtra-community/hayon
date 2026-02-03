@@ -26,8 +26,8 @@ interface HistoryFiltersProps {
   setSort: (sort: string) => void;
 }
 
-const ALL_PLATFORMS = ["Instagram", "Facebook", "Twitter", "LinkedIn"];
-const ALL_STATUSES = ["DRAFT", "SCHEDULED", "COMPLETED", "FAILED"];
+const ALL_PLATFORMS = ["Bluesky", "Mastodon", "Instagram", "Facebook", "Threads", "Tumblr"];
+const ALL_STATUSES = ["COMPLETED", "PARTIAL_SUCCESS", "FAILED", "PROCESSING"];
 
 export function HistoryFilters({ filters, setFilters, sort, setSort }: HistoryFiltersProps) {
   const handleStatusChange = (status: string, checked: boolean) => {
