@@ -78,26 +78,6 @@ export default function DraftsPage() {
     }
   };
 
-  const handlePost = async (draftId: string) => {
-    try {
-      const draft = drafts.find((d) => d._id === draftId);
-      if (!draft) return;
-
-      // Update draft to PENDING status (removes it from drafts)
-      await api.put(`/posts/${draftId}`, {
-        ...draft,
-        status: "PENDING", // This will trigger job enqueuing in backend
-      });
-
-      // Remove from drafts list
-      setDrafts(drafts.filter((d) => d._id !== draftId));
-      alert("Post queued successfully!");
-    } catch (error) {
-      console.error("Failed to post draft", error);
-      alert("Failed to post. Please try again.");
-    }
-  };
-
   const filteredDrafts = drafts.filter((draft) =>
     draft.content.text.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -170,7 +150,6 @@ export default function DraftsPage() {
                     selectedPlatforms={draft.selectedPlatforms}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    onPost={handlePost}
                   />
                 );
               })}
