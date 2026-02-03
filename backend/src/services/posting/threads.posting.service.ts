@@ -126,11 +126,30 @@ export class ThreadsPostingService extends BasePostingService {
 
       const postId = publishResponse.data.id;
 
-      return {
-        success: true,
-        platformPostId: postId,
-        platformPostUrl: `https://www.threads.net/t/${postId}`,
-      };
+      // 3. Fetch official permalink
+      try {
+        const permalinkResponse = await axios.get(`${this.graphApiUrl}/${postId}`, {
+          params: {
+            fields: "permalink",
+            access_token: accessToken,
+          },
+        });
+        return {
+          success: true,
+          platformPostId: postId,
+          platformPostUrl: permalinkResponse.data.permalink,
+        };
+      } catch (permalinkError) {
+        console.warn(
+          "Failed to fetch Threads permalink, falling back to manual URL:",
+          permalinkError,
+        );
+        return {
+          success: true,
+          platformPostId: postId,
+          platformPostUrl: `https://www.threads.net/t/${postId}`,
+        };
+      }
     } catch (error: any) {
       const errorData = error.response?.data || error.message;
       console.error("Threads post creation failed:", JSON.stringify(errorData, null, 2));

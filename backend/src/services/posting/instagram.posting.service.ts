@@ -130,11 +130,30 @@ export class InstagramPostingService extends BasePostingService {
       // Publish the container
       const mediaId = await this.publishContainer(igUserId, accessToken, containerId);
 
-      return {
-        success: true,
-        platformPostId: mediaId,
-        platformPostUrl: `https://www.instagram.com/p/${mediaId}/`,
-      };
+      // Fetch official permalink
+      try {
+        const permalinkResponse = await axios.get(`${this.graphApiUrl}/${mediaId}`, {
+          params: {
+            fields: "permalink",
+            access_token: accessToken,
+          },
+        });
+        return {
+          success: true,
+          platformPostId: mediaId,
+          platformPostUrl: permalinkResponse.data.permalink,
+        };
+      } catch (permalinkError) {
+        console.warn(
+          "Failed to fetch Instagram permalink, falling back to manual URL:",
+          permalinkError,
+        );
+        return {
+          success: true,
+          platformPostId: mediaId,
+          platformPostUrl: `https://www.instagram.com/p/${mediaId}/`,
+        };
+      }
     } catch (error: any) {
       const errorData = error.response?.data || error.message;
       console.error("Instagram post creation failed:", JSON.stringify(errorData, null, 2));
