@@ -23,8 +23,8 @@ export const postContentSchema = z.object({
     .array(
       z.object({
         s3Url: z.string().url(),
+        s3Key: z.string().optional(),
         mimeType: z.string().optional(),
-        // other fields if needed
       }),
     )
     .optional()
@@ -45,6 +45,7 @@ export const createPlatformPostSchema = (platform: PlatformType) => {
         .array(
           z.object({
             s3Url: z.string().url(),
+            s3Key: z.string().optional(),
             mimeType: z.string().optional(),
           }),
         )

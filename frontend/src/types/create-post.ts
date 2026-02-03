@@ -27,6 +27,7 @@ export interface PlatformPost {
   text: string;
   mediaFiles: File[];
   filePreviews: string[];
+  existingMedia?: { s3Url: string; mimeType?: string; s3Key?: string }[];
   status?: string;
   error?: string;
   platformPostUrl?: string;

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { MoreHorizontal, Heart, MessageCircle, Repeat, Send } from "lucide-react";
 import { User } from "@/types/create-post";
 import { ReadMoreText } from "./ReadMoreText";
+import { PreviewImage } from "./PreviewImage";
 
 interface ThreadsPreviewProps {
   user: User | null;
@@ -47,8 +48,7 @@ export const ThreadsPreview: React.FC<ThreadsPreviewProps> = ({ user, postText, 
               key={idx}
               className="relative flex-shrink-0 w-10/12 aspect-[4/5] rounded-xl overflow-hidden border border-gray-100 snap-center bg-gray-100"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt={`Post ${idx + 1}`} className="w-full h-full object-cover" />
+              <PreviewImage src={src} alt={`Post ${idx + 1}`} />
               <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
                 Alt
               </div>

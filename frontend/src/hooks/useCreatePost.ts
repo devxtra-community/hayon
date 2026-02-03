@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/axios";
 import { Facebook, Instagram } from "lucide-react";
 import Image from "next/image";
@@ -23,6 +24,10 @@ export function useCreatePost() {
   const [postText, setPostText] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
+  const [existingMedia, setExistingMedia] = useState<
+    { s3Url: string; mimeType?: string; s3Key?: string }[]
+  >([]);
+  const [draftId, setDraftId] = useState<string | null>(null); // Track if editing existing draft
 
   // Platforms & Generation
   const [availablePlatforms, setAvailablePlatforms] = useState<Platform[]>([]);
@@ -39,6 +44,7 @@ export function useCreatePost() {
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [timeZone, setTimeZone] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [platformWarnings, setPlatformWarnings] = useState<Record<string, string[]>>({});
@@ -145,6 +151,8 @@ export function useCreatePost() {
   ];
 
   // --- Auth & Init ---
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -172,14 +180,39 @@ export function useCreatePost() {
         });
 
         setAvailablePlatforms(platforms);
-        // Select all connected by default
-        setSelectedPlatforms(platforms.filter((p) => p.connected).map((p) => p.id));
+
+        // Select all connected by default ONLY if NOT loading a draft
+        const draftIdParam = searchParams.get("draftId");
+        if (!draftIdParam) {
+          setSelectedPlatforms(platforms.filter((p) => p.connected).map((p) => p.id));
+        }
       } catch (error) {
         console.error("Failed to fetch initial data", error);
       }
     };
     fetchData();
-  }, []);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (isScheduleOpen && !scheduleDate && !scheduleTime) {
+      const now = new Date();
+      // Format: YYYY-MM-DD (Local)
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
+      // Format: HH:mm (Local 24h)
+      const timeStr = now.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      setScheduleDate(dateStr);
+      setScheduleTime(timeStr);
+    }
+  }, [isScheduleOpen, scheduleDate, scheduleTime]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -209,7 +242,13 @@ export function useCreatePost() {
   };
 
   const removeFile = (index: number) => {
-    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+    const existingCount = existingMedia.length;
+    if (index < existingCount) {
+      setExistingMedia((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      const relativeIndex = index - existingCount;
+      setMediaFiles((prev) => prev.filter((_, i) => i !== relativeIndex));
+    }
     setFilePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -232,7 +271,8 @@ export function useCreatePost() {
       const platform = ALL_SUPPORTED_PLATFORMS.find((p) => p.id === platformId);
       if (!platform || !platform.constraints) return;
 
-      const { maxChars, maxImages, requiresImage, maxFileSize } = platform.constraints;
+      const { maxChars, maxImages, requiresImage, maxFileSize, allowedMimeTypes } =
+        platform.constraints;
       const pWarnings: string[] = [];
 
       // Character Count Validation
@@ -245,8 +285,24 @@ export function useCreatePost() {
         pWarnings.push(`Max ${maxImages} images/videos.`);
       }
 
+      // MIME Type Validation
+      if (allowedMimeTypes) {
+        // Check new files
+        const unsupportedFiles = mediaFiles.filter((f) => !allowedMimeTypes.includes(f.type));
+        if (unsupportedFiles.length > 0) {
+          pWarnings.push(`Format not supported. Use: ${allowedMimeTypes.join(", ")}`);
+        }
+        // Check existing media from drafts
+        const unsupportedExisting = existingMedia.filter(
+          (m) => m.mimeType && !allowedMimeTypes.includes(m.mimeType),
+        );
+        if (unsupportedExisting.length > 0) {
+          pWarnings.push(`Some drafted items have unsupported formats.`);
+        }
+      }
+
       // Required Image Validation (Instagram)
-      if (requiresImage && mediaFiles.length === 0) {
+      if (requiresImage && mediaFiles.length === 0 && existingMedia.length === 0) {
         pWarnings.push(`Requires at least one media item.`);
       }
 
@@ -282,6 +338,7 @@ export function useCreatePost() {
         text: postText,
         mediaFiles: [...mediaFiles],
         filePreviews: [...filePreviews],
+        existingMedia: [...existingMedia],
       };
     });
     setPlatformPosts(initialPlatformPosts);
@@ -452,26 +509,182 @@ export function useCreatePost() {
       const res = await api.post("/posts", payload);
 
       if (res.data?.data?.postId) {
-        // Post created successfully
+        setSuccessMessage(
+          scheduleDate && scheduleTime
+            ? "Your post has been successfully scheduled."
+            : "Your post has been successfully published.",
+        );
+        setIsSuccess(true);
       }
 
       setIsSubmitting(false);
-      setIsSuccess(true);
 
       // Auto-reset and navigate back after 3 seconds
       setTimeout(() => {
         setIsSuccess(false);
+        setSuccessMessage("");
         setViewMode("create");
         setPostText("");
         setMediaFiles([]);
         setFilePreviews([]);
         setPlatformPosts({});
         setErrors([]);
+        setExistingMedia([]);
       }, 3000);
     } catch (error) {
       console.error("Failed to post", error);
       setErrors(["Failed to create post. Please try again."]);
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    // Basic validation - post must have text or media
+    if (!postText && mediaFiles.length === 0) {
+      setErrors(["Post must have text or media."]);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrors([]);
+
+    try {
+      // 1. Upload Global Media (if any)
+      const globalMediaItems = await uploadFiles(mediaFiles);
+
+      // 2. Prepare Platform Specific Content (same as handlePostNow)
+      const platformSpecificContent: Record<string, any> = {};
+
+      const platformPromises = selectedPlatforms.map(async (platformId) => {
+        const pPost = platformPosts[platformId];
+        if (pPost) {
+          let pMediaItems: any[] = [];
+
+          const isSameFiles =
+            pPost.mediaFiles.length === mediaFiles.length &&
+            pPost.mediaFiles.every((f, i) => f === mediaFiles[i]);
+
+          if (isSameFiles) {
+            // If platform has specific existing media, prefer it. Otherwise use global.
+            const baseExisting =
+              pPost.existingMedia && pPost.existingMedia.length > 0
+                ? pPost.existingMedia
+                : pPost.existingMedia === undefined
+                  ? existingMedia
+                  : []; // If explicitly empty, keep it empty
+
+            pMediaItems = [...baseExisting, ...globalMediaItems];
+          } else {
+            // Merge platform specific existing media with platform specific new uploads
+            pMediaItems = [
+              ...(pPost.existingMedia || []),
+              ...(await uploadFiles(pPost.mediaFiles)),
+            ];
+          }
+
+          platformSpecificContent[platformId] = {
+            text: pPost.text,
+            mediaItems: pMediaItems,
+          };
+        }
+      });
+
+      await Promise.all(platformPromises);
+
+      // 3. Send Create or Update Request based on draftId
+      const payload = {
+        content: {
+          text: postText,
+          mediaItems: [...existingMedia, ...globalMediaItems],
+        },
+        selectedPlatforms,
+        platformSpecificContent,
+        status: "DRAFT",
+        timezone: timeZone,
+      };
+
+      let res;
+      if (draftId) {
+        // Update existing draft
+        res = await api.put(`/posts/${draftId}`, payload);
+      } else {
+        // Create new draft
+        res = await api.post("/posts", payload);
+      }
+
+      if (res.data?.data?.postId) {
+        setSuccessMessage("Your draft has been saved successfully.");
+        setIsSuccess(true);
+      }
+
+      setIsSubmitting(false);
+
+      // Auto-reset after showing success
+      setTimeout(() => {
+        setIsSuccess(false);
+        setSuccessMessage("");
+        setViewMode("create");
+        setPostText("");
+        setMediaFiles([]);
+        setFilePreviews([]);
+        setPlatformPosts({});
+        setErrors([]);
+        setDraftId(null);
+        setExistingMedia([]);
+      }, 2000);
+    } catch (error: any) {
+      console.error("Failed to save draft", error);
+      if (error.response?.data) {
+        console.error("Backend validation errors:", JSON.stringify(error.response.data, null, 2));
+      }
+      setErrors(["Failed to save draft. Please try again."]);
+      setIsSubmitting(false);
+    }
+  };
+
+  const loadDraft = async (id: string) => {
+    try {
+      const res = await api.get(`/posts/${id}`);
+      const draft = res.data.data.post;
+
+      // Set draft ID
+      setDraftId(id);
+
+      // Load content
+      setPostText(draft.content.text);
+
+      // Load platforms
+      setSelectedPlatforms(draft.selectedPlatforms);
+
+      // Load media - convert S3 URLs to file previews
+      if (draft.content.mediaItems && draft.content.mediaItems.length > 0) {
+        setExistingMedia(draft.content.mediaItems);
+        setFilePreviews(draft.content.mediaItems.map((item: any) => item.s3Url));
+        // Note: We can't recreate File objects from URLs, so mediaFiles stays empty
+        // The backend already has the S3 URLs, so we just need the previews
+      }
+
+      // Load platform-specific content if exists
+      if (draft.platformSpecificContent && Object.keys(draft.platformSpecificContent).length > 0) {
+        const platformPostsData: Record<string, PlatformPost> = {};
+        Object.entries(draft.platformSpecificContent).forEach(
+          ([platformId, content]: [string, any]) => {
+            platformPostsData[platformId] = {
+              text: content.text || draft.content.text,
+              mediaFiles: [], // Can't recreate files
+              filePreviews: content.mediaItems?.map((item: any) => item.s3Url) || [],
+              existingMedia: content.mediaItems || [],
+            };
+          },
+        );
+        setPlatformPosts(platformPostsData);
+      }
+
+      // Automatically switch to preview mode when loading a draft
+      setViewMode("preview");
+    } catch (error) {
+      console.error("Failed to load draft", error);
+      setErrors(["Failed to load draft."]);
     }
   };
 
@@ -502,12 +715,14 @@ export function useCreatePost() {
     isSubmitting,
     isSuccess,
     setIsSuccess,
+    successMessage,
     timeZone,
     handleFileChange,
     removeFile,
     togglePlatform,
     handleGeneratePosts,
     handlePostNow,
+    handleSaveDraft,
     handleScheduleConfirm,
     connectedAccounts,
     errors,
@@ -516,5 +731,7 @@ export function useCreatePost() {
     platformPosts,
     updatePlatformPost,
     refinePlatformPostWithLLM,
+    loadDraft,
+    draftId,
   };
 }

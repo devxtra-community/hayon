@@ -36,7 +36,7 @@ export function EditPlatformPostModal({
   onRefine,
   isGenerating,
 }: EditPlatformPostModalProps) {
-  const [localText, setLocalText] = useState(post.text);
+  const [localText, setLocalText] = useState(post?.text || "");
   const [llmPrompt, setLlmPrompt] = useState("");
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -49,16 +49,26 @@ export function EditPlatformPostModal({
       const newFiles = Array.from(e.target.files);
       const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
       onUpdate({
-        mediaFiles: [...post.mediaFiles, ...newFiles],
-        filePreviews: [...post.filePreviews, ...newPreviews],
+        mediaFiles: [...(post?.mediaFiles || []), ...newFiles],
+        filePreviews: [...(post?.filePreviews || []), ...newPreviews],
       });
     }
   };
 
   const removeFile = (index: number) => {
-    const newFiles = post.mediaFiles.filter((_, i) => i !== index);
-    const newPreviews = post.filePreviews.filter((_, i) => i !== index);
-    onUpdate({ mediaFiles: newFiles, filePreviews: newPreviews });
+    const existingCount = post?.existingMedia?.length || 0;
+    if (index < existingCount) {
+      // Removing an existing media item
+      const newExisting = (post?.existingMedia || []).filter((_, i) => i !== index);
+      const newPreviews = (post?.filePreviews || []).filter((_, i) => i !== index);
+      onUpdate({ existingMedia: newExisting, filePreviews: newPreviews });
+    } else {
+      // Removing a newly uploaded file
+      const relativeIndex = index - existingCount;
+      const newFiles = (post?.mediaFiles || []).filter((_, i) => i !== relativeIndex);
+      const newPreviews = (post?.filePreviews || []).filter((_, i) => i !== index);
+      onUpdate({ mediaFiles: newFiles, filePreviews: newPreviews });
+    }
   };
 
   const handleRefine = async () => {
@@ -104,12 +114,12 @@ export function EditPlatformPostModal({
                 <span
                   className={cn(
                     "text-xs font-medium",
-                    localText.length > (platform.constraints?.maxChars || 280)
+                    (localText || "").length > (platform.constraints?.maxChars || 280)
                       ? "text-red-500"
                       : "text-gray-400",
                   )}
                 >
-                  {localText.length} / {platform.constraints?.maxChars || "∞"}
+                  {(localText || "").length} / {platform.constraints?.maxChars || "∞"}
                 </span>
               </div>
             </div>
@@ -144,7 +154,7 @@ export function EditPlatformPostModal({
           <div className="space-y-3">
             <label className="text-sm font-semibold text-gray-700">Media</label>
             <div className="grid grid-cols-4 gap-4">
-              {post.filePreviews.map((src, idx) => (
+              {(post?.filePreviews || []).map((src, idx) => (
                 <div
                   key={idx}
                   className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 group"
@@ -164,7 +174,7 @@ export function EditPlatformPostModal({
                   </button>
                 </div>
               ))}
-              {post.filePreviews.length < (platform.constraints?.maxImages || 10) && (
+              {(post?.filePreviews || []).length < (platform.constraints?.maxImages || 10) && (
                 <label className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 hover:border-primary/50 transition-all cursor-pointer">
                   <Upload size={20} className="text-gray-400" />
                   <span className="text-[10px] font-semibold text-gray-400 uppercase">Add</span>

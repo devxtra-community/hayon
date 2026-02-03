@@ -4,6 +4,7 @@ import { Globe, Reply, Repeat, Star, Bookmark, MoreHorizontal } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { User } from "@/types/create-post";
 import { ReadMoreText } from "./ReadMoreText";
+import { PreviewImage } from "./PreviewImage";
 
 interface MastodonPreviewProps {
   user: User | null;
@@ -59,8 +60,7 @@ export const MastodonPreview: React.FC<MastodonPreviewProps> = ({
           >
             {filePreviews.slice(0, 4).map((src, idx) => (
               <div key={idx} className="relative aspect-square">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`Post ${idx + 1}`} className="w-full h-full object-cover" />
+                <PreviewImage src={src} alt={`Post ${idx + 1}`} />
                 <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]">
                   ALT
                 </div>

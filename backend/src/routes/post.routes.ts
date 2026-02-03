@@ -1,13 +1,25 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.middleware";
-import { createPost, getPostStatus, getUploadUrls } from "../controllers/post.controller";
+import {
+  createPost,
+  getPostStatus,
+  getUploadUrls,
+  getUserPosts,
+  getPostById,
+  updatePost,
+  deletePost,
+} from "../controllers/post.controller";
 
 const router = Router();
 
 router.use(authenticate);
 
+router.get("/", getUserPosts);
+router.get("/:postId", getPostById);
 router.get("/:postId/status", getPostStatus);
 router.post("/", createPost);
+router.put("/:postId", updatePost);
+router.delete("/:postId", deletePost);
 
 router.post("/media/upload", getUploadUrls);
 

@@ -4,6 +4,7 @@ import { Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share } from "lucide-re
 import { cn } from "@/lib/utils";
 import { User } from "@/types/create-post";
 import { ReadMoreText } from "./ReadMoreText";
+import { PreviewImage } from "./PreviewImage";
 
 interface FacebookPreviewProps {
   user: User | null;
@@ -73,12 +74,7 @@ export const FacebookPreview: React.FC<FacebookPreviewProps> = ({
                   filePreviews.length === 1 ? "h-auto max-h-[600px]" : "",
                 )}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src}
-                  alt={`Post ${idx + 1}`}
-                  className="w-full h-full object-cover mx-auto"
-                />
+                <PreviewImage src={src} alt={`Post ${idx + 1}`} />
                 {idx === 3 && filePreviews.length > 4 && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-2xl font-bold">
                     +{filePreviews.length - 4}

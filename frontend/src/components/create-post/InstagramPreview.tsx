@@ -4,6 +4,7 @@ import { MoreHorizontal, ImageIcon, Heart, MessageCircle, Send, Bookmark } from 
 import { cn } from "@/lib/utils";
 import { User } from "@/types/create-post";
 import { ReadMoreText } from "./ReadMoreText";
+import { PreviewImage } from "./PreviewImage";
 
 interface InstagramPreviewProps {
   user: User | null;
@@ -42,8 +43,7 @@ export const InstagramPreview: React.FC<InstagramPreviewProps> = ({
             <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide aspect-square">
               {filePreviews.map((src, idx) => (
                 <div key={idx} className="flex-shrink-0 w-full h-full snap-center relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={`Post ${idx + 1}`} className="w-full h-full object-contain" />
+                  <PreviewImage src={src} alt={`Post ${idx + 1}`} fill />
                 </div>
               ))}
             </div>

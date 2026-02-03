@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,11 @@ import { useCreatePost } from "@/hooks/useCreatePost";
 import { PlatformSelection } from "@/components/create-post/PlatformSelection";
 import { CreatePostForm } from "@/components/create-post/CreatePostForm";
 import { PostPreview } from "@/components/create-post/PostPreview";
+import { useSearchParams } from "next/navigation";
 
 export default function CreatePostPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const searchParams = useSearchParams();
 
   const {
     user,
@@ -34,12 +36,14 @@ export default function CreatePostPage() {
     isSubmitting,
     isSuccess,
     setIsSuccess,
+    successMessage,
     timeZone,
     handleFileChange,
     removeFile,
     togglePlatform,
     handleGeneratePosts,
     handlePostNow,
+    handleSaveDraft,
     handleScheduleConfirm,
     connectedAccounts,
     errors,
@@ -47,7 +51,17 @@ export default function CreatePostPage() {
     platformPosts,
     updatePlatformPost,
     refinePlatformPostWithLLM,
+    loadDraft,
+    draftId,
   } = useCreatePost();
+
+  // Load draft if draftId query param is present
+  useEffect(() => {
+    const draftIdParam = searchParams.get("draftId");
+    if (draftIdParam && !draftId) {
+      loadDraft(draftIdParam);
+    }
+  }, [searchParams, draftId, loadDraft]);
 
   if (!user) {
     return (
@@ -94,7 +108,7 @@ export default function CreatePostPage() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Success!</h2>
               <p className="text-gray-500 mb-6">
-                Your post has been successfully scheduled/published.
+                {successMessage || "Your post has been successfully processed."}
               </p>
               <Button
                 onClick={() => setIsSuccess(false)}
@@ -155,6 +169,7 @@ export default function CreatePostPage() {
               selectedPlatforms={selectedPlatforms}
               onBack={() => setViewMode("create")}
               onPostNow={handlePostNow}
+              onSaveDraft={handleSaveDraft}
               isScheduleOpen={isScheduleOpen}
               setIsScheduleOpen={setIsScheduleOpen}
               scheduleDate={scheduleDate}
