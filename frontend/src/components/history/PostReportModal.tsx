@@ -148,27 +148,27 @@ export function PostReportModal({ isOpen, onClose, post, onRetry }: PostReportMo
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  {p.platformPostUrl && (
+                <div className="flex items-center gap-2">
+                  {p.platformPostUrl && p.status === "completed" && (
                     <a
                       href={p.platformPostUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-blue-600 transition-colors"
-                      title="View Post"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors text-[11px] font-semibold"
                     >
-                      <ExternalLink size={16} />
+                      <span>View</span>
+                      <ExternalLink size={12} />
                     </a>
                   )}
                   {p.status === "failed" && (
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
+                      size="sm"
+                      className="h-8 gap-1.5 px-3 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50 text-[11px] font-semibold"
                       onClick={() => onRetry(post._id)}
-                      title="Retry this platform"
                     >
-                      <RefreshCw size={16} />
+                      <RefreshCw size={12} />
+                      <span>Retry</span>
                     </Button>
                   )}
                 </div>

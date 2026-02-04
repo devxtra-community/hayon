@@ -70,8 +70,11 @@ export const FacebookPreview: React.FC<FacebookPreviewProps> = ({
                 key={idx}
                 className={cn(
                   "relative bg-gray-100 overflow-hidden",
-                  filePreviews.length === 3 && idx === 0 ? "row-span-2 h-[400px]" : "h-[200px]",
-                  filePreviews.length === 1 ? "h-auto max-h-[600px]" : "",
+                  filePreviews.length === 1
+                    ? "w-full aspect-square"
+                    : filePreviews.length === 3 && idx === 0
+                      ? "row-span-2 h-[400px]"
+                      : "h-[200px]",
                 )}
               >
                 <PreviewImage src={src} alt={`Post ${idx + 1}`} />

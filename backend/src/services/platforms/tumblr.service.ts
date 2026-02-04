@@ -79,9 +79,21 @@ export class TumblrService {
     const tumblrUsername: string = userRes.data.response.user.name;
     const blogs = userRes.data.response.user.blogs;
     const primaryBlog = blogs.find((b: any) => b.primary === true) || blogs[0];
-    const blogHostname = primaryBlog.name; // This is the identifier used in API paths
 
-    const avatarUrl = `https://api.tumblr.com/v2/blog/${blogHostname}.tumblr.com/avatar/512`;
+    // Extract hostname from URL (e.g., "https://myblog.tumblr.com/" -> "myblog.tumblr.com")
+    let blogHostname = primaryBlog.name;
+    if (primaryBlog.url) {
+      try {
+        const url = new URL(primaryBlog.url);
+        blogHostname = url.hostname;
+      } catch {
+        blogHostname = `${primaryBlog.name}.tumblr.com`;
+      }
+    } else {
+      blogHostname = `${primaryBlog.name}.tumblr.com`;
+    }
+
+    const avatarUrl = `https://api.tumblr.com/v2/blog/${blogHostname}/avatar/512`;
 
     return {
       handle: tumblrUsername,

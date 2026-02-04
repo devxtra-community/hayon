@@ -453,7 +453,8 @@ export function useCreatePost() {
 
       if (postText.length > maxChars) blockingPlatforms.push(pId);
       if (mediaFiles.length > maxImages) blockingPlatforms.push(pId);
-      if (requiresImage && mediaFiles.length === 0) blockingPlatforms.push(pId);
+      if (requiresImage && mediaFiles.length === 0 && existingMedia.length === 0)
+        blockingPlatforms.push(pId); // Fixed: check existingMedia too
       if (maxFileSize && mediaFiles.some((f) => f.size > maxFileSize)) blockingPlatforms.push(pId);
     });
 
@@ -483,20 +484,28 @@ export function useCreatePost() {
       const platformPromises = selectedPlatforms.map(async (platformId) => {
         const pPost = platformPosts[platformId];
         if (pPost) {
-          // Check if files are exactly the same objects as global mediaFiles
-          // If so, reuse globalMediaItems
           let pMediaItems: any[] = [];
 
-          // Simple equality check for exact file arrays
           const isSameFiles =
             pPost.mediaFiles.length === mediaFiles.length &&
             pPost.mediaFiles.every((f, i) => f === mediaFiles[i]);
 
           if (isSameFiles) {
-            pMediaItems = globalMediaItems;
+            // If platform has specific existing media, prefer it. Otherwise use global.
+            const baseExisting =
+              pPost.existingMedia && pPost.existingMedia.length > 0
+                ? pPost.existingMedia
+                : pPost.existingMedia === undefined
+                  ? existingMedia
+                  : []; // If explicitly empty, keep it empty
+
+            pMediaItems = [...baseExisting, ...globalMediaItems];
           } else {
-            // Upload platform specific files
-            pMediaItems = await uploadFiles(pPost.mediaFiles);
+            // Merge platform specific existing media with platform specific new uploads
+            pMediaItems = [
+              ...(pPost.existingMedia || []),
+              ...(await uploadFiles(pPost.mediaFiles)),
+            ];
           }
 
           platformSpecificContent[platformId] = {
@@ -508,11 +517,11 @@ export function useCreatePost() {
 
       await Promise.all(platformPromises);
 
-      // 3. Send Create Post Request
+      // 3. Send Create or Update Request
       const payload = {
         content: {
           text: postText, // Global text fallback
-          mediaItems: globalMediaItems,
+          mediaItems: [...existingMedia, ...globalMediaItems], // Fixed: include existingMedia
         },
         selectedPlatforms,
         platformSpecificContent,
@@ -521,9 +530,17 @@ export function useCreatePost() {
             ? new Date(`${scheduleDate}T${scheduleTime}`).toISOString()
             : undefined,
         timezone: timeZone,
+        status: scheduleDate && scheduleTime ? "SCHEDULED" : "PENDING",
       };
 
-      const res = await api.post("/posts", payload);
+      let res;
+      if (draftId) {
+        // Update existing draft to PENDING/SCHEDULED
+        res = await api.put(`/posts/${draftId}`, payload);
+      } else {
+        // Create new post
+        res = await api.post("/posts", payload);
+      }
 
       if (res.data?.data?.postId) {
         setSuccessMessage(
@@ -547,6 +564,7 @@ export function useCreatePost() {
         setPlatformPosts({});
         setErrors([]);
         setExistingMedia([]);
+        setDraftId(null); // Reset draftId
       }, 3000);
     } catch (error) {
       console.error("Failed to post", error);
