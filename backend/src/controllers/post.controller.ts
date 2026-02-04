@@ -229,8 +229,20 @@ export const cancelPost = async (req: Request, res: Response) => {
     if (!req.auth) {
       return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
     }
+    const { postId } = req.params;
+    const userId = req.auth.id;
 
-    return new ErrorResponse("Not implemented", { status: 501 }).send(res);
+    const cancelledPost = await postRepository.cancelPost(postId, userId);
+
+    if (!cancelledPost) {
+      return new ErrorResponse("Post not found, unauthorized, or not in a cancellable state", {
+        status: 404,
+      }).send(res);
+    }
+
+    return new SuccessResponse("Post cancelled successfully", {
+      data: { postId: cancelledPost._id, status: cancelledPost.status },
+    }).send(res);
   } catch (error) {
     logger.error("Cancel post error", error);
     return new ErrorResponse("Failed to cancel post").send(res);
@@ -242,8 +254,63 @@ export const retryPost = async (req: Request, res: Response) => {
     if (!req.auth) {
       return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
     }
+    const { postId } = req.params;
+    const userId = req.auth.id;
 
-    return new ErrorResponse("Not implemented", { status: 501 }).send(res);
+    const post = await postRepository.findById(postId);
+    if (!post) {
+      return new ErrorResponse("Post not found", { status: 404 }).send(res);
+    }
+
+    if (post.userId.toString() !== userId) {
+      return new ErrorResponse("Unauthorized", { status: 403 }).send(res);
+    }
+
+    // Identify failed platforms
+    const failedPlatforms = post.platformStatuses
+      .filter((p) => p.status === "failed")
+      .map((p) => p.platform);
+
+    if (failedPlatforms.length === 0) {
+      return new ErrorResponse("No failed platforms to retry", { status: 400 }).send(res);
+    }
+
+    // Reset status for failed platforms and re-enqueue
+    const retryPromises = failedPlatforms.map(async (platform) => {
+      // Update DB status back to pending
+      await postRepository.updatePlatformStatus(postId, platform, {
+        status: "pending",
+        error: undefined,
+      });
+
+      // Prepare content (respecting platform-specific overrides)
+      const specificContent = (post.platformSpecificContent as any)?.[platform] || {};
+      const finalContentText = specificContent.text || post.content.text;
+      const sourceMediaItems = specificContent.mediaItems || post.content.mediaItems || [];
+      const mediaUrls = sourceMediaItems.map((item: any) => item.s3Url);
+
+      // Re-enqueue
+      await Producer.queueSocialPost({
+        postId: post._id!.toString(),
+        userId,
+        platform: platform as any,
+        content: {
+          text: finalContentText,
+          mediaUrls,
+        },
+        // For retry, we usually want it to go out immediately
+        scheduledAt: undefined,
+      });
+    });
+
+    await Promise.all(retryPromises);
+
+    return new SuccessResponse("Retry initiated for failed platforms", {
+      data: {
+        postId: post._id,
+        retryingPlatforms: failedPlatforms,
+      },
+    }).send(res);
   } catch (error) {
     logger.error("Retry post error", error);
     return new ErrorResponse("Failed to retry post").send(res);

@@ -149,37 +149,17 @@ export const ConnectedPlatformsCard = ({
   };
 
   const platformIcons = {
-    Threads: (
-      <div className="relative w-full h-full scale-[0.6]">
-        <Image src="/images/logos/threads.png" alt="Threads" fill className="object-contain" />
-      </div>
-    ),
-    Bluesky: (
-      <div className="relative w-full h-full scale-[0.7]">
-        <Image src="/images/logos/bluesky.png" alt="Bluesky" fill className="object-contain" />
-      </div>
-    ),
+    Threads: <Image src="/images/logos/threads.png" alt="Threads" fill className="object-cover" />,
+    Bluesky: <Image src="/images/logos/bluesky.png" alt="Bluesky" fill className="object-cover" />,
     Mastodon: (
-      <div className="relative w-full h-full scale-[0.7]">
-        <Image src="/images/logos/mastodon.png" alt="Mastodon" fill className="object-contain" />
-      </div>
+      <Image src="/images/logos/mastodon.png" alt="Mastodon" fill className="object-cover" />
     ),
-    Tumblr: (
-      <div className="relative w-full h-full scale-[0.55]">
-        <Image src="/images/logos/tumblr.png" alt="Tumblr" fill className="object-contain" />
-      </div>
-    ),
+    Tumblr: <Image src="/images/logos/tumblr.png" alt="Tumblr" fill className="object-cover" />,
     Instagram: (
-      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-2">
-        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-      </svg>
+      <Image src="/images/logos/instagram.png" alt="Instagram" fill className="object-cover" />
     ),
     Facebook: (
-      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-      </svg>
+      <Image src="/images/logos/facebook.png" alt="Facebook" fill className="object-cover" />
     ),
   };
 
@@ -396,9 +376,7 @@ export const ConnectedPlatformsCard = ({
         {platforms.map((platform) => (
           <div key={platform.name} className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full ${platform.color} flex items-center justify-center text-white shadow-sm shrink-0`}
-              >
+              <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-sm shrink-0">
                 {platform.icon}
               </div>
               <div className="flex flex-col">

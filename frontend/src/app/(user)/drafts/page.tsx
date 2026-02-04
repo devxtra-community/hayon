@@ -78,26 +78,6 @@ export default function DraftsPage() {
     }
   };
 
-  const handlePost = async (draftId: string) => {
-    try {
-      const draft = drafts.find((d) => d._id === draftId);
-      if (!draft) return;
-
-      // Update draft to PENDING status (removes it from drafts)
-      await api.put(`/posts/${draftId}`, {
-        ...draft,
-        status: "PENDING", // This will trigger job enqueuing in backend
-      });
-
-      // Remove from drafts list
-      setDrafts(drafts.filter((d) => d._id !== draftId));
-      alert("Post queued successfully!");
-    } catch (error) {
-      console.error("Failed to post draft", error);
-      alert("Failed to post. Please try again.");
-    }
-  };
-
   const filteredDrafts = drafts.filter((draft) =>
     draft.content.text.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -152,7 +132,7 @@ export default function DraftsPage() {
               <p className="text-lg">No drafts found.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {filteredDrafts.map((draft) => {
                 const uniqueImages = new Set<string>();
                 draft.content.mediaItems.forEach((item) => uniqueImages.add(item.s3Url));
@@ -167,9 +147,9 @@ export default function DraftsPage() {
                     draftId={draft._id}
                     title={draft.content.text}
                     images={Array.from(uniqueImages)}
+                    selectedPlatforms={draft.selectedPlatforms}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    onPost={handlePost}
                   />
                 );
               })}

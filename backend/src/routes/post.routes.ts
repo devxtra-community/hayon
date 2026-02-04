@@ -8,6 +8,8 @@ import {
   getPostById,
   updatePost,
   deletePost,
+  retryPost,
+  cancelPost,
 } from "../controllers/post.controller";
 
 const router = Router();
@@ -20,6 +22,8 @@ router.get("/:postId/status", getPostStatus);
 router.post("/", createPost);
 router.put("/:postId", updatePost);
 router.delete("/:postId", deletePost);
+router.post("/:postId/retry", retryPost);
+router.post("/:postId/cancel", cancelPost);
 
 router.post("/media/upload", getUploadUrls);
 

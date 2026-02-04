@@ -91,11 +91,30 @@ export class FacebookPostingService extends BasePostingService {
 
       const postId = response.data.post_id || response.data.id;
 
-      return {
-        success: true,
-        platformPostId: postId,
-        platformPostUrl: `https://www.facebook.com/${postId}`,
-      };
+      // Fetch official permalink
+      try {
+        const permalinkResponse = await axios.get(`${this.graphApiUrl}/${postId}`, {
+          params: {
+            fields: "permalink_url",
+            access_token: accessToken,
+          },
+        });
+        return {
+          success: true,
+          platformPostId: postId,
+          platformPostUrl: permalinkResponse.data.permalink_url,
+        };
+      } catch (permalinkError) {
+        console.warn(
+          "Failed to fetch Facebook permalink, falling back to manual URL:",
+          permalinkError,
+        );
+        return {
+          success: true,
+          platformPostId: postId,
+          platformPostUrl: `https://www.facebook.com/${postId}`,
+        };
+      }
     } catch (error: any) {
       return this.handleError(error);
     }

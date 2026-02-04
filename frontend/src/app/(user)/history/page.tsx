@@ -1,83 +1,38 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sidebar, Header } from "@/components/dashboard";
-import { HistoryCard } from "@/components/history/HistoryCard";
-import { HistoryFilters, FilterState } from "@/components/history/HistoryFilters"; // Import filters
+import { HistoryCard, PlatformPostStatus } from "@/components/history/HistoryCard";
+import { HistoryFilters, FilterState } from "@/components/history/HistoryFilters";
+import { PostReportModal } from "@/components/history/PostReportModal";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/axios";
 
-// Expanded Mock Data with Status and Date
-const historyItems = [
-  {
-    id: 1,
-    imageUrl: "https://images.unsplash.com/photo-1518005020951-ecc8e5cc6991",
-    description: "A breathtaking aerial view of a bustling cyberpunk metropolis",
-    status: "COMPLETED",
-    platform: "Instagram",
-    scheduledAt: "2024-03-10T10:00:00Z",
-  },
-  {
-    id: 2,
-    imageUrl: "https://images.unsplash.com/photo-1542385489-d10d9c792484",
-    description: "Modern typography design with bold aesthetics",
-    status: "SCHEDULED",
-    platform: "LinkedIn",
-    scheduledAt: "2024-03-15T09:00:00Z",
-  },
-  {
-    id: 3,
-    imageUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
-    description: "Creative workspace setup with natural light",
-    status: "DRAFT",
-    platform: "Twitter",
-    scheduledAt: "2024-03-20T14:30:00Z",
-  },
-  {
-    id: 4,
-    imageUrl: "https://images.unsplash.com/photo-1593642532400-91a02925d947",
-    description: "Professional networking event coverage",
-    status: "FAILED",
-    platform: "Facebook",
-    scheduledAt: "2024-03-05T11:00:00Z",
-  },
-  {
-    id: 5,
-    imageUrl: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205",
-    description: "Product photography session behind the scenes",
-    status: "COMPLETED",
-    platform: "Instagram",
-    scheduledAt: "2024-03-01T16:20:00Z",
-  },
-  {
-    id: 6,
-    imageUrl: "https://images.unsplash.com/photo-1493612276216-9c5901955d43",
-    description: "Minimalist interior design inspiration",
-    status: "SCHEDULED",
-    platform: "Instagram",
-    scheduledAt: "2024-03-22T08:15:00Z",
-  },
-  {
-    id: 7,
-    imageUrl: "https://images.unsplash.com/photo-1556155092-490a1ba16284",
-    description: "Team collaboration meeting in open office",
-    status: "PROCESSING",
-    platform: "LinkedIn",
-    scheduledAt: "2024-03-12T13:45:00Z",
-  },
-  {
-    id: 8,
-    imageUrl: "https://images.unsplash.com/photo-1542385489-d10d9c792484",
-    description: "Abstract architectural details close-up",
-    status: "COMPLETED",
-    platform: "Twitter",
-    scheduledAt: "2024-03-08T10:30:00Z",
-  },
-];
+interface Post {
+  _id: string;
+  content: {
+    text: string;
+    mediaItems: Array<{ s3Url: string }>;
+  };
+  platformSpecificContent?: {
+    [key: string]: {
+      text?: string;
+      mediaItems?: Array<{ s3Url: string }>;
+    };
+  };
+  status: string;
+  platformStatuses: PlatformPostStatus[];
+  scheduledAt: string;
+  createdAt: string;
+}
 
 export default function HistoryPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Filter & Sort State
+  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [user, setUser] = useState({ name: "", email: "", avatar: "" });
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     statuses: [],
     platforms: [],
@@ -85,30 +40,98 @@ export default function HistoryPage() {
   });
   const [sort, setSort] = useState<string>("newest");
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // Fetch user
+      const userRes = await api.get("/auth/me");
+      setUser({
+        name: userRes.data.data.user.name || "User",
+        email: userRes.data.data.user.email || "",
+        avatar: userRes.data.data.user.avatar || "/mock-avatar.png",
+      });
+
+      // Fetch history
+      const postsRes = await api.get("/posts", {
+        params: {
+          limit: 100,
+        },
+      });
+
+      // Filter history (include attempted and active posts)
+      const allowedStatuses = ["COMPLETED", "PARTIAL_SUCCESS", "FAILED", "PENDING", "PROCESSING"];
+      const allPosts = postsRes.data.data.posts || [];
+      setPosts(allPosts.filter((p: Post) => allowedStatuses.includes(p.status)));
+    } catch (error) {
+      console.error("Failed to fetch history", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleRetry = async (postId: string) => {
+    try {
+      await api.post(`/posts/${postId}/retry`);
+      alert("Retry initiated for failed platforms");
+      setIsReportOpen(false);
+      fetchData(); // Refresh
+    } catch (error) {
+      console.error("Failed to retry post", error);
+      alert("Failed to initiate retry.");
+    }
+  };
+
+  const handleActionClick = (id: string, action: string) => {
+    const post = posts.find((p) => p._id === id);
+    if (!post) return;
+
+    switch (action) {
+      case "view":
+        setSelectedPost(post);
+        setIsReportOpen(true);
+        break;
+      case "retry":
+        handleRetry(id);
+        break;
+    }
+  };
+
   // Filter Logic
   const filteredItems = useMemo(() => {
-    return historyItems
+    return posts
       .filter((item) => {
         // Status Filter
-        if (filters.statuses.length > 0 && !filters.statuses.includes(item.status)) {
-          return false;
+        if (filters.statuses.length > 0) {
+          const isProcessingIncluded = filters.statuses.includes("PROCESSING");
+          const matchesDirectly = filters.statuses.includes(item.status);
+          const matchesProcessingAlias =
+            isProcessingIncluded && (item.status === "PENDING" || item.status === "PROCESSING");
+
+          if (!matchesDirectly && !matchesProcessingAlias) {
+            return false;
+          }
         }
-        // Platform Filter
-        if (filters.platforms.length > 0 && !filters.platforms.includes(item.platform)) {
-          return false;
+        // Platform Filter (check if any platform in the post matches the filter)
+        if (filters.platforms.length > 0) {
+          const postPlatforms = item.platformStatuses.map((ps) => ps.platform.toLowerCase());
+          const match = filters.platforms.some((fp) => postPlatforms.includes(fp.toLowerCase()));
+          if (!match) return false;
         }
         return true;
       })
       .sort((a, b) => {
-        // Sort Logic
-        const dateA = new Date(a.scheduledAt).getTime();
-        const dateB = new Date(b.scheduledAt).getTime();
+        const dateA = new Date(a.scheduledAt || a.createdAt).getTime();
+        const dateB = new Date(b.scheduledAt || b.createdAt).getTime();
 
         switch (sort) {
           case "oldest":
             return dateA - dateB;
           case "scheduled_asc":
-            return dateA - dateB; // Same as oldest logic-wise if using scheduledAt for age
+            return dateA - dateB;
           case "scheduled_desc":
             return dateB - dateA;
           case "newest":
@@ -116,13 +139,7 @@ export default function HistoryPage() {
             return dateB - dateA;
         }
       });
-  }, [filters, sort]);
-
-  const user = {
-    name: "Monkey d luffy",
-    email: "monkeydluffy@gmail.com",
-    avatar: "/mock-avatar.png",
-  };
+  }, [posts, filters, sort]);
 
   return (
     <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
@@ -172,30 +189,52 @@ export default function HistoryPage() {
 
         {/* Main Content */}
         <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
-          {filteredItems.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
-              <p className="text-lg">No history items found.</p>
+              <p className="text-lg text-gray-500 font-medium">No history items found.</p>
               <button
                 onClick={() => setFilters({ statuses: [], platforms: [], dateRange: "all" })}
-                className="mt-2 text-blue-500 hover:underline"
+                className="mt-2 text-primary hover:underline font-semibold"
               >
                 Clear filters
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {filteredItems.map((item) => (
                 <HistoryCard
-                  key={item.id}
-                  imageUrl={item.imageUrl}
-                  description={item.description}
+                  key={item._id}
+                  id={item._id}
+                  imageUrl={item.content.mediaItems[0]?.s3Url || "/placeholder.png"}
+                  description={item.content.text}
                   status={item.status as any}
+                  platformStatuses={item.platformStatuses}
+                  mediaCount={
+                    (item.content.mediaItems?.length || 0) +
+                    Object.values(item.platformSpecificContent || {}).reduce(
+                      (acc: number, curr: any) => acc + (curr.mediaItems?.length || 0),
+                      0,
+                    )
+                  }
+                  createdAt={item.createdAt}
+                  onActionClick={handleActionClick}
                 />
               ))}
             </div>
           )}
         </main>
       </div>
+
+      <PostReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        post={selectedPost}
+        onRetry={handleRetry}
+      />
     </div>
   );
 }

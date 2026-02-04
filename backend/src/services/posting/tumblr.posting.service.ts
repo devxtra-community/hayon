@@ -80,7 +80,7 @@ export class TumblrPostingService extends BasePostingService {
       return {
         success: true,
         platformPostId: postId.toString(),
-        platformPostUrl: `https://www.tumblr.com/posts/${postId}`,
+        platformPostUrl: `https://${blogHostname}/post/${postId}`,
       };
     } catch (error: any) {
       return this.handleError(error);

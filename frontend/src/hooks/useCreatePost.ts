@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/axios";
-import { Facebook, Instagram } from "lucide-react";
 import Image from "next/image";
 import { Platform, User, ViewMode, PlatformPost, PlatformConstraints } from "@/types/create-post";
 import {
@@ -73,14 +72,32 @@ export function useCreatePost() {
     {
       id: "facebook",
       name: "Facebook",
-      icon: React.createElement(Facebook, { className: "w-5 h-5" }),
+      icon: React.createElement(
+        "div",
+        { className: "relative w-full h-full rounded-full overflow-hidden" },
+        React.createElement(Image, {
+          src: "/images/logos/facebook.png",
+          alt: "Facebook",
+          fill: true,
+          className: "object-cover",
+        }),
+      ),
       color: "bg-blue-600",
       constraints: getPlatformConstraints("facebook"),
     },
     {
       id: "instagram",
       name: "Instagram",
-      icon: React.createElement(Instagram, { className: "w-5 h-5" }),
+      icon: React.createElement(
+        "div",
+        { className: "relative w-full h-full rounded-full overflow-hidden" },
+        React.createElement(Image, {
+          src: "/images/logos/instagram.png",
+          alt: "Instagram",
+          fill: true,
+          className: "object-cover",
+        }),
+      ),
       color: "bg-pink-600",
       constraints: getPlatformConstraints("instagram"),
     },
@@ -89,12 +106,12 @@ export function useCreatePost() {
       name: "Threads",
       icon: React.createElement(
         "div",
-        { className: "relative w-full h-full scale-[0.6]" },
+        { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
           src: "/images/logos/threads.png",
           alt: "Threads",
           fill: true,
-          className: "object-contain",
+          className: "object-cover",
         }),
       ),
       color: "bg-white border border-gray-100",
@@ -105,12 +122,12 @@ export function useCreatePost() {
       name: "Blue Sky",
       icon: React.createElement(
         "div",
-        { className: "relative w-full h-full scale-[0.7]" },
+        { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
           src: "/images/logos/bluesky.png",
           alt: "Bluesky",
           fill: true,
-          className: "object-contain",
+          className: "object-cover",
         }),
       ),
       color: "bg-white border border-gray-100",
@@ -121,12 +138,12 @@ export function useCreatePost() {
       name: "Tumblr",
       icon: React.createElement(
         "div",
-        { className: "relative w-full h-full scale-[0.55]" },
+        { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
           src: "/images/logos/tumblr.png",
           alt: "Tumblr",
           fill: true,
-          className: "object-contain",
+          className: "object-cover",
         }),
       ),
       color: "bg-white border border-gray-100",
@@ -137,12 +154,12 @@ export function useCreatePost() {
       name: "Mastodon",
       icon: React.createElement(
         "div",
-        { className: "relative w-full h-full scale-[0.7]" },
+        { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
           src: "/images/logos/mastodon.png",
           alt: "Mastodon",
           fill: true,
-          className: "object-contain",
+          className: "object-cover",
         }),
       ),
       color: "bg-white border border-gray-100",

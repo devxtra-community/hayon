@@ -2,7 +2,6 @@ import { useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, Calendar, Send, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Platform, User, PlatformPost } from "@/types/create-post";
 import { SocialAccount } from "@hayon/schemas";
 // import { useToast } from "@/context/ToastContext";
@@ -130,59 +129,13 @@ export function PostPreview({
                       </div>
                     )}
                     <div className="flex items-center gap-2.5">
-                      <div className="relative w-8 h-8 rounded-full bg-white shadow-sm border border-slate-100 p-1.5 flex items-center justify-center">
-                        {/* 
-                            FUTURE: Optimize logo rendering using a dedicated component or SVG map.
-                            Currently dealing with distinct assets for each platform. 
-                         */}
-                        {platform.id === "threads" ? (
-                          <Image
-                            src="/images/logos/threads.png"
-                            alt="Threads"
-                            fill
-                            className="object-contain p-1"
-                          />
-                        ) : platform.id === "bluesky" ? (
-                          <Image
-                            src="/images/logos/bluesky.png"
-                            alt="Bluesky"
-                            fill
-                            className="object-contain p-1"
-                          />
-                        ) : platform.id === "mastodon" ? (
-                          <Image
-                            src="/images/logos/mastodon.png"
-                            alt="Mastodon"
-                            fill
-                            className="object-contain p-1"
-                          />
-                        ) : platform.id === "tumblr" ? (
-                          <Image
-                            src="/images/logos/tumblr.png"
-                            alt="Tumblr"
-                            fill
-                            className="object-contain p-1"
-                          />
-                        ) : platform.id === "facebook" ? (
-                          <div className="w-full h-full bg-[#1877F2] rounded-full flex items-center justify-center">
-                            <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white">
-                              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                            </svg>
-                          </div>
-                        ) : platform.id === "instagram" ? (
-                          <div className="w-full h-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] rounded-full flex items-center justify-center">
-                            <svg
-                              viewBox="0 0 24 24"
-                              className="w-3 h-3 fill-none stroke-white stroke-[2.5]"
-                            >
-                              <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                              <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                            </svg>
-                          </div>
-                        ) : (
-                          <div className={cn("w-full h-full rounded-full", platform.color)} />
-                        )}
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-sm">
+                        <Image
+                          src={`/images/logos/${platform.id.toLowerCase()}.png`}
+                          alt={platform.name}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
                       <span className="font-bold text-slate-900 tracking-tight">
                         {platform.name}

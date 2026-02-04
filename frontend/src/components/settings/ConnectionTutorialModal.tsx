@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Facebook } from "lucide-react";
 import Image from "next/image";
 import React from "react";
 
@@ -69,7 +68,16 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
             <TabsContent value="meta" className="mt-0 space-y-6">
               <Section
                 title="Facebook & Instagram"
-                icon={Facebook}
+                icon={
+                  <div className="relative w-full h-full rounded-full overflow-hidden">
+                    <Image
+                      src="/images/logos/facebook.png"
+                      alt="Facebook"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                }
                 color="text-blue-600"
                 content="Connecting your Meta accounts allows us to auto-post content and track basic analytics."
               />
@@ -93,12 +101,12 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
               <Section
                 title="Threads"
                 icon={
-                  <div className="relative w-full h-full scale-[0.6]">
+                  <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
                       src="/images/logos/threads.png"
                       alt="Threads"
                       fill
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 }
@@ -121,12 +129,12 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
               <Section
                 title="Mastodon"
                 icon={
-                  <div className="relative w-full h-full scale-[0.7]">
+                  <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
                       src="/images/logos/mastodon.png"
                       alt="Mastodon"
                       fill
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 }
@@ -152,12 +160,12 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
               <Section
                 title="Bluesky"
                 icon={
-                  <div className="relative w-full h-full scale-[0.7]">
+                  <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
                       src="/images/logos/bluesky.png"
                       alt="Bluesky"
                       fill
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 }
@@ -180,12 +188,12 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
               <Section
                 title="Tumblr"
                 icon={
-                  <div className="relative w-full h-full scale-[0.55]">
+                  <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
                       src="/images/logos/tumblr.png"
                       alt="Tumblr"
                       fill
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 }
