@@ -449,6 +449,12 @@ export const updatePost = async (req: Request, res: Response) => {
       timezone: timezone || "UTC",
     };
 
+    // FIX: If publishing a draft (DRAFT -> PENDING/SCHEDULED), update createdAt to now
+    // so it appears at the top of the history list.
+    if (statusChangedFromDraft) {
+      updateData.createdAt = new Date();
+    }
+
     const updatedPost = await postRepository.updatePost(postId, userId, updateData);
 
     if (!updatedPost) {
