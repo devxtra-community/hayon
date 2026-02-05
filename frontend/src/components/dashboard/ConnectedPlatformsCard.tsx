@@ -170,7 +170,7 @@ export default function ConnectedPlatformsCard() {
                     ) : (
                       <div className="relative w-full h-full">
                         <Image
-                          src={`/images/logos/${account.platform.toLowerCase()}.png`}
+                          src={`/images/platform-logos/${account.platform.toLowerCase()}.png`}
                           alt={account.platform}
                           fill
                           className="object-cover"

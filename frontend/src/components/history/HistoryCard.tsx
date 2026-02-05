@@ -123,7 +123,7 @@ export function HistoryCard({
               >
                 <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center shadow-sm">
                   <Image
-                    src={`/images/logos/${p.platform.toLowerCase()}.png`}
+                    src={`/images/platform-logos/${p.platform.toLowerCase()}.png`}
                     alt={p.platform}
                     fill
                     className="object-cover"
