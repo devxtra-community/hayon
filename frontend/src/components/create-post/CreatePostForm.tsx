@@ -20,7 +20,7 @@ interface CreatePostFormProps {
   availablePlatforms: Platform[];
 }
 
-const LLM_MODELS = [{ id: "gemini-1.5 pro", name: "gemini-1.5-pro", provider: "Gemini" }];
+const LLM_MODELS = [{ id: "gemini-1.5-flash", name: "gemini-2.5 flash", provider: "Gemini" }];
 
 const SUGGESTED_HASHTAGS = [""];
 

@@ -529,7 +529,7 @@ export const generateCaptions = async (req: Request, res: Response) => {
       return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
     }
 
-    const { media } = req.body;
+    const { prompt, media } = req.body;
 
     function parseBase64Image(dataUrl: any) {
       const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -549,8 +549,42 @@ export const generateCaptions = async (req: Request, res: Response) => {
       },
     }));
 
+    const textPrompt = `
+You are a professional social media content creator.
+
+User intent (optional):
+${prompt || "Not provided"}
+
+Task:
+Analyze the provided image(s).
+
+Generate:
+
+- One engaging Instagram caption (2–3 short lines max).
+- Use the user intent if provided.
+- Match the vibe of the image.
+- Sound natural and human.
+
+Then generate:
+- 5 relevant niche hashtags based on the image.
+- 3 general Instagram hashtags.
+
+Rules:
+- No emojis.
+- No markdown.
+- No explanations.
+- Do NOT include labels like "Caption:" or "Hashtags:".
+- Return plain text only.
+
+Output format:
+
+<caption text>
+
+#tag1 #tag2 #tag3 #tag4 #tag5 #tag6 #tag7 #tag8
+`;
+
     imageParts.push({
-      text: "generate some captions according to this image i want to post this on my instagram account",
+      text: textPrompt,
     });
 
     //TODO: Implement caption generation logic here
