@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import logger from "../utils/logger";
 import * as postRepository from "../repositories/post.repository";
-import { Producer } from "../lib/queues/producer";
+import { Producer } from "../lib/queues/posting.producer";
 import { PostStatus, PlatformStatus, Post } from "../interfaces/post.interface";
 import { Types } from "mongoose";
 import { z } from "zod";
