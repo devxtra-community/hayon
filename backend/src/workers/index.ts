@@ -1,7 +1,7 @@
 import "dotenv/config"; // Load environment variables
 import { connectRabbitMQ, getChannel, closeRabbitMQ } from "../config/rabbitmq";
 import connectDB from "../config/database";
-import { PostWorker } from "./post.worker";
+import { PostWorker } from "./posting.worker";
 import { QUEUES, EXCHANGES } from "../lib/queues/types";
 
 async function startWorker(): Promise<void> {
@@ -51,6 +51,10 @@ async function startWorker(): Promise<void> {
     await channel.assertExchange(EXCHANGES.DLX_EXCHANGE, "direct", { durable: true });
     console.log(`✅ DLX exchange ready: ${EXCHANGES.DLX_EXCHANGE}`);
 
+    // Analytics Exchange
+    await channel.assertExchange(EXCHANGES.ANALYTICS_EXCHANGE, "topic", { durable: true });
+    console.log(`✅ Analytics exchange ready: ${EXCHANGES.ANALYTICS_EXCHANGE}`);
+
     // ========================================================================
     // STEP 3: Setup Queues
     // ========================================================================
@@ -60,6 +64,13 @@ async function startWorker(): Promise<void> {
       durable: true,
       deadLetterExchange: EXCHANGES.DLX_EXCHANGE, // Failed messages go here
       deadLetterRoutingKey: "dead",
+    });
+
+    // Analytics Queue
+    await channel.assertQueue(QUEUES.ANALYTICS_FETCH, {
+      durable: true,
+      deadLetterExchange: EXCHANGES.DLX_EXCHANGE, // Failed analytics go here too
+      deadLetterRoutingKey: "dead.analytics",
     });
 
     // Dead letter queue for inspection
@@ -77,9 +88,7 @@ async function startWorker(): Promise<void> {
     // Parking lot for permanently failed messages
     await channel.assertQueue(QUEUES.PARKING_LOT, { durable: true });
 
-    console.log(
-      `✅ Queues ready: ${QUEUES.SOCIAL_POSTS}, ${QUEUES.DEAD_LETTERS}, ${QUEUES.RETRY_QUEUE}, ${QUEUES.PARKING_LOT}`,
-    );
+    console.log(`✅ Queues ready: ${QUEUES.SOCIAL_POSTS}, ${QUEUES.ANALYTICS_FETCH} and others...`);
 
     // ========================================================================
     // STEP 4: Bind Queues to Exchanges
@@ -96,8 +105,15 @@ async function startWorker(): Promise<void> {
     // When delay expires, plugin routes message here
     await channel.bindQueue(QUEUES.SOCIAL_POSTS, EXCHANGES.POST_DELAYED_EXCHANGE, "post.create.*");
 
+    // NEW: Bind Analytics Queue
+    await channel.bindQueue(
+      QUEUES.ANALYTICS_FETCH,
+      EXCHANGES.ANALYTICS_EXCHANGE,
+      "analytics.fetch.*", // Matches analytics.fetch.post, analytics.fetch.account
+    );
+
     // DLX bindings
-    await channel.bindQueue(QUEUES.DEAD_LETTERS, EXCHANGES.DLX_EXCHANGE, "dead");
+    await channel.bindQueue(QUEUES.DEAD_LETTERS, EXCHANGES.DLX_EXCHANGE, "dead.#"); // Catch dead & dead.analytics
     await channel.bindQueue(QUEUES.RETRY_QUEUE, EXCHANGES.DLX_EXCHANGE, "retry");
     await channel.bindQueue(QUEUES.PARKING_LOT, EXCHANGES.DLX_EXCHANGE, "parking");
 
@@ -116,10 +132,21 @@ async function startWorker(): Promise<void> {
     // ========================================================================
 
     console.log(`👂 Listening on queue: ${QUEUES.SOCIAL_POSTS}`);
+    console.log(`👂 Listening on queue: ${QUEUES.ANALYTICS_FETCH}`);
 
+    // Consumer 1: Social Posts
     channel.consume(QUEUES.SOCIAL_POSTS, async (msg) => {
       if (msg) {
         await PostWorker.processMessage(msg, channel);
+      }
+    });
+
+    // Consumer 2: Analytics Jobs
+    channel.consume(QUEUES.ANALYTICS_FETCH, async (msg) => {
+      if (msg) {
+        // We import inside to avoid circular deps if any, or just standard import at top
+        const { AnalyticsWorker } = await import("./analytics.worker");
+        await AnalyticsWorker.processMessage(msg, channel);
       }
     });
 

@@ -23,9 +23,18 @@ export interface PostResultMessage {
   error?: string;
 }
 
-// ============================================================================
-// EXCHANGE AND QUEUE CONSTANTS
-// ============================================================================
+// Analytics fetch payload
+export interface AnalyticsFetchMessage extends BaseQueueMessage {
+  type: "post" | "account";
+
+  // When type = 'post'
+  postId?: string;
+  platform?: "bluesky" | "threads" | "tumblr" | "mastodon" | "facebook" | "instagram";
+
+  // When type = 'account'
+  userId?: string;
+  platforms?: ("bluesky" | "threads" | "tumblr" | "mastodon" | "facebook" | "instagram")[];
+}
 
 export const EXCHANGES = {
   // Main exchange for IMMEDIATE posts (topic type)
@@ -37,13 +46,14 @@ export const EXCHANGES = {
 
   // Dead letter exchange for failed messages
   DLX_EXCHANGE: "dlx_exchange",
+
+  // Analytics Exchange
+  ANALYTICS_EXCHANGE: "analytics_exchange",
 } as const;
 
 export const QUEUES = {
   // Main queue for post processing
   SOCIAL_POSTS: "hayon_social_posts",
-
-  // REMOVED: WAITING_ROOM - no longer needed with delayed plugin
 
   // Retry queue (messages waiting for retry with TTL)
   RETRY_QUEUE: "hayon_retry_queue",
@@ -53,6 +63,9 @@ export const QUEUES = {
 
   // Dead letter queue for inspection
   DEAD_LETTERS: "hayon_dead_letters",
+
+  // Analytics Queue
+  ANALYTICS_FETCH: "hayon_analytics_fetch",
 } as const;
 
 export const ROUTING_KEYS = {
@@ -63,4 +76,6 @@ export const ROUTING_KEYS = {
   POST_CREATE_FACEBOOK: "post.create.facebook",
   POST_CREATE_MASTODON: "post.create.mastodon",
   POST_CREATE_TUMBLR: "post.create.tumblr",
+  ANALYTICS_FETCH_POST: "analytics.fetch.post",
+  ANALYTICS_FETCH_ACCOUNT: "analytics.fetch.account",
 } as const;
