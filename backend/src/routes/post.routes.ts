@@ -10,6 +10,7 @@ import {
   deletePost,
   retryPost,
   cancelPost,
+  generateCaptions,
 } from "../controllers/post.controller";
 
 const router = Router();
@@ -24,6 +25,7 @@ router.put("/:postId", updatePost);
 router.delete("/:postId", deletePost);
 router.post("/:postId/retry", retryPost);
 router.post("/:postId/cancel", cancelPost);
+router.post("/generate/captions", generateCaptions);
 
 router.post("/media/upload", getUploadUrls);
 

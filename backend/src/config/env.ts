@@ -4,7 +4,7 @@ dotenv.config();
 const required = (key: string): string => {
   const value = process.env[key];
   if (!value) {
-    throw new Error(`😭 Missing environment variable: ${key}  ⚠️❗`);
+    throw new Error(`😭😭😭😭😭😭😭😭😭 Missing environment variable ❗❗❗: ${key}  ⚠️❗`);
   }
   return value;
 };
@@ -113,5 +113,9 @@ export const ENV = {
 
   RABBITMQ: {
     URL: required("RABBITMQ_URL"),
+  },
+
+  GEMINI: {
+    API_KEY: required("GEMINI_API_KEY"),
   },
 } as const;

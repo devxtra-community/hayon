@@ -8,6 +8,8 @@ import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
 import { timezoneSchema, platformSpecificPostSchema } from "@hayon/schemas";
+import { ENV } from "../config/env";
+import { GoogleGenAI } from "@google/genai";
 
 const createPostSchema = z.object({
   content: z.object({
@@ -518,5 +520,59 @@ export const deletePost = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Delete post error", error);
     return new ErrorResponse("Failed to delete post").send(res);
+  }
+};
+
+export const generateCaptions = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+    }
+
+    const { media } = req.body;
+
+    function parseBase64Image(dataUrl: any) {
+      const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+
+      return {
+        mimeType: matches[1], // image/png or image/jpeg
+        data: matches[2], // pure base64
+      };
+    }
+
+    const images = media.map((img: string) => parseBase64Image(img)).filter(Boolean); // removes nulls
+
+    const imageParts = images.map((img: any) => ({
+      inlineData: {
+        mimeType: img.mimeType,
+        data: img.data,
+      },
+    }));
+
+    imageParts.push({
+      text: "generate some captions according to this image i want to post this on my instagram account",
+    });
+
+    //TODO: Implement caption generation logic here
+
+    const GenAi = new GoogleGenAI({
+      apiKey: ENV.GEMINI.API_KEY,
+    });
+
+    const result = await GenAi.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: imageParts,
+        },
+      ],
+    });
+
+    console.log("model result :", result);
+    return new SuccessResponse("Captions generated successfully", { data: result }).send(res);
+  } catch (error) {
+    logger.error("Generate captions error", error);
+    return new ErrorResponse("Failed to generate captions").send(res);
   }
 };
