@@ -46,6 +46,7 @@ export interface PlatformPostStatus {
   attemptCount: number; // For retry logic
   lastAttemptAt?: Date;
   completedAt?: Date;
+  lastAnalyticsFetch?: Date; // NEW: When analytics were last fetched
 }
 
 export interface PostContent {
