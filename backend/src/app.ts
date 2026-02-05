@@ -22,12 +22,15 @@ import path from "path";
 import platformRoutes from "./routes/platform.routes";
 import postRoutes from "./routes/post.routes";
 import { connectRabbitMQ } from "./config/rabbitmq";
+import { AnalyticsCronService } from "./services/cron/analytics.cron";
 
 const expressInstance: Application = express();
 
 const bootstrap = async () => {
   await connectDB();
   await connectRabbitMQ();
+
+  AnalyticsCronService.init();
 
   const corsOptions = {
     origin: (

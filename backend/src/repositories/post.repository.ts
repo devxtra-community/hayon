@@ -218,8 +218,55 @@ export const findScheduledPostsDue = async () => {
 
 export const findPostsWithFailedPlatforms = async (_maxAttempts: number = 3) => {
   // return await PostModel.find({
-  //   "platformStatuses.status": "failed",
   //   "platformStatuses.attemptCount": { $lt: maxAttempts }
   // });
   return [];
+};
+
+// ============================================================================
+// FIND POSTS NEEDING ANALYTICS UPDATE
+// ============================================================================
+
+/*
+ * Finds posts that need their analytics refreshed based on "Smart Fetching" logic.
+ *
+ * Logic:
+ * 1. Fresh (< 24h): Updates every 2 hours
+ * 2. Recent (1-7 days): Updates every 12 hours
+ * 3. Old (> 7 days): Updates every 24 hours
+ * 4. Never fetched: Always update
+ */
+export const findPostsNeedingAnalyticsUpdate = async () => {
+  const now = new Date();
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const oneDayAgoThreshold = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const sevenDaysAgoThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  return await PostModel.find({
+    "platformStatuses.status": "completed",
+    $or: [
+      // 1. FRESH POSTS (< 24h old): Update every 2 hours
+      {
+        createdAt: { $gte: oneDayAgoThreshold },
+        "platformStatuses.lastAnalyticsFetch": { $lte: twoHoursAgo },
+      },
+      // 2. RECENT POSTS (1-7 days old): Update every 12 hours
+      {
+        createdAt: { $gte: sevenDaysAgoThreshold, $lt: oneDayAgoThreshold },
+        "platformStatuses.lastAnalyticsFetch": { $lte: twelveHoursAgo },
+      },
+      // 3. OLD POSTS (> 7 days old): Update every 24 hours
+      {
+        createdAt: { $lt: sevenDaysAgoThreshold },
+        "platformStatuses.lastAnalyticsFetch": { $lte: twentyFourHoursAgo },
+      },
+      // 4. NEWLY COMPLETED: Never fetched before
+      {
+        "platformStatuses.lastAnalyticsFetch": { $exists: false },
+      },
+    ],
+  });
 };
