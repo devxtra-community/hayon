@@ -71,7 +71,7 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
                 icon={
                   <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
-                      src="/images/logos/facebook.png"
+                      src="/images/platform-logos/facebook.png"
                       alt="Facebook"
                       fill
                       className="object-cover"
@@ -103,7 +103,7 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
                 icon={
                   <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
-                      src="/images/logos/threads.png"
+                      src="/images/platform-logos/threads.png"
                       alt="Threads"
                       fill
                       className="object-cover"
@@ -131,7 +131,7 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
                 icon={
                   <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
-                      src="/images/logos/mastodon.png"
+                      src="/images/platform-logos/mastodon.png"
                       alt="Mastodon"
                       fill
                       className="object-cover"
@@ -162,7 +162,7 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
                 icon={
                   <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
-                      src="/images/logos/bluesky.png"
+                      src="/images/platform-logos/bluesky.png"
                       alt="Bluesky"
                       fill
                       className="object-cover"
@@ -190,7 +190,7 @@ export function ConnectionTutorialModal({ isOpen, onClose }: ConnectionTutorialM
                 icon={
                   <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
-                      src="/images/logos/tumblr.png"
+                      src="/images/platform-logos/tumblr.png"
                       alt="Tumblr"
                       fill
                       className="object-cover"

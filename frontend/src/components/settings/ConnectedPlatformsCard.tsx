@@ -149,17 +149,38 @@ export const ConnectedPlatformsCard = ({
   };
 
   const platformIcons = {
-    Threads: <Image src="/images/logos/threads.png" alt="Threads" fill className="object-cover" />,
-    Bluesky: <Image src="/images/logos/bluesky.png" alt="Bluesky" fill className="object-cover" />,
-    Mastodon: (
-      <Image src="/images/logos/mastodon.png" alt="Mastodon" fill className="object-cover" />
+    Threads: (
+      <Image src="/images/platform-logos/threads.png" alt="Threads" fill className="object-cover" />
     ),
-    Tumblr: <Image src="/images/logos/tumblr.png" alt="Tumblr" fill className="object-cover" />,
+    Bluesky: (
+      <Image src="/images/platform-logos/bluesky.png" alt="Bluesky" fill className="object-cover" />
+    ),
+    Mastodon: (
+      <Image
+        src="/images/platform-logos/mastodon.png"
+        alt="Mastodon"
+        fill
+        className="object-cover"
+      />
+    ),
+    Tumblr: (
+      <Image src="/images/platform-logos/tumblr.png" alt="Tumblr" fill className="object-cover" />
+    ),
     Instagram: (
-      <Image src="/images/logos/instagram.png" alt="Instagram" fill className="object-cover" />
+      <Image
+        src="/images/platform-logos/instagram.png"
+        alt="Instagram"
+        fill
+        className="object-cover"
+      />
     ),
     Facebook: (
-      <Image src="/images/logos/facebook.png" alt="Facebook" fill className="object-cover" />
+      <Image
+        src="/images/platform-logos/facebook.png"
+        alt="Facebook"
+        fill
+        className="object-cover"
+      />
     ),
   };
 

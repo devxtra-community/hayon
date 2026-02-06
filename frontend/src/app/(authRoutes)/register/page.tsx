@@ -1,6 +1,6 @@
 import RegisterForm from "@/components/RegisterForm";
 import Image from "next/image";
-import logo_IMG from "@/assets/logo.png";
+const logo_IMG = "/images/logos/android-chrome-512x512.png";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -22,7 +22,7 @@ export default function RegisterPage() {
         {/* Left Side - Branding */}
         <div className="hidden lg:flex flex-col justify-center space-y-8 px-12">
           <div>
-            <Image src={logo_IMG} alt="Hayon Logo" className="mb-8" />
+            <Image src={logo_IMG} alt="Hayon Logo" className="mb-8" width={64} height={64} />
           </div>
 
           <div className="space-y-4">
@@ -91,7 +91,7 @@ export default function RegisterPage() {
         <div className="flex items-center justify-center">
           <div className="w-full max-w-md">
             <div className="lg:hidden mb-8 flex justify-center">
-              <Image src={logo_IMG} alt="Hayon Logo" />
+              <Image src={logo_IMG} alt="Hayon Logo" width={48} height={48} />
             </div>
 
             <RegisterForm />

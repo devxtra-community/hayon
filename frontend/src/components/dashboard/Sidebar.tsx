@@ -66,7 +66,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 h-full bg-[#F7F7F7] rounded-xl flex flex-col shadow-sm">
       {/* Logo */}
-      <div className="p-6">
+      <div className="flex items-center justify-center py-5 px-6">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image src={logo_IMG} alt="Hayon" className="w-8 h-8" />
           <span className="text-xl font-semibold text-gray-900">Hayon</span>

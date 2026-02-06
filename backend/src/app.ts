@@ -2,9 +2,13 @@ import express, { Application } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import connectDB from "./config/database";
+
+// routeres
 import authRoutes from "./routes/auth.routes";
 import paymentRoutes from "./routes/payment.routes";
 import profileRoutes from "./routes/profile.routes";
+import generativeRoutes from "./routes/generative.routes";
+// =========
 import passport from "./config/passport";
 import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
 import { ENV } from "./config/env";
@@ -64,6 +68,7 @@ const bootstrap = async () => {
   appRouter.use("/profile", profileRoutes);
   appRouter.use("/platform", platformRoutes);
   appRouter.use("/posts", postRoutes);
+  appRouter.use("/generate", generativeRoutes);
 
   expressInstance.use(notFoundHandler);
   expressInstance.use(serverErrorHandler);

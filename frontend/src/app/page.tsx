@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import logo_IMG from "@/assets/logo.png";
+const logo_IMG = "/images/logos/android-chrome-512x512.png";
 import dashboardImg from "@/assets/Dashboard.png";
 import { BookOpen, Sparkles, Menu, X, Calendar, BarChart3, FileText } from "lucide-react";
 import Link from "next/link";
@@ -131,7 +131,13 @@ export default function Home() {
           {/* Navigation BAR */}
           <nav className="flex items-center justify-between px-4 md:px-8 py-4 md:py-8">
             <div className="flex-shrink-0">
-              <Image src={logo_IMG} alt="Hayon logo" className="w-7 h-7 md:w-10 md:h-10" />
+              <Image
+                src={logo_IMG}
+                alt="Hayon logo"
+                className="w-7 h-7 md:w-10 md:h-10"
+                width={40}
+                height={40}
+              />
             </div>
 
             {/* Desktop Navigation */}
@@ -302,7 +308,7 @@ export default function Home() {
       <footer className="py-8 md:py-12 px-4 md:px-8 bg-background border-t">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Image src={logo_IMG} alt="Hayon logo" className="w-6 h-6" />
+            <Image src={logo_IMG} alt="Hayon logo" className="w-6 h-6" width={24} height={24} />
             <span className="font-semibold">Hayon</span>
           </div>
           <p className="text-sm text-muted-foreground text-center">

@@ -28,7 +28,6 @@ const authSchema = new Schema<IUserAuth>(
       },
     },
   },
-
   { _id: false },
 );
 
@@ -68,6 +67,34 @@ const subscriptionSchema = new Schema<IUserSubscription>(
   { _id: false },
 );
 
+const usageSchema = new Schema(
+  {
+    captionGenerations: {
+      type: Number,
+      default: 0,
+    },
+    postsCreated: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { _id: false },
+);
+
+const limitsSchema = new Schema(
+  {
+    maxCaptionGenerations: {
+      type: Number,
+      required: true,
+    },
+    maxPosts: {
+      type: Number,
+      required: true,
+    },
+  },
+  { _id: false },
+);
+
 const userSchema = new Schema<IUser>(
   {
     email: {
@@ -77,36 +104,68 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
+
     name: {
       type: String,
       required: true,
       trim: true,
     },
+
     avatar: {
       type: String,
       default: "https://avatars.githubusercontent.com/u/18816363",
     },
+
     timezone: {
       type: String,
       default: "Asia/Kolkata",
     },
+
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
+
     isDisabled: {
       type: Boolean,
       default: false,
     },
+
     auth: {
       type: authSchema,
       required: true,
     },
+
     subscription: {
       type: subscriptionSchema,
       default: () => ({}),
     },
+
+    usage: {
+      type: usageSchema,
+      default: () => ({}),
+    },
+
+    limits: {
+      type: limitsSchema,
+      default: function () {
+        const plan = this.subscription?.plan || "free";
+
+        if (plan === "pro") {
+          return {
+            maxCaptionGenerations: 25,
+            maxPosts: 90,
+          };
+        }
+
+        return {
+          maxCaptionGenerations: 10,
+          maxPosts: 30,
+        };
+      },
+    },
+
     lastLogin: {
       type: Date,
       default: null,

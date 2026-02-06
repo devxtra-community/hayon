@@ -8,6 +8,7 @@ import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
 import { timezoneSchema, platformSpecificPostSchema } from "@hayon/schemas";
+import { IncreasePostsCreated } from "../repositories/user.repository";
 
 const createPostSchema = z.object({
   content: z.object({
@@ -120,6 +121,7 @@ export const createPost = async (req: Request, res: Response) => {
       await Promise.all(queuePromises);
     }
 
+    await IncreasePostsCreated(userId);
     return new SuccessResponse("Post created successfully", {
       data: {
         postId: post._id,

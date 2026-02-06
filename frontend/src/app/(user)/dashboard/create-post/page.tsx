@@ -139,6 +139,7 @@ export default function CreatePostPage() {
                 postText={postText}
                 setPostText={setPostText}
                 handleFileChange={handleFileChange}
+                mediaFiles={mediaFiles}
                 filePreviews={filePreviews}
                 removeFile={removeFile}
                 errors={errors}

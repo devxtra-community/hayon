@@ -61,7 +61,7 @@ export default function LoginForm({
       const message = errorMessages[error] || "An error occurred. Please try again.";
 
       showToast("error", "Login failed", message);
-      window.history.replaceState({}, "", isAdmin ? "/admin-login" : "/login");
+      window.history.replaceState({}, "", isAdmin ? "/admin-login" : "/admin/login");
     }
   }, [error, isAdmin]);
 
@@ -140,7 +140,7 @@ export default function LoginForm({
   };
 
   return (
-    <Card className="border-2 border-gray-300 shadow-xl">
+    <Card className="border-0 py-8">
       <CardHeader className="space-y-1">
         <CardTitle className="text-3xl font-bold text-center">
           {isAdmin ? "Admin Login" : "Login"}

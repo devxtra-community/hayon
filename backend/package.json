@@ -30,7 +30,7 @@
     "@aws-sdk/client-s3": "^3.956.0",
     "@aws-sdk/client-sts": "^3.974.0",
     "@aws-sdk/s3-request-presigner": "^3.956.0",
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.40.0",
     "@hayon/schemas": "workspace:*",
     "amqplib": "^0.10.9",
     "axios": "^1.13.2",
