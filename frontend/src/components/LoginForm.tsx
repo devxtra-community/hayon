@@ -61,7 +61,7 @@ export default function LoginForm({
       const message = errorMessages[error] || "An error occurred. Please try again.";
 
       showToast("error", "Login failed", message);
-      window.history.replaceState({}, "", isAdmin ? "/admin-login" : "/login");
+      window.history.replaceState({}, "", isAdmin ? "/admin-login" : "/admin/login");
     }
   }, [error, isAdmin]);
 
