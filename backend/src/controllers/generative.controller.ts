@@ -5,6 +5,7 @@ import logger from "../utils/logger";
 import { Request, Response } from "express";
 import { buildPlatformPrompt } from "../ai/prompts";
 import { buildImageParts } from "../services/image.service";
+import { IncreaseCaptionGenerations } from "../repositories/user.repository";
 
 export const generateCaptions = async (req: Request, res: Response) => {
   try {
@@ -68,7 +69,7 @@ export const generateCaptions = async (req: Request, res: Response) => {
       ],
     });
 
-    // console.log("model result :", result);
+    await IncreaseCaptionGenerations(req.auth.id);
     return new SuccessResponse("Captions generated successfully", { data: result }).send(res);
   } catch (error) {
     logger.error("Generate captions error", error);
@@ -78,6 +79,10 @@ export const generateCaptions = async (req: Request, res: Response) => {
 
 export const generateCaptionsForSpecificPlatform = async (req: Request, res: Response) => {
   try {
+    if (!req.auth) {
+      return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+    }
+
     const { media, prompt } = req.body;
     const platform = req.params.platform;
 
@@ -100,6 +105,7 @@ export const generateCaptionsForSpecificPlatform = async (req: Request, res: Res
       ],
     });
 
+    await IncreaseCaptionGenerations(req.auth.id);
     return new SuccessResponse("Captions are generated", { data: result }).send(res);
   } catch (error) {
     logger.error(error);

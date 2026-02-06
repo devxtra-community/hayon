@@ -8,15 +8,7 @@ import { ProfileCard } from "@/components/settings/ProfileCard";
 import { PlanInfoCard } from "@/components/settings/PlanInfoCard";
 import { TimezoneCard } from "@/components/settings/TimezoneCard";
 import { ConnectedPlatformsCard } from "@/components/settings/ConnectedPlatformsCard";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar: string;
-  timezone?: string;
-}
+import { User } from "@/types/user.types";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -102,7 +94,7 @@ export default function SettingsPage() {
               <ProfileCard user={user} onUpdate={() => setUpdate(!update)} />
 
               {/* Plan Info Section */}
-              <PlanInfoCard />
+              <PlanInfoCard user={user} />
             </div>
 
             {/* Right Column */}

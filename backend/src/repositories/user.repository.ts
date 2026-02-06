@@ -74,3 +74,11 @@ export const changeUserTimezone = async (userId: string, timezone: string) => {
 export const changeUserName = async (userId: string, name: string) => {
   return User.findByIdAndUpdate(userId, { name }, { new: true });
 };
+
+export const IncreaseCaptionGenerations = async (userId: string) => {
+  return User.findByIdAndUpdate(userId, { $inc: { "usage.captionGenerations": 1 } }, { new: true });
+};
+
+export const IncreasePostsCreated = async (userId: string) => {
+  return User.findByIdAndUpdate(userId, { $inc: { "usage.postsCreated": 1 } }, { new: true });
+};

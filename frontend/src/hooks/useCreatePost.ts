@@ -76,7 +76,7 @@ export function useCreatePost() {
         "div",
         { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
-          src: "/images/logos/facebook.png",
+          src: "/images/platform-logos/facebook.png",
           alt: "Facebook",
           fill: true,
           className: "object-cover",
@@ -92,7 +92,7 @@ export function useCreatePost() {
         "div",
         { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
-          src: "/images/logos/instagram.png",
+          src: "/images/platform-logos/instagram.png",
           alt: "Instagram",
           fill: true,
           className: "object-cover",
@@ -108,7 +108,7 @@ export function useCreatePost() {
         "div",
         { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
-          src: "/images/logos/threads.png",
+          src: "/images/platform-logos/threads.png",
           alt: "Threads",
           fill: true,
           className: "object-cover",
@@ -124,7 +124,7 @@ export function useCreatePost() {
         "div",
         { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
-          src: "/images/logos/bluesky.png",
+          src: "/images/platform-logos/bluesky.png",
           alt: "Bluesky",
           fill: true,
           className: "object-cover",
@@ -140,7 +140,7 @@ export function useCreatePost() {
         "div",
         { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
-          src: "/images/logos/tumblr.png",
+          src: "/images/platform-logos/tumblr.png",
           alt: "Tumblr",
           fill: true,
           className: "object-cover",
@@ -156,7 +156,7 @@ export function useCreatePost() {
         "div",
         { className: "relative w-full h-full rounded-full overflow-hidden" },
         React.createElement(Image, {
-          src: "/images/logos/mastodon.png",
+          src: "/images/platform-logos/mastodon.png",
           alt: "Mastodon",
           fill: true,
           className: "object-cover",

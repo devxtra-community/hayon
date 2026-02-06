@@ -75,6 +75,7 @@ export function EditPlatformPostModal({
     if (!llmPrompt.trim()) return;
     await onRefine(llmPrompt);
     setLlmPrompt("");
+    onClose();
   };
 
   return (

@@ -1,6 +1,6 @@
 import LoginForm from "@/components/LoginForm";
 import Image from "next/image";
-const logo_IMG = "/images/logos/android-chrome-512x512.png";
+const logo_IMG = "/images/logos/logo.png";
 
 export default function LoginPage() {
   return (
