@@ -8,8 +8,6 @@ import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
 import { timezoneSchema, platformSpecificPostSchema } from "@hayon/schemas";
-import { ENV } from "../config/env";
-import { GoogleGenAI } from "@google/genai";
 
 const createPostSchema = z.object({
   content: z.object({
@@ -520,93 +518,5 @@ export const deletePost = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Delete post error", error);
     return new ErrorResponse("Failed to delete post").send(res);
-  }
-};
-
-export const generateCaptions = async (req: Request, res: Response) => {
-  try {
-    if (!req.auth) {
-      return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
-    }
-
-    const { prompt, media } = req.body;
-
-    function parseBase64Image(dataUrl: any) {
-      const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
-
-      return {
-        mimeType: matches[1], // image/png or image/jpeg
-        data: matches[2], // pure base64
-      };
-    }
-
-    const images = media.map((img: string) => parseBase64Image(img)).filter(Boolean); // removes nulls
-
-    const imageParts = images.map((img: any) => ({
-      inlineData: {
-        mimeType: img.mimeType,
-        data: img.data,
-      },
-    }));
-
-    const textPrompt = `
-You are a professional social media content creator.
-
-User intent (optional):
-${prompt || "Not provided"}
-
-Task:
-Analyze the provided image(s).
-
-Generate:
-
-- One engaging Instagram caption (2–3 short lines max).
-- Use the user intent if provided.
-- Match the vibe of the image.
-- Sound natural and human.
-
-Then generate:
-- 5 relevant niche hashtags based on the image.
-- 3 general Instagram hashtags.
-
-Rules:
-- No emojis.
-- No markdown.
-- No explanations.
-- Do NOT include labels like "Caption:" or "Hashtags:".
-- Return plain text only.
-
-Output format:
-
-<caption text>
-
-#tag1 #tag2 #tag3 #tag4 #tag5 #tag6 #tag7 #tag8
-`;
-
-    imageParts.push({
-      text: textPrompt,
-    });
-
-    //TODO: Implement caption generation logic here
-
-    const GenAi = new GoogleGenAI({
-      apiKey: ENV.GEMINI.API_KEY,
-    });
-
-    const result = await GenAi.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: imageParts,
-        },
-      ],
-    });
-
-    console.log("model result :", result);
-    return new SuccessResponse("Captions generated successfully", { data: result }).send(res);
-  } catch (error) {
-    logger.error("Generate captions error", error);
-    return new ErrorResponse("Failed to generate captions").send(res);
   }
 };

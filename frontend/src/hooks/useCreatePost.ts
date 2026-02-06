@@ -383,18 +383,42 @@ export function useCreatePost() {
     });
   };
 
+  function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string); // "data:<mime>;base64,..."
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
   const refinePlatformPostWithLLM = async (id: string, prompt: string) => {
     const currentPost = platformPosts[id];
     if (!currentPost) return;
 
     setIsGenerating(true);
     try {
-      // Simulate LLM Call - In a real app, this would call your backend
-      // and use the prompt to refine currentPost.text for specific platform
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const base64List = await Promise.all(currentPost.mediaFiles.map(fileToDataUrl));
 
-      const platformName = ALL_SUPPORTED_PLATFORMS.find((p) => p.id === id)?.name || id;
-      const refinedText = `${currentPost.text}\n\n[AI Refined for ${platformName} using prompt: "${prompt}"]`;
+      const context =
+        currentPost.text.trim().length > 0
+          ? `Current draft:\n${currentPost.text}\n\nUser request:\n${prompt}`
+          : prompt;
+
+      const response = await api.post(`/generate/captions/${id}`, {
+        prompt: context,
+        media: base64List,
+      });
+
+      console.log(response);
+
+      const refinedText: string | undefined =
+        response.data?.data?.candidates[0].content.parts[0].text;
+
+      console.log(refinedText);
+      if (!refinedText) {
+        throw new Error("AI refinement returned no text");
+      }
 
       updatePlatformPost(id, { text: refinedText });
     } catch (error) {

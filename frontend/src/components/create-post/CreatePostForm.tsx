@@ -54,7 +54,7 @@ export function CreatePostForm({
     setIsGenerating(true);
     try {
       const base64List = await Promise.all(mediaFiles.map(fileToDataUrl));
-      const response = await api.post("/posts/generate/captions", {
+      const response = await api.post("/generate/captions", {
         modalName: selectedModel.id,
         prompt: postText,
         media: base64List,
