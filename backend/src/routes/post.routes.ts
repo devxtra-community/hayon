@@ -11,6 +11,7 @@ import {
   retryPost,
   cancelPost,
 } from "../controllers/post.controller";
+import { checkUserPostLimit } from "../middleware/limitChecker.middleware";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.use(authenticate);
 router.get("/", getUserPosts);
 router.get("/:postId", getPostById);
 router.get("/:postId/status", getPostStatus);
-router.post("/", createPost);
+router.post("/", checkUserPostLimit, createPost);
 router.put("/:postId", updatePost);
 router.delete("/:postId", deletePost);
 router.post("/:postId/retry", retryPost);

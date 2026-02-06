@@ -150,7 +150,6 @@ const userSchema = new Schema<IUser>(
     limits: {
       type: limitsSchema,
       default: function () {
-        // @ts-expect-error - mongoose runtime context
         const plan = this.subscription?.plan || "free";
 
         if (plan === "pro") {
