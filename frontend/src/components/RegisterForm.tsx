@@ -242,9 +242,9 @@ export default function RegisterForm() {
   };
 
   return (
-    <Card className="border-2 shadow-xl">
-      <CardHeader className="space-y-3">
-        <div className="space-y-2">
+    <Card className="border-0 py-9 shadow-xl">
+      <CardHeader className="space-y-6">
+        <div className="space-y-4">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Step {step === "email" ? "1" : step === "otp" ? "2" : "3"} of 3</span>
             <span>{progress}% Complete</span>

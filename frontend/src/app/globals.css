@@ -264,6 +264,7 @@
   pointer-events: none;
 }
 
-.toast-container > * {
-  pointer-events: auto;
+
+.font-handwriting {
+  font-family: 'Kalam', 'Patrick Hand', 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
 }

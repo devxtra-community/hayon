@@ -1,22 +1,19 @@
 import RegisterForm from "@/components/RegisterForm";
 import Image from "next/image";
-const logo_IMG = "/images/logos/android-chrome-512x512.png";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+const logo_IMG = "/images/logos/logo.png";
 
 export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       {/* Back Button */}
-      <div className="absolute top-4 left-4">
+      {/* <div className="absolute top-4 left-4">
         <Link href="/">
           <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Button>
         </Link>
-      </div>
+      </div> */}
 
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - Branding */}
