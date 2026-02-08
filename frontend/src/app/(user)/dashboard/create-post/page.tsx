@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/dashboard"; // Removed Header import since unused
+import { Sidebar } from "@/components/shared"; // Removed Header import since unused
 
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { PlatformSelection } from "@/components/create-post/PlatformSelection";
