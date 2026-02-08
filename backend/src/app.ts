@@ -22,6 +22,7 @@ import path from "path";
 import platformRoutes from "./routes/platform.routes";
 import postRoutes from "./routes/post.routes";
 import { connectRabbitMQ } from "./config/rabbitmq";
+import analyticsRoutes from "./routes/analytics.routes"; // Import analytics routes
 import { AnalyticsCronService } from "./services/cron/analytics.cron";
 
 const expressInstance: Application = express();
@@ -72,6 +73,8 @@ const bootstrap = async () => {
   appRouter.use("/platform", platformRoutes);
   appRouter.use("/posts", postRoutes);
   appRouter.use("/generate", generativeRoutes);
+  appRouter.use("/analytics", analyticsRoutes); 
+
 
   expressInstance.use(notFoundHandler);
   expressInstance.use(serverErrorHandler);

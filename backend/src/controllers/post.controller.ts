@@ -3,7 +3,7 @@ import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import logger from "../utils/logger";
 import * as postRepository from "../repositories/post.repository";
 import { Producer } from "../lib/queues/posting.producer";
-import { PostStatus, PlatformStatus, Post } from "../interfaces/post.interface";
+import { PostStatus, PlatformStatus, Post, PlatformType } from "../interfaces/post.interface";
 import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
@@ -280,7 +280,7 @@ export const retryPost = async (req: Request, res: Response) => {
     // Reset status for failed platforms and re-enqueue
     const retryPromises = failedPlatforms.map(async (platform) => {
       // Update DB status back to pending
-      await postRepository.updatePlatformStatus(postId, platform, {
+      await postRepository.updatePlatformStatus(postId, platform as PlatformType, {
         status: "pending",
         error: undefined,
       });

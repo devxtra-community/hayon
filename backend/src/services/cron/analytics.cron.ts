@@ -1,4 +1,4 @@
-import cron from "node-cron";
+// import cron from "node-cron";
 import logger from "../../utils/logger";
 import SocialAccountModel from "../../models/socialAccount.model";
 import * as postRepository from "../../repositories/post.repository";
@@ -9,26 +9,19 @@ export class AnalyticsCronService {
     logger.info("📅 Initializing Analytics Cron Service...");
 
     // 1. Post Analytics Job - Run every 2 hours to support smart fetching
-    cron.schedule("0 */2 * * *", async () => {
-      await this.schedulePostAnalyticsTasks();
-    });
+    // cron.schedule("0 */2 * * *", async () => {
+    //   await this.schedulePostAnalyticsTasks();
+    // });
 
     // 2. Account Analytics Job - Run once a day at 12:00 AM
-    cron.schedule("0 0 * * *", async () => {
-      await this.scheduleAccountAnalyticsTasks();
-    });
+    // cron.schedule("0 0 * * *", async () => {
+    //   await this.scheduleAccountAnalyticsTasks();
+    // });
 
-    logger.info("✅ Analytics Cron Jobs scheduled successfully.");
+    logger.info("✅ Analytics Cron Jobs ready (Automated scheduling disabled in DEV).");
   }
 
-  /**
-   * Identifies posts needing analytics updates and queues tasks
-   * Implements "Smart Fetching" logic:
-   * - Fresh posts (< 24h): Every 2 hours
-   * - Recent posts (1-7 days): Every 12 hours
-   * - Old posts (> 7 days): Every 24 hours
-   */
-  private static async schedulePostAnalyticsTasks() {
+  public static async schedulePostAnalyticsTasks() {
     logger.info("🔄 Checking for posts needing analytics updates...");
 
     try {
@@ -45,7 +38,6 @@ export class AnalyticsCronService {
       for (const post of posts) {
         for (const status of post.platformStatuses) {
           if (status.status === "completed") {
-            // Check if this specific platform needs update based on its own lastAnalyticsFetch
             const needsUpdate = this.checkSpecificPlatformNeedsUpdate(
               post.createdAt,
               status.lastAnalyticsFetch,
@@ -98,7 +90,7 @@ export class AnalyticsCronService {
   /**
    * Schedules account-level metrics fetch (followers) for all connected accounts
    */
-  private static async scheduleAccountAnalyticsTasks() {
+  public static async scheduleAccountAnalyticsTasks() {
     logger.info("🔄 Checking for accounts needing follower updates...");
 
     try {
