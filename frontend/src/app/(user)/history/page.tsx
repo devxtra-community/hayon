@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Sidebar, Header } from "@/components/dashboard";
+import { Sidebar, Header } from "@/components/shared";
 import { HistoryCard, PlatformPostStatus } from "@/components/history/HistoryCard";
 import { HistoryFilters, FilterState } from "@/components/history/HistoryFilters";
 import { PostReportModal } from "@/components/history/PostReportModal";

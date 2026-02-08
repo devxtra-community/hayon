@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sidebar, Header } from "@/components/dashboard";
+import { Sidebar, Header } from "@/components/shared";
 import { DraftCard } from "@/components/drafts/DraftCard";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/axios";

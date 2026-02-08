@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sidebar, Header } from "@/components/dashboard";
+import { Sidebar, Header } from "@/components/shared";
 import { api } from "@/lib/axios";
 import { User } from "@/types/create-post";
 import CalendarComponent from "@/components/calendar/CalendarComponent";
