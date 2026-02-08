@@ -5,7 +5,6 @@ const logo_IMG = "/images/logos/logo.png";
 import {
   Sparkles,
   Menu,
-  X,
   Calendar,
   BarChart3,
   FileText,
@@ -16,7 +15,7 @@ import {
 import Link from "next/link";
 import { SwipeButton } from "@/components/ui/swipe-button";
 import { useRef, useEffect, useState } from "react";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useScroll, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { api, setAccessToken, getAccessToken } from "@/lib/axios";
 import { useRouter } from "next/navigation";
 
@@ -254,53 +253,121 @@ export default function Home() {
           backgroundSize: "24px 24px",
         }}
       ></div>
+
       {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-0 md:hidden">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="absolute inset-0 bg-white flex flex-col items-center justify-between pt-6 pb-12 px-6">
-            {/* Close Button */}
-            <div className="w-full flex justify-start">
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-gray-200"
-              >
-                <X size={24} className="text-gray-800" />
-              </button>
-            </div>
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-[100] md:hidden">
+            {/* Backdrop with stronger blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute inset-0 bg-white/70 backdrop-blur-2xl"
+            />
 
-            {/* Menu Items */}
-            <div className="flex flex-col items-center gap-4 w-full max-w-xs">
-              <Link href="#" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"outline"} className="w-full py-6 text-lg">
-                  What is Hayon
-                </Button>
-              </Link>
-              <Link href="/login" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"outline"} className="w-full py-6 text-lg">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/pricing" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"outline"} className="w-full py-6 text-lg">
-                  Pricing
-                </Button>
-              </Link>
-            </div>
+            {/* Menu Slide-up Content */}
+            <motion.div
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 100 || info.velocity.y > 500) {
+                  setMobileMenuOpen(false);
+                }
+              }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 200 }}
+              className="absolute inset-x-0 bottom-0 top-[20%] bg-white rounded-t-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.1)] border-t border-gray-100 flex flex-col pt-8 pb-10 px-6 touch-none"
+            >
+              {/* Top Handle */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-200 rounded-full" />
 
-            {/* CTA Button */}
-            <div className="w-full max-w-xs">
-              <Link href="/register" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={"black"} className="w-full py-6 text-lg">
-                  Start Free Trial
-                </Button>
-              </Link>
-            </div>
+              <div className="flex flex-col h-full pt-4">
+                {/* Nav Links - immersive full width */}
+                <div className="flex flex-col gap-4 flex-1">
+                  {[
+                    { label: "Features", href: "#", icon: <Sparkles size={20} /> },
+                    { label: "Pricing", href: "/pricing", icon: <BarChart3 size={20} /> },
+                    { label: "Resources", href: "#", icon: <FileText size={20} /> },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={item.label}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + i * 0.1 }}
+                    >
+                      <Link
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-4 p-4 rounded-xl bg-gray-50/50 hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200 group"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400 group-hover:text-black group-hover:scale-110 transition-all shadow-sm">
+                          {item.icon}
+                        </div>
+                        <span className="text-base font-semibold text-gray-800 group-hover:text-black">
+                          {item.label}
+                        </span>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Footer Buttons - Sticky bottom */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex flex-col gap-3 mt-auto pb-4"
+                >
+                  <Link href="/login" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                    <Button
+                      variant={"outline"}
+                      className="w-full h-12 rounded-xl text-base font-semibold border-gray-200"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="w-full"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button
+                      variant={"black"}
+                      className="w-full h-12 rounded-xl text-base font-semibold shadow-xl shadow-gray-200"
+                    >
+                      Get Started for Free
+                    </Button>
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
           </div>
-        </div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Swipe-Up Trigger */}
+      {!mobileMenuOpen && (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(_, info) => {
+            if (info.offset.y < -20 || info.velocity.y < -300) {
+              setMobileMenuOpen(true);
+            }
+          }}
+          className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-5 pt-10 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-auto touch-none"
+        >
+          <div className="w-16 h-1.5 bg-black/20 backdrop-blur-md rounded-full shadow-sm" />
+        </motion.div>
       )}
 
       {/* Hero Section */}
@@ -308,14 +375,14 @@ export default function Home() {
         {/* Main Card Container */}
         <div className="flex-1 flex flex-col relative overflow-hidden">
           {/* Navigation BAR */}
-          <nav className="relative z-0 flex items-center justify-between px-6 md:px-12 py-6">
+          <nav className="relative z-20 flex items-center justify-between px-6 md:px-12 py-6">
             <div className="flex items-center gap-2">
               <Image
                 src={logo_IMG}
                 alt="Hayon Logo"
-                width={25}
-                height={25}
-                className="w-4 h-4 md:w-5 md:h-5"
+                width={32}
+                height={32}
+                className="w-7 h-7 md:w-5 md:h-5"
               />
               <span className="font-bold text-xl tracking-tight hidden md:block">Hayon</span>
             </div>
@@ -345,37 +412,60 @@ export default function Home() {
                   Get started
                 </Button>
               </Link>
-              {/* Mobile Hamburger Menu */}
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <Menu size={24} className="text-gray-900" />
-              </button>
+              {/* Mobile Mobile Action Pill */}
+              <div className="md:hidden flex items-center bg-white border border-gray-100 rounded-full p-1.5 pl-5 shadow-[0_2px_10px_rgba(0,0,0,0.05)] gap-3">
+                <Link href="/login" className="text-sm font-bold text-gray-800">
+                  Sign in
+                </Link>
+                <div className="w-px h-4 bg-gray-200"></div>
+                <button
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 text-gray-900 transition-all active:scale-95 border border-gray-100"
+                >
+                  <Menu size={18} />
+                </button>
+              </div>
             </div>
           </nav>
 
           {/* Hero Content */}
-          <main className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-12 md:py-0">
+          <main className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-0 pb-32 md:pb-0 md:py-0 -mt-20 md:mt-0">
             {/* Central Icon */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="mb-8 p-4 bg-white rounded-2xl shadow-xl shadow-gray-200/50"
+              className="hidden md:block mb-8 p-4 bg-white rounded-2xl shadow-xl shadow-gray-200/50"
             >
               <Image src={logo_IMG} alt="Hayon Logo" width={40} height={40} className="w-10 h-10" />
             </motion.div>
 
-            <motion.h1
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-4xl md:text-6xl lg:text-7xl font-bold text-center tracking-tight text-gray-900 leading-[1.1] max-w-4xl mx-auto"
-            >
-              Think, plan, and post <br />
-              <span className="text-gray-400">all in one place</span>
-            </motion.h1>
+            <div className="w-full max-w-4xl mx-auto">
+              <motion.h1
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="font-bold tracking-tighter text-gray-900"
+              >
+                {/* Mobile: Animated Staggered Steps */}
+                <div className="flex flex-col mt-15 md:hidden text-[3.5rem] leading-[1] w-full max-w-[220px] mx-auto gap-0 mb-2">
+                  <span className="self-start">Think</span>
+                  <span className="self-center text-[#318d62]">Plan</span>
+                  <span className="self-end">Post</span>
+                </div>
+
+                {/* Desktop: Massive Inline */}
+                <div className="hidden md:block text-7xl lg:text-7xl leading-tight text-center mb-4">
+                  Think <span className="text-[#318d62]">Plan</span> Post
+                </div>
+
+                <div className="text-center">
+                  <span className="text-3xl md:text-5xl text-gray-400 font-medium tracking-tight">
+                    all in one place
+                  </span>
+                </div>
+              </motion.h1>
+            </div>
 
             <motion.p
               initial={{ y: 20, opacity: 0 }}
