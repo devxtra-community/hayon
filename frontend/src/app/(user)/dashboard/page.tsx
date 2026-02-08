@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/axios";
+import { analyticsService } from "@/services/analytics.service";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sidebar, Header } from "@/components/shared";
 import {
-  Sidebar,
-  Header,
-  StatsCard,
-  ImpressionsChart,
+  DashboardMetrics,
+  EngagementChart,
   BestPostCard,
-  PlanInfoCard,
+  UpcomingPostsCarousel,
   ConnectedPlatformsCard,
-  PlatformPerformanceCard,
+  PostDistributionChart,
   UpgradeCard,
 } from "@/components/dashboard";
 import Link from "next/link";
@@ -26,22 +26,66 @@ interface User {
   avatar: string;
 }
 
+interface DashboardData {
+  metrics: {
+    totalPosts: number;
+    scheduled: number;
+    totalAudience: number;
+    totalEngagement: number;
+  };
+  timeline: Array<{ _id: string; totalEngagement: number; postCount: number }>;
+  topPost: any;
+  upcomingPosts: any[];
+  platformPerformance: Array<{ _id: string; postCount: number }>;
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await api.get("/auth/me");
-        setUser(data.data.user);
-        console.log("Fetched user:", data.data.user);
+        // Fetch user
+        const { data: userData } = await api.get("/auth/me");
+        setUser(userData.data.user);
+
+        // Fetch all dashboard data in parallel
+        const [overviewRes, timelineRes, topPostsRes, upcomingRes, scheduledCountRes] =
+          await Promise.allSettled([
+            analyticsService.getOverview("7d"),
+            analyticsService.getTimeline("7d"),
+            analyticsService.getTopPosts(1),
+            analyticsService.getUpcomingPosts(3),
+            analyticsService.getScheduledCount(),
+          ]);
+
+        const overview = overviewRes.status === "fulfilled" ? overviewRes.value : null;
+        const timeline = timelineRes.status === "fulfilled" ? timelineRes.value : [];
+        const topPosts = topPostsRes.status === "fulfilled" ? topPostsRes.value : [];
+        const upcoming = upcomingRes.status === "fulfilled" ? upcomingRes.value : { posts: [] };
+        const scheduledCount =
+          scheduledCountRes.status === "fulfilled" ? scheduledCountRes.value : 0;
+
+        setDashboardData({
+          metrics: {
+            totalPosts: overview?.stats?.totalPosts || 0,
+            scheduled: scheduledCount,
+            totalAudience: overview?.followers?.total || 0,
+            totalEngagement: overview?.stats?.totalEngagement || 0,
+          },
+          timeline: timeline || [],
+          topPost: topPosts?.[0] || null,
+          upcomingPosts: upcoming?.posts || [],
+          platformPerformance: overview?.platformPerformance || [],
+        });
       } catch (error) {
-        console.error("Failed to fetch user", error);
+        console.error("Failed to fetch dashboard data", error);
       }
     };
 
-    fetchUser();
+    fetchData();
   }, []);
 
   if (!user) {
@@ -69,18 +113,12 @@ export default function DashboardPage() {
       >
         <div
           className={cn(
-            "absolute left-0 top-0 bottom-0 w-72 bg-none  transition-transform duration-300 transform",
+            "absolute left-0 top-0 bottom-0 w-72 bg-none transition-transform duration-300 transform",
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           )}
           onClick={(e) => e.stopPropagation()}
         >
           <Sidebar />
-          {/* <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-100 rounded-full"
-          >
-            <X size={20} />
-          </button> */}
         </div>
       </div>
 
@@ -104,7 +142,7 @@ export default function DashboardPage() {
               <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
                 Hi, {user.name.split(" ")[0]}
               </h1>
-              <p className="text-gray-500 text-xs lg:text-sm">welcome back</p>
+              <p className="text-gray-500 text-xs lg:text-sm">Here's your performance summary</p>
             </div>
 
             <div className="flex gap-2">
@@ -121,55 +159,62 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
-          {/* Wrapper for responsive vertical stacking on mobile */}
-          <div className="space-y-5 lg:space-y-0 lg:block">
-            {/* Stats Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:mb-8">
-              <StatsCard
-                title="Total Posts"
-                value="25"
-                trend="5% increased from last month"
-                variant="primary"
-              />
-              <StatsCard title="Total Drafts" value="17" trend="5% increased from last month" />
-              <StatsCard title="Total Schedules" value="33" trend="5% increased from last month" />
-              {/* Re-ordered to match image somewhat, or kept logical */}
-              <StatsCard title="Total Impression" value="48" trend="5% increased from last month" />
-            </div>
 
-            {/* Main Grid - Charts and Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 lg:mb-8">
-              {/* Impressions Chart - takes 2 columns on desktop */}
-              <div className="lg:col-span-2">
-                <ImpressionsChart />
-              </div>
-              <div className="lg:hidden">
-                {/* On mobile, stack order: Chart -> Platform Performance (Pie) -> Best Post */}
-                <PlatformPerformanceCard />
+          <div className="space-y-6">
+            {/* 1. Top Metrics */}
+            <section>
+              <DashboardMetrics data={dashboardData?.metrics} />
+            </section>
+
+            {/* 2. Charts & Widgets Grid */}
+            <section className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+              {/* Engagement Chart - Spans 2 cols */}
+              <div className="lg:col-span-2 min-h-[350px]">
+                <EngagementChart data={dashboardData?.timeline} />
               </div>
 
-              {/* Best Post Card - takes 1 column */}
-              <div className="lg:col-span-1">
-                <BestPostCard />
+              {/* Best Post Card - 1 col */}
+              <div className="lg:col-span-1 min-h-[350px]">
+                <BestPostCard post={dashboardData?.topPost} />
               </div>
 
-              {/* Plan Info Card - takes 1 column */}
-              <div className="lg:col-span-1">
-                <PlanInfoCard />
+              {/* Upcoming Posts Carousel - 1 col */}
+              <div className="lg:col-span-1 min-h-[350px]">
+                <UpcomingPostsCarousel posts={dashboardData?.upcomingPosts} />
               </div>
-            </div>
+            </section>
 
-            {/* Bottom Row / Re-arranged for Mobile */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {/* Connected Platforms */}
-              <ConnectedPlatformsCard />
-
-              <div className="hidden lg:block">
-                <PlatformPerformanceCard />
+            {/* 3. Bottom Grid */}
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 pb-8">
+              {/* Connected Accounts */}
+              <div className="lg:col-span-1 min-h-[300px]">
+                <ConnectedPlatformsCard />
               </div>
 
-              {/* Upgrade Card */}
-              <UpgradeCard />
+              {/* Post Distribution */}
+              <div className="lg:col-span-1 min-h-[300px]">
+                <PostDistributionChart data={dashboardData?.platformPerformance} />
+              </div>
+
+              {/* Upgrade / Plan Info */}
+              <div className="lg:col-span-1 min-h-[300px]">
+                <UpgradeCard />
+              </div>
+            </section>
+
+            {/* Analytics CTA - Optional / Footer style */}
+            <div className="bg-white rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Need deeper insights?</h3>
+                <p className="text-slate-500">
+                  Dive into the full analytics suite for granular reporting.
+                </p>
+              </div>
+              <Link href="/analytics">
+                <Button variant="outline" className="border-slate-200">
+                  Go to Analytics
+                </Button>
+              </Link>
             </div>
           </div>
         </main>
