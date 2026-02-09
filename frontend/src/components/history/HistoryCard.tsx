@@ -63,9 +63,10 @@ export function HistoryCard({
   return (
     <Card
       className={cn(
-        "rounded-[30px] border-none shadow-none overflow-hidden h-full flex flex-col group transition-all hover:shadow-lg hover:shadow-black/5",
+        "rounded-[30px] border-none shadow-none overflow-hidden h-full flex flex-col group transition-all hover:shadow-lg hover:shadow-black/5 cursor-pointer",
         // hasFailures ? "bg-red-50" : "bg-white"
       )}
+      onClick={() => onActionClick?.(id, "detail")}
     >
       <div className="p-2 relative">
         <div className="relative w-full aspect-[4/3] rounded-[24px] overflow-hidden bg-gray-50 flex items-center justify-center">
@@ -153,7 +154,10 @@ export function HistoryCard({
           {/* Menu Icon with Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-primary hover:bg-primary/5 transition-all outline-none">
+              <button
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-primary hover:bg-primary/5 transition-all outline-none"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreVertical size={20} />
               </button>
             </DropdownMenuTrigger>
@@ -162,7 +166,10 @@ export function HistoryCard({
               className="w-48 bg-white rounded-2xl p-2 border-none shadow-xl shadow-black/5"
             >
               <DropdownMenuItem
-                onClick={() => onActionClick?.(id, "view")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onActionClick?.(id, "view");
+                }}
                 className="flex items-center gap-2 rounded-xl focus:bg-primary/5 focus:text-primary cursor-pointer p-3"
               >
                 <Eye size={18} />
@@ -171,7 +178,10 @@ export function HistoryCard({
 
               {isRetryable && (
                 <DropdownMenuItem
-                  onClick={() => onActionClick?.(id, "retry")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onActionClick?.(id, "retry");
+                  }}
                   className="flex items-center gap-2 rounded-xl focus:bg-primary/5 focus:text-primary cursor-pointer p-3"
                 >
                   <RefreshCw size={18} />

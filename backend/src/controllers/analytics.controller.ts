@@ -4,7 +4,6 @@ import * as analyticsRepository from "../repositories/analytics.repository";
 import * as postRepository from "../repositories/post.repository";
 import { analyticsProducer } from "../lib/queues/analytics.producer";
 
-// Helper to parse date range or default to 30 days
 const getDateRange = (req: Request) => {
   const end = new Date();
   const start = new Date();
@@ -12,7 +11,6 @@ const getDateRange = (req: Request) => {
   if (req.query.period === "7d") {
     start.setDate(end.getDate() - 7);
   } else {
-    // Default 30 days
     start.setDate(end.getDate() - 30);
   }
 
@@ -27,7 +25,6 @@ export const getOverview = async (req: Request, res: Response) => {
     const userId = req.auth.id;
     const { start, end } = getDateRange(req);
 
-    // Run parallel queries
     const [stats, followers, platformStats] = await Promise.all([
       analyticsRepository.getOverviewStats(userId, start, end),
       analyticsRepository.getLatestFollowerCounts(userId),
