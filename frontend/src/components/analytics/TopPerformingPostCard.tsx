@@ -134,19 +134,50 @@ export default function TopPerformingPostCard({ initialData }: TopPerformingPost
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
               <div className="flex items-center justify-between text-white">
                 <div className="flex items-center gap-2">
-                  <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-lg">
-                    <PlatformIcon platform={post.platform} size={16} className="text-white" />
-                  </div>
+                  <PlatformIcon platform={post.platform} size={24} className="text-white" />
                   <span className="text-sm font-medium capitalize">{post.platform}</span>
                 </div>
                 <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-lg text-white">
+                  {/* Direct to Post Link */}
+                  {post.postDetails?.platformStatuses?.find(
+                    (ps: any) => ps.platform === (platform === "all" ? post.platform : platform),
+                  )?.platformPostUrl && (
+                    <>
+                      <a
+                        href={
+                          post.postDetails.platformStatuses.find(
+                            (ps: any) =>
+                              ps.platform === (platform === "all" ? post.platform : platform),
+                          )?.platformPostUrl
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-white/80 transition-colors flex items-center"
+                        title="View on platform"
+                      >
+                        <Share2 size={14} className="" />
+                      </a>
+                      <div className="w-[1px] h-3 bg-white/20 mx-1" />
+                    </>
+                  )}
+
                   {metric === "likes" && <Heart size={14} className="fill-white" />}
                   {metric === "comments" && <MessageCircle size={14} className="fill-white" />}
                   {metric === "shares" && <Share2 size={14} className="fill-white" />}
                   {metric === "totalEngagement" && <BarChart2 size={14} className="fill-white" />}
-                  <span className="font-bold text-sm">{metricValue}</span>
+                  <span className="font-bold text-sm">
+                    {post.platform === "facebook" && metricValue === 0 ? "N/A*" : metricValue}
+                  </span>
                 </div>
               </div>
+
+              {/* Special Note for Facebook N/A */}
+              {post.platform === "facebook" && metricValue === 0 && (
+                <div className="absolute bottom-16 right-4 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white/80">
+                  * Metrics unavailable
+                </div>
+              )}
+
               {/* Caption Preview if Image exists */}
               {postMedia?.s3Url && postText && (
                 <div className="mt-2 text-white/90 text-xs line-clamp-2 font-medium drop-shadow-md">

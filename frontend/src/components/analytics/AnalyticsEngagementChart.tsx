@@ -84,9 +84,19 @@ export default function AnalyticsEngagementChart() {
           <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
             <Loader2 className="animate-spin text-primary" size={24} />
           </div>
-        ) : data.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-400">
-            No data available
+        ) : data.length === 0 ||
+          (platform === "facebook" && data.every((d) => d.totalEngagement === 0)) ? (
+          <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
+            {platform === "facebook" ? (
+              <>
+                <span className="mb-2 font-semibold text-gray-500">Data Unavailable</span>
+                <p className="text-xs max-w-[250px]">
+                  Facebook engagement data is temporarily unavailable due to permission updates.
+                </p>
+              </>
+            ) : (
+              <span>No data available</span>
+            )}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

@@ -1,7 +1,6 @@
 "use client";
 
 import { Heart, MessageCircle, Share2 } from "lucide-react";
-import { SiMastodon, SiBluesky, SiTumblr } from "react-icons/si";
 import Image from "next/image";
 
 interface MediaItem {
@@ -32,6 +31,10 @@ interface BestPostCardProps {
           mediaItems?: MediaItem[];
         }
       >;
+      platformStatuses?: Array<{
+        platform: string;
+        platformPostUrl?: string;
+      }>;
     };
   };
 }
@@ -43,16 +46,14 @@ function formatNumber(num: number): string {
 }
 
 function getPlatformIcon(platform: string) {
-  switch (platform) {
-    case "mastodon":
-      return <SiMastodon size={20} />;
-    case "bluesky":
-      return <SiBluesky size={20} />;
-    case "tumblr":
-      return <SiTumblr size={20} />;
-    default:
-      return <SiMastodon size={20} />;
-  }
+  const p = platform.toLowerCase();
+  const logoPath = `/images/platform-logos/${p}.png`;
+
+  return (
+    <div className="relative w-6 h-6 rounded-full overflow-hidden border border-white/10 shadow-sm">
+      <Image src={logoPath} alt={`${platform} logo`} fill className="object-cover" />
+    </div>
+  );
 }
 
 export default function BestPostCard({ post }: BestPostCardProps) {
@@ -116,9 +117,7 @@ export default function BestPostCard({ post }: BestPostCardProps) {
               {hasData ? "Top Performer" : "No Data Yet"}
             </span>
           </div>
-          <div className="bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/20 shadow-lg text-white">
-            {getPlatformIcon(platform)}
-          </div>
+          <div className="text-white">{getPlatformIcon(platform)}</div>
         </div>
 
         <div>
@@ -141,6 +140,24 @@ export default function BestPostCard({ post }: BestPostCardProps) {
               <MessageCircle size={20} />
               <span className="text-lg">{formatNumber(comments)}</span>
             </div>
+
+            {/* Direct to Post Link */}
+            {hasData &&
+              post.postDetails?.platformStatuses?.find((ps: any) => ps.platform === platform)
+                ?.platformPostUrl && (
+                <a
+                  href={
+                    post.postDetails?.platformStatuses?.find((ps: any) => ps.platform === platform)
+                      ?.platformPostUrl
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto bg-white/20 hover:bg-white/30 backdrop-blur-md p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10 shadow-lg"
+                  title="View on platform"
+                >
+                  <Share2 size={18} className="text-white" />
+                </a>
+              )}
           </div>
         </div>
       </div>
