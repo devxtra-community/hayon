@@ -41,37 +41,53 @@ export class ThreadsAnalyticsService {
 
     try {
       // 1. Fetch basic fields first (always available for the owner)
-      const basicResponse = await axios.get(`${THREADS_GRAPH_URL}/${platformPostId}`, {
+      // Note: We don't fetch counts here anymore as they might not be available as direct fields
+      await axios.get(`${THREADS_GRAPH_URL}/${platformPostId}`, {
         params: {
-          fields: "like_count,reply_count,repost_count,quote_count",
+          fields: "id,media_type,permalink",
           access_token: auth.accessToken,
         },
       });
 
-      const data = basicResponse.data;
       const metrics: PostMetrics = {
-        likes: data.like_count || 0,
-        shares: (data.repost_count || 0) + (data.quote_count || 0),
-        comments: data.reply_count || 0,
+        likes: 0,
+        shares: 0,
+        comments: 0,
         impressions: 0,
       };
 
-      // 2. Try to fetch views from insights (optional)
+      // 2. Fetch engagement metrics from insights edge
+      // Supported metrics: views, likes, replies, reposts, quotes
       try {
         const insightsResponse = await axios.get(
-          `${THREADS_GRAPH_URL}/${platformPostId}/threads_insights`,
+          `${THREADS_GRAPH_URL}/${platformPostId}/insights`,
           {
             params: {
-              metric: "views",
+              metric: "views,likes,replies,reposts,quotes",
               access_token: auth.accessToken,
             },
           },
         );
+
         const insights = insightsResponse.data.data || [];
+
+        // Map insights to metrics
+        metrics.likes = insights.find((m: any) => m.name === "likes")?.values?.[0]?.value || 0;
+
+        const replies = insights.find((m: any) => m.name === "replies")?.values?.[0]?.value || 0;
+        metrics.comments = replies;
+
+        const reposts = insights.find((m: any) => m.name === "reposts")?.values?.[0]?.value || 0;
+        const quotes = insights.find((m: any) => m.name === "quotes")?.values?.[0]?.value || 0;
+        metrics.shares = reposts + quotes;
+
         metrics.impressions =
-          insights.find((m: any) => m.name === "views")?.total_value?.value || 0;
-      } catch {
-        // Ignore insight errors if basic data worked
+          insights.find((m: any) => m.name === "views")?.values?.[0]?.value || 0;
+      } catch (insightError: any) {
+        logger.warn(`[ThreadsAnalytics] Failed to fetch insights for ${platformPostId}:`, {
+          error: insightError.response?.data || insightError.message,
+        });
+        // We still return basic empty metrics if insights fail but basic info was ok
       }
 
       return metrics;

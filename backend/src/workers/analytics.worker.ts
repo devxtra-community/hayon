@@ -83,11 +83,13 @@ export class AnalyticsWorker {
       logger.info(`[AnalyticsWorker] Fetching ${msg.platform} metrics for post ${msg.postId}`);
 
       try {
+        // Fetch Post Metrics
         const fetchedMetrics = await analyticsService.getPostMetrics(
           platformStatus.platformPostId,
           platformData,
           post.userId.toString(),
         );
+        logger.info(`[AnalyticsWorker] Received metrics for ${msg.platform}:`, fetchedMetrics);
 
         metrics = {
           ...metrics,
@@ -97,15 +99,28 @@ export class AnalyticsWorker {
           saved: fetchedMetrics.saved ?? 0,
         };
 
-        // Also fetch current follower count for engagement rate calculation
-        const accountMetrics = await analyticsService.getAccountMetrics(
-          platformData,
-          post.userId.toString(),
-        );
-        followerCount = accountMetrics.followers;
+        // Fetch Account Metrics (Always fetch to ensure followers are updated)
+        try {
+          const accountMetrics = await analyticsService.getAccountMetrics(
+            platformData,
+            post.userId.toString(),
+          );
+          logger.info(
+            `[AnalyticsWorker] Received account metrics for ${msg.platform}:`,
+            accountMetrics,
+          );
+          followerCount = accountMetrics.followers;
+        } catch (accError: any) {
+          logger.error(`[AnalyticsWorker] Account metrics fetch failed for ${msg.platform}:`, {
+            error: accError.message,
+          });
+          // Non-critical failure, continue with post metrics
+        }
       } catch (error: any) {
-        logger.warn(`[AnalyticsWorker] API call failed, using zeros`, { error: error.message });
-        // Continue with zeros if API fails - don't throw
+        logger.error(`[AnalyticsWorker] Failed to fetch analytics for ${msg.platform}:`, {
+          error: error.message,
+        });
+        // Continue to save snapshot with zero/partial metrics
       }
     } else {
       // Platform not yet implemented (Facebook, Instagram, Threads)
