@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/shared"; // Removed Header import since unused
 
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { PlatformSelection } from "@/components/create-post/PlatformSelection";
@@ -13,7 +11,6 @@ import { PostPreview } from "@/components/create-post/PostPreview";
 import { useSearchParams } from "next/navigation";
 
 export default function CreatePostPage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchParams = useSearchParams();
 
   const {
@@ -73,30 +70,6 @@ export default function CreatePostPage() {
 
   return (
     <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-full">
-        <Sidebar />
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      <div
-        className={cn(
-          "fixed inset-0 z-50 bg-black/50 lg:hidden transition-opacity duration-300",
-          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
-        )}
-        onClick={() => setIsMobileMenuOpen(false)}
-      >
-        <div
-          className={cn(
-            "absolute left-0 top-0 bottom-0 w-72 bg-none transition-transform duration-300 transform",
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
-          )}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Sidebar />
-        </div>
-      </div>
-
       {/* Right Column */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Success Overlay */}

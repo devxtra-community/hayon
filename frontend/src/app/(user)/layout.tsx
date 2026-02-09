@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, getAccessToken, setAccessToken } from "@/lib/axios";
 import { ToastProvider } from "@/context/ToastContext";
+import { LoadingH } from "@/components/ui/loading-h";
+import { Sidebar } from "@/components/shared";
 
 interface User {
   id: string;
@@ -53,18 +55,31 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     checkAuth();
   }, [router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="ml-4 text-gray-600">Loading...</p>
+  return (
+    <ToastProvider>
+      <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
+        {/* Persistent Sidebar (Desktop) */}
+        <div className="hidden lg:block h-full">
+          <Sidebar />
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          {isLoading ? (
+            <div className="flex-1 flex flex-col h-full">
+              {/* Placeholder Header */}
+              <div className="pb-2 lg:pb-4">
+                <div className="h-[13vh] bg-[#F7F7F7] rounded-[1rem] animate-pulse" />
+              </div>
+              <main className="flex-1 bg-[#F7F7F7] rounded-3xl flex items-center justify-center">
+                <LoadingH />
+              </main>
+            </div>
+          ) : !isAuthenticated ? null : (
+            children
+          )}
+        </div>
       </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  return <ToastProvider>{children}</ToastProvider>;
+    </ToastProvider>
+  );
 }

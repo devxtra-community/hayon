@@ -6,6 +6,7 @@ import { api } from "@/lib/axios";
 import { User } from "@/types/create-post";
 import CalendarComponent from "@/components/calendar/CalendarComponent";
 import { cn } from "@/lib/utils";
+import { LoadingH } from "@/components/ui/loading-h";
 
 export default function CalendarPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -23,21 +24,8 @@ export default function CalendarPage() {
     fetchUser();
   }, []);
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-full">
-        <Sidebar />
-      </div>
-
+    <>
       {/* Mobile Sidebar Overlay */}
       <div
         className={cn(
@@ -57,23 +45,26 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Right Column */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="pb-2 lg:pb-4">
-          <Header
-            userName={user.name}
-            userEmail={user.email}
-            userAvatar={user.avatar}
-            onMenuClick={() => setIsMobileMenuOpen(true)}
-          />
-        </div>
-
-        {/* Calendar Content */}
-        <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
-          <CalendarComponent />
-        </main>
+      {/* Header */}
+      <div className="pb-2 lg:pb-4">
+        <Header
+          userName={user?.name || ""}
+          userEmail={user?.email || ""}
+          userAvatar={user?.avatar || ""}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
+        />
       </div>
-    </div>
+
+      {/* Calendar Content */}
+      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
+        {!user ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingH />
+          </div>
+        ) : (
+          <CalendarComponent />
+        )}
+      </main>
+    </>
   );
 }

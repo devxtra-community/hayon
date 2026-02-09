@@ -11,9 +11,10 @@ import {
   AnalyticsInsightsCard,
 } from "@/components/analytics";
 import { analyticsService } from "@/services/analytics.service";
-import { Loader2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
+import { LoadingH } from "@/components/ui/loading-h";
 
 interface User {
   id: string;
@@ -72,43 +73,8 @@ export default function AnalyticsPage() {
     fetchData();
   }, [selectedPeriod]);
 
-  if (loading) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <Loader2 className="animate-spin text-gray-400" size={32} />
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="flex h-[80vh] flex-col items-center justify-center gap-4 text-center">
-        <AlertCircle className="text-red-400" size={48} />
-        <p className="text-gray-600">{error || "No data available"}</p>
-        <button onClick={() => window.location.reload()} className="text-sm text-primary underline">
-          Try again
-        </button>
-      </div>
-    );
-  }
-
-  // Safe access with defaults
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <Loader2 className="animate-spin text-primary" size={32} />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-full">
-        <Sidebar />
-      </div>
-
+    <>
       {/* Mobile Sidebar Overlay */}
       <div
         className={cn(
@@ -128,20 +94,34 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Right Column */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="pb-2 lg:pb-4">
-          <Header
-            userName={user.name}
-            userEmail={user.email}
-            userAvatar={user.avatar}
-            onMenuClick={() => setIsMobileMenuOpen(true)}
-          />
-        </div>
+      {/* Header */}
+      <div className="pb-2 lg:pb-4">
+        <Header
+          userName={user?.name || ""}
+          userEmail={user?.email || ""}
+          userAvatar={user?.avatar || ""}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
+        />
+      </div>
 
-        {/* Main Content */}
-        <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
+      {/* Main Content */}
+      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
+        {loading || !user ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingH />
+          </div>
+        ) : error || !data ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+            <AlertCircle className="text-red-400" size={48} />
+            <p className="text-gray-600">{error || "No data available"}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-sm text-primary underline"
+            >
+              Try again
+            </button>
+          </div>
+        ) : (
           <div className="max-w-[1600px] mx-auto space-y-8 pb-10">
             {/* Top Cards Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -170,8 +150,8 @@ export default function AnalyticsPage() {
               <AnalyticsInsightsCard heatmapData={data.heatmap || []} />
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+        )}
+      </main>
+    </>
   );
 }

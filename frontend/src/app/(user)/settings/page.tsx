@@ -9,6 +9,7 @@ import { PlanInfoCard } from "@/components/settings/PlanInfoCard";
 import { TimezoneCard } from "@/components/settings/TimezoneCard";
 import { ConnectedPlatformsCard } from "@/components/settings/ConnectedPlatformsCard";
 import { User } from "@/types/user.types";
+import { LoadingH } from "@/components/ui/loading-h";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -39,21 +40,8 @@ export default function SettingsPage() {
     fetchPlatforms();
   }, [update]);
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-screen bg-white overflow-hidden p-4 gap-4">
-      {/* Sidebar Area */}
-      <div className="hidden lg:block h-full">
-        <Sidebar />
-      </div>
-
+    <>
       {/* Mobile Sidebar Overlay */}
       <div
         className={cn(
@@ -73,20 +61,23 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Right Column */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="pb-4">
-          <Header
-            userName={user.name}
-            userEmail={user.email}
-            userAvatar={user.avatar}
-            onMenuClick={() => setIsMobileMenuOpen(true)}
-          />
-        </div>
+      {/* Header */}
+      <div className="pb-4">
+        <Header
+          userName={user?.name || ""}
+          userEmail={user?.email || ""}
+          userAvatar={user?.avatar || ""}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
+        />
+      </div>
 
-        {/* Settings Content */}
-        <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-6 py-8">
+      {/* Settings Content */}
+      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-6 py-8">
+        {!user ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingH />
+          </div>
+        ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
@@ -109,8 +100,8 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+        )}
+      </main>
+    </>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from "@/components/dashboard";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { LoadingH } from "@/components/ui/loading-h";
 
 interface User {
   id: string;
@@ -88,21 +89,8 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-full">
-        <Sidebar />
-      </div>
-
+    <>
       {/* Mobile Sidebar Overlay */}
       <div
         className={cn(
@@ -122,103 +110,108 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Right Column */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="pb-2 lg:pb-4">
-          <Header
-            userName={user.name}
-            userEmail={user.email}
-            userAvatar={user.avatar}
-            onMenuClick={() => setIsMobileMenuOpen(true)}
-          />
-        </div>
-
-        {/* Dashboard Content */}
-        <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
-          {/* Welcome Section */}
-          <div className="flex items-center justify-between mb-6 lg:mb-8">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                Hi, {user.name.split(" ")[0]}
-              </h1>
-              <p className="text-gray-500 text-xs lg:text-sm">Here's your performance summary</p>
-            </div>
-
-            <div className="flex gap-2">
-              <Link href="/dashboard/devices">
-                <Button variant="outline" className="mr-2">
-                  Manage Devices
-                </Button>
-              </Link>
-              <Link href="/dashboard/create-post" className="hidden lg:block">
-                <Button variant="default" className="gap-2">
-                  Create a post
-                  <Plus size={18} />
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* 1. Top Metrics */}
-            <section>
-              <DashboardMetrics data={dashboardData?.metrics} />
-            </section>
-
-            {/* 2. Charts & Widgets Grid */}
-            <section className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-              {/* Engagement Chart - Spans 2 cols */}
-              <div className="lg:col-span-2 min-h-[350px]">
-                <EngagementChart data={dashboardData?.timeline} />
-              </div>
-
-              {/* Best Post Card - 1 col */}
-              <div className="lg:col-span-1 min-h-[350px]">
-                <BestPostCard post={dashboardData?.topPost} />
-              </div>
-
-              {/* Upcoming Posts Carousel - 1 col */}
-              <div className="lg:col-span-1 min-h-[350px]">
-                <UpcomingPostsCarousel posts={dashboardData?.upcomingPosts} />
-              </div>
-            </section>
-
-            {/* 3. Bottom Grid */}
-            <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 pb-8">
-              {/* Connected Accounts */}
-              <div className="lg:col-span-1 min-h-[300px]">
-                <ConnectedPlatformsCard />
-              </div>
-
-              {/* Post Distribution */}
-              <div className="lg:col-span-1 min-h-[300px]">
-                <PostDistributionChart data={dashboardData?.platformPerformance} />
-              </div>
-
-              {/* Upgrade / Plan Info */}
-              <div className="lg:col-span-1 min-h-[300px]">
-                <UpgradeCard />
-              </div>
-            </section>
-
-            {/* Analytics CTA - Optional / Footer style */}
-            <div className="bg-white rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">Need deeper insights?</h3>
-                <p className="text-slate-500">
-                  Dive into the full analytics suite for granular reporting.
-                </p>
-              </div>
-              <Link href="/analytics">
-                <Button variant="outline" className="border-slate-200">
-                  Go to Analytics
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </main>
+      {/* Header */}
+      <div className="pb-2 lg:pb-4">
+        <Header
+          userName={user?.name || ""}
+          userEmail={user?.email || ""}
+          userAvatar={user?.avatar || ""}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
+        />
       </div>
+
+      {/* Dashboard Content */}
+      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
+        {!user || !dashboardData ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingH />
+          </div>
+        ) : (
+          <>
+            {/* Welcome Section */}
+            <div className="flex items-center justify-between mb-6 lg:mb-8">
+              <div>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  Hi, {user.name.split(" ")[0]}
+                </h1>
+                <p className="text-gray-500 text-xs lg:text-sm">Here's your performance summary</p>
+              </div>
+
+              <div className="flex gap-2">
+                <Link href="/dashboard/devices">
+                  <Button variant="outline" className="mr-2">
+                    Manage Devices
+                  </Button>
+                </Link>
+                <Link href="/dashboard/create-post" className="hidden lg:block">
+                  <Button variant="default" className="gap-2">
+                    Create a post
+                    <Plus size={18} />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* 1. Top Metrics */}
+              <section>
+                <DashboardMetrics data={dashboardData?.metrics} />
+              </section>
+
+              {/* 2. Charts & Widgets Grid */}
+              <section className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+                {/* Engagement Chart - Spans 2 cols */}
+                <div className="lg:col-span-2 min-h-[350px]">
+                  <EngagementChart data={dashboardData?.timeline} />
+                </div>
+
+                {/* Best Post Card - 1 col */}
+                <div className="lg:col-span-1 min-h-[350px]">
+                  <BestPostCard post={dashboardData?.topPost} />
+                </div>
+
+                {/* Upcoming Posts Carousel - 1 col */}
+                <div className="lg:col-span-1 min-h-[350px]">
+                  <UpcomingPostsCarousel posts={dashboardData?.upcomingPosts} />
+                </div>
+              </section>
+
+              {/* 3. Bottom Grid */}
+              <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 pb-8">
+                {/* Connected Accounts */}
+                <div className="lg:col-span-1 min-h-[300px]">
+                  <ConnectedPlatformsCard />
+                </div>
+
+                {/* Post Distribution */}
+                <div className="lg:col-span-1 min-h-[300px]">
+                  <PostDistributionChart data={dashboardData?.platformPerformance} />
+                </div>
+
+                {/* Upgrade / Plan Info */}
+                <div className="lg:col-span-1 min-h-[300px]">
+                  <UpgradeCard />
+                </div>
+              </section>
+
+              {/* Analytics CTA */}
+              <div className="bg-white rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Need deeper insights?</h3>
+                  <p className="text-slate-500">
+                    Dive into the full analytics suite for granular reporting.
+                  </p>
+                </div>
+                <Link href="/analytics">
+                  <Button variant="outline" className="border-slate-200">
+                    Go to Analytics
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </>
+        )}
+      </main>
 
       {/* Floating Action Button (Mobile Only) */}
       <Link href="/dashboard/create-post" className="fixed bottom-6 right-6 lg:hidden z-40">
@@ -229,6 +222,6 @@ export default function DashboardPage() {
           <Plus size={32} />
         </Button>
       </Link>
-    </div>
+    </>
   );
 }

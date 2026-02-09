@@ -1,97 +1,61 @@
+import AuthImageCarousel from "@/components/AuthImageCarousel";
 import RegisterForm from "@/components/RegisterForm";
-import Image from "next/image";
-const logo_IMG = "/images/logos/logo.png";
+import Link from "next/link";
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Back Button */}
-      {/* <div className="absolute top-4 left-4">
-        <Link href="/">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
-        </Link>
-      </div> */}
+    <div className="min-h-screen bg-[#f3f4f6] flex items-center justify-center p-4 lg:p-8">
+      <div className="w-full max-w-[1200px] bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col lg:flex-row min-h-[700px]">
+        {/* Left Side: Register Form & Mobile Content */}
+        <div className="lg:w-1/2 flex flex-col justify-center items-center px-8 py-12 lg:px-20 relative">
+          <div className="w-full max-w-[400px]">
+            {/* Heading - Now on top in both views */}
+            <div className="mb-10 text-center lg:text-left">
+              <h1 className="text-4xl lg:text-5xl font-bold text-zinc-900 mb-3 tracking-tight">
+                Join Hayon
+              </h1>
+              <p className="text-zinc-500 text-base leading-relaxed">
+                Start your journey with <span className="font-semibold text-zinc-900">Hayon</span>.
+                Experience the next level of social automation.
+              </p>
+            </div>
 
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        {/* Left Side - Branding */}
-        <div className="hidden lg:flex flex-col justify-center space-y-8 px-12">
-          <div>
-            <Image src={logo_IMG} alt="Hayon Logo" className="mb-8" width={64} height={64} />
-          </div>
-
-          <div className="space-y-4">
-            <h1 className="text-5xl font-bold text-foreground">Join Hayon Today</h1>
-            <p className="text-xl text-muted-foreground">
-              Start automating your social media with AI in just a few minutes
-            </p>
-          </div>
-
-          <div className="gradient rounded-2xl p-8 text-white space-y-4">
-            <h3 className="text-2xl font-semibold">What youll get</h3>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3">
-                <div className="rounded-full bg-white/20 p-1 shrink-0 mt-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+            {/* Mobile Illustration Component - Visible only on mobile, placed between title and form */}
+            <div className="lg:hidden mb-10">
+              <div className="w-full bg-[#f1fcf5] rounded-[2rem] flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                <div className="absolute top-6 left-6 w-16 h-16 bg-white/50 rounded-full blur-2xl" />
+                <div className="absolute bottom-6 right-6 w-24 h-24 bg-emerald-100/30 rounded-full blur-3xl" />
+                <div className="relative z-10 w-full">
+                  <AuthImageCarousel />
                 </div>
-                <span>5 free AI-generated posts per month</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="rounded-full bg-white/20 p-1 shrink-0 mt-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <span>Connect 1 social media account</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="rounded-full bg-white/20 p-1 shrink-0 mt-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <span>Basic analytics dashboard</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="rounded-full bg-white/20 p-1 shrink-0 mt-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <span>Upgrade anytime to Pro</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Right Side - Register Form */}
-        <div className="flex items-center justify-center">
-          <div className="w-full max-w-md">
-            <div className="lg:hidden mb-8 flex justify-center">
-              <Image src={logo_IMG} alt="Hayon Logo" width={48} height={48} />
+              </div>
             </div>
 
             <RegisterForm />
+
+            <div className="mt-10 text-center">
+              <p className="text-sm text-zinc-500">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="font-bold text-emerald-600 hover:text-emerald-500 transition-colors"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Desktop Illustration Container */}
+        <div className="hidden lg:block lg:w-1/2 p-4 lg:p-6">
+          <div className="h-full w-full bg-[#f1fcf5] rounded-[2rem] flex flex-col items-center justify-center p-8 lg:p-12 relative overflow-hidden">
+            <div className="absolute top-10 left-10 w-20 h-20 bg-white/50 rounded-full blur-2xl" />
+            <div className="absolute bottom-10 right-10 w-32 h-32 bg-emerald-100/30 rounded-full blur-3xl" />
+
+            <div className="relative z-10 w-full h-full flex items-center justify-center">
+              <AuthImageCarousel />
+            </div>
           </div>
         </div>
       </div>
