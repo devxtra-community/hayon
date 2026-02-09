@@ -16,4 +16,7 @@ router.get("/posts/top", analyticsController.getTopPosts);
 router.get("/platforms", analyticsController.getPlatformPerformance);
 router.get("/heatmap", analyticsController.getHeatmap);
 
+// Manual refresh
+router.post("/posts/:postId/refresh", analyticsController.refreshPostAnalytics);
+
 export default router;

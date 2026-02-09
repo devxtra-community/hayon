@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import * as analyticsRepository from "../repositories/analytics.repository";
+import * as postRepository from "../repositories/post.repository";
+import { analyticsProducer } from "../lib/queues/analytics.producer";
 
 // Helper to parse date range or default to 30 days
 const getDateRange = (req: Request) => {
@@ -136,6 +138,56 @@ export const getHeatmap = async (req: Request, res: Response) => {
     const data = await analyticsRepository.getHeatmapData(userId, start, end);
 
     return new SuccessResponse("Heatmap data fetched", { data }).send(res);
+  } catch (error: any) {
+    return new ErrorResponse(error.message).send(res);
+  }
+};
+
+/**
+ * Manual refresh of analytics for a specific post on a specific platform
+ * POST /analytics/posts/:postId/refresh?platform=X
+ */
+export const refreshPostAnalytics = async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return new ErrorResponse("Unauthorized").send(res);
+    }
+    const userId = req.auth.id;
+    const { postId } = req.params;
+    const platform = req.query.platform as string;
+
+    if (!postId || !platform) {
+      return new ErrorResponse("Missing postId or platform", { status: 400 }).send(res);
+    }
+
+    // Verify user owns the post
+    const post = await postRepository.findById(postId);
+    if (!post) {
+      return new ErrorResponse("Post not found", { status: 404 }).send(res);
+    }
+    if (post.userId.toString() !== userId) {
+      return new ErrorResponse("Unauthorized", { status: 403 }).send(res);
+    }
+
+    // Queue the analytics fetch
+    await analyticsProducer.sendMessage({
+      type: "post",
+      postId,
+      platform: platform as any,
+    });
+
+    // Wait for processing (simple delay - worker typically completes within 2-5s)
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Fetch latest snapshot
+    const latestSnapshot = await analyticsRepository.getLatestSnapshotsForPost(postId);
+
+    return new SuccessResponse("Analytics refreshed successfully", {
+      data: {
+        analytics: latestSnapshot,
+        platform,
+      },
+    }).send(res);
   } catch (error: any) {
     return new ErrorResponse(error.message).send(res);
   }
