@@ -234,7 +234,7 @@ export const findPostsWithFailedPlatforms = async (_maxAttempts: number = 3) => 
  * 1. Fresh (< 24h): Updates every 2 hours
  * 2. Recent (1-7 days): Updates every 12 hours
  * 3. Old (> 7 days): Updates every 24 hours
- * 4. Never fetched: Always update
+ * 4. Never fetched: Always
  */
 export const findPostsNeedingAnalyticsUpdate = async () => {
   const now = new Date();

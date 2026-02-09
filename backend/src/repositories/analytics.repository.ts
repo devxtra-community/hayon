@@ -364,7 +364,7 @@ export const getTopPosts = async (
     },
     {
       $group: {
-        _id: "$postId",
+        _id: { postId: "$postId", platform: "$platform" },
         doc: { $first: "$$ROOT" },
       },
     },
@@ -372,7 +372,7 @@ export const getTopPosts = async (
       $replaceRoot: { newRoot: "$doc" },
     },
     {
-      $sort: { [sortField]: -1, postId: -1 },
+      $sort: { [sortField]: -1, "_id.postId": -1 },
     },
     {
       $limit: limit,
@@ -396,8 +396,59 @@ export const getTopPosts = async (
         derived: 1,
         snapshotAt: 1,
         "postDetails.content": 1,
+        "postDetails.platformSpecificContent": 1,
         "postDetails.platformStatuses": 1, // To get specific platform URL
       },
     },
   ]);
+};
+
+/**
+ * Get the latest analytics snapshot for each platform for a specific post
+ */
+export const getLatestSnapshotsForPost = async (postId: string) => {
+  if (!Types.ObjectId.isValid(postId)) {
+    return [];
+  }
+
+  const result = await AnalyticsSnapshotModel.aggregate([
+    {
+      $match: {
+        postId: new Types.ObjectId(postId),
+      },
+    },
+    // Sort by snapshotAt desc to get latest first
+    {
+      $sort: { snapshotAt: -1 },
+    },
+    // Group by platform and take the first (latest) document
+    {
+      $group: {
+        _id: "$platform",
+        latestSnapshot: { $first: "$$ROOT" },
+      },
+    },
+    // Project only the necessary fields
+    {
+      $project: {
+        _id: 0,
+        platform: "$_id",
+        metrics: "$latestSnapshot.metrics",
+        derived: "$latestSnapshot.derived",
+        snapshotAt: "$latestSnapshot.snapshotAt",
+      },
+    },
+  ]);
+
+  // Convert array to object map: { facebook: { ...metrics }, instagram: { ...metrics } }
+  const analyticsByPlatform: Record<string, any> = {};
+  result.forEach((item) => {
+    analyticsByPlatform[item.platform] = {
+      ...item.metrics,
+      ...item.derived,
+      snapshotAt: item.snapshotAt,
+    };
+  });
+
+  return analyticsByPlatform;
 };
