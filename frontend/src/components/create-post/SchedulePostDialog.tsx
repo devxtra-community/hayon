@@ -1,10 +1,11 @@
+"use client";
+
 import React from "react";
-import Image from "next/image";
-import { Calendar, Globe, Clock, Image as ImageIcon } from "lucide-react";
+import { Globe, Clock, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { CustomDatePicker } from "@/components/ui/custom-date-picker";
+import { CustomTimePicker } from "@/components/ui/custom-time-picker";
 
 interface SchedulePostDialogProps {
   isOpen: boolean;
@@ -22,8 +23,6 @@ interface SchedulePostDialogProps {
 export const SchedulePostDialog: React.FC<SchedulePostDialogProps> = ({
   isOpen,
   onOpenChange,
-  filePreviews,
-  postText,
   timeZone,
   scheduleDate,
   setScheduleDate,
@@ -33,83 +32,60 @@ export const SchedulePostDialog: React.FC<SchedulePostDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden bg-white rounded-3xl">
-        <div className="flex flex-col md:flex-row h-[500px]">
-          {/* Left: Preview */}
-          <div className="bg-gray-100 w-full md:w-5/12 relative hidden md:block">
-            {filePreviews[0] ? (
-              <Image src={filePreviews[0]} alt="Scheduled Post" fill className="object-cover" />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                <ImageIcon size={48} />
-                <p className="absolute mt-20 text-sm">No media selected</p>
+      <DialogContent className="max-w-[95vw] sm:max-w-[850px] p-0 overflow-hidden bg-white rounded-[2rem] md:rounded-[2.5rem] border-none shadow-2xl">
+        <div className="flex flex-col md:flex-row h-full max-h-[85vh] md:max-h-none md:min-h-[520px] overflow-y-auto md:overflow-visible">
+          {/* Left Section: Date Selection */}
+          <div className="flex-1 p-6 md:p-8 bg-gray-50/50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col justify-center">
+            <div className="mb-6">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-3">
+                <CalendarIcon size={20} />
               </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
-              <p className="text-white font-medium line-clamp-3 text-sm">
-                {postText || "No caption provided..."}
-              </p>
+              <h2 className="text-xl font-bold text-gray-900">Choose Date</h2>
+              <p className="text-gray-500 text-xs mt-1">Pick the best day for your content.</p>
+            </div>
+
+            <CustomDatePicker value={scheduleDate} onChange={setScheduleDate} />
+
+            <div className="mt-4 p-4 bg-white rounded-2xl border border-gray-100 flex items-center gap-3 shadow-sm">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                <Globe size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                  Current Timezone
+                </p>
+                <p className="text-sm font-semibold text-gray-700">{timeZone}</p>
+              </div>
             </div>
           </div>
 
-          {/* Right: Form */}
-          <div className="flex-1 p-8 flex flex-col">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-bold">Schedule Post</DialogTitle>
-              <p className="text-gray-500 text-sm">Choose the best time for your audience.</p>
-            </DialogHeader>
-
-            <div className="space-y-6 flex-1">
-              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
-                <span className="text-sm font-medium text-gray-600">Time Zone</span>
-                <span className="text-sm text-gray-900 font-semibold flex items-center gap-2">
-                  <Globe size={14} /> {timeZone}
-                </span>
+          {/* Right Section: Time Selection */}
+          <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
+            <div className="mb-6">
+              <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 mb-3">
+                <Clock size={20} />
               </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <div className="relative">
-                    <Calendar
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <Input
-                      id="date"
-                      type="date"
-                      className="pl-10"
-                      value={scheduleDate}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="time">Time</Label>
-                  <div className="relative">
-                    <Clock
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <Input
-                      id="time"
-                      type="time"
-                      className="pl-10"
-                      value={scheduleTime}
-                      onChange={(e) => setScheduleTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
+              <h2 className="text-xl font-bold text-gray-900">Choose Time</h2>
+              <p className="text-gray-500 text-xs mt-1">Select the exact hour and minute.</p>
             </div>
 
-            <div className="pt-6 border-t border-gray-100 flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancel
+            <div className="flex justify-center">
+              <CustomTimePicker value={scheduleTime} onChange={setScheduleTime} />
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <Button
+                onClick={onConfirm}
+                className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Schedule Post
               </Button>
-              <Button onClick={onConfirm} className="bg-primary hover:bg-primary/90">
-                Schedule
+              <Button
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="w-full h-12 rounded-xl text-gray-500 hover:text-gray-700 font-medium"
+              >
+                Go Back
               </Button>
             </div>
           </div>

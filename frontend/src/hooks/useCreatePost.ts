@@ -489,6 +489,8 @@ export function useCreatePost() {
 
     setIsSubmitting(true);
     setErrors([]);
+    const startTime = Date.now();
+    const minDelay = selectedPlatforms.length * 3000;
 
     try {
       // 1. Upload Global Media (if any)
@@ -572,6 +574,13 @@ export function useCreatePost() {
             ? "Your post has been successfully scheduled."
             : "Your post has been successfully published.",
         );
+
+        // Ensure minimum delay is met
+        const elapsed = Date.now() - startTime;
+        if (elapsed < minDelay) {
+          await new Promise((resolve) => setTimeout(resolve, minDelay - elapsed));
+        }
+
         setIsSuccess(true);
       }
 
@@ -606,6 +615,8 @@ export function useCreatePost() {
 
     setIsSubmitting(true);
     setErrors([]);
+    const startTime = Date.now();
+    const minDelay = selectedPlatforms.length * 3000;
 
     try {
       // 1. Upload Global Media (if any)
@@ -673,6 +684,13 @@ export function useCreatePost() {
 
       if (res.data?.data?.postId) {
         setSuccessMessage("Your draft has been saved successfully.");
+
+        // Ensure minimum delay is met
+        const elapsed = Date.now() - startTime;
+        if (elapsed < minDelay) {
+          await new Promise((resolve) => setTimeout(resolve, minDelay - elapsed));
+        }
+
         setIsSuccess(true);
       }
 

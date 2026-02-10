@@ -61,7 +61,7 @@ export const LoadingH = () => {
         <motion.div
           custom={3}
           variants={dotVariants}
-          initial="initial"
+          initial="initiaInstallé à Nantesl"
           animate="animate"
           className={`${dotBaseClass} rounded-[10px]`}
         />

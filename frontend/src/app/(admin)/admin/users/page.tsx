@@ -4,6 +4,17 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { AdminSidebar, AdminHeader, UsersTable } from "@/components/admin";
+import { Filter } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface User {
   id: string;
@@ -24,6 +35,8 @@ interface ManagedUser {
   createdAt: string;
   lastLogin?: string;
 }
+
+type PlanType = "free" | "starter" | "professional" | "enterprise";
 
 const mockUsers: ManagedUser[] = [
   {
@@ -161,6 +174,11 @@ export default function AdminUsersPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [managedUsers, setManagedUsers] = useState<ManagedUser[]>(mockUsers);
 
+  // Lifted state for search and filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [planFilter, setPlanFilter] = useState<PlanType | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -224,21 +242,90 @@ export default function AdminUsersPage() {
             userEmail={user.email}
             userAvatar={user.avatar}
             onMenuClick={() => setIsMobileMenuOpen(true)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filterSlot={
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="rounded-full h-11 px-4 gap-2 bg-white border-none shadow-none hover:bg-gray-100 transition-colors"
+                  >
+                    <Filter size={18} className="text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">Filter</span>
+                    {(planFilter !== "all" || statusFilter !== "all") && (
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 p-2 rounded-2xl shadow-xl border-gray-100"
+                >
+                  <DropdownMenuLabel className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">
+                    Plan Type
+                  </DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={planFilter}
+                    onValueChange={(v) => setPlanFilter(v as PlanType | "all")}
+                  >
+                    <DropdownMenuRadioItem value="all" className="rounded-xl">
+                      All Plans
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="free" className="rounded-xl">
+                      Free
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="starter" className="rounded-xl">
+                      Starter
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="professional" className="rounded-xl">
+                      Professional
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="enterprise" className="rounded-xl">
+                      Enterprise
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+
+                  <DropdownMenuSeparator className="my-2" />
+
+                  <DropdownMenuLabel className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">
+                    Status
+                  </DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={statusFilter}
+                    onValueChange={(v) => setStatusFilter(v as "all" | "active" | "inactive")}
+                  >
+                    <DropdownMenuRadioItem value="all" className="rounded-xl">
+                      All Status
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="active" className="rounded-xl">
+                      Active
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="inactive" className="rounded-xl">
+                      Inactive
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            }
           />
         </div>
 
         {/* Content */}
-        <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
-          {/* Page Header */}
-          <div className="mb-6 lg:mb-8">
-            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-500 text-xs lg:text-sm mt-1">
-              Manage user accounts, enable/disable users, and change their subscription plans.
+        <main className="flex-1 overflow-y-auto pt-2">
+          <div className="flex flex-col gap-1 mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">User Management</h1>
+            <p className="text-sm text-gray-500">
+              View and manage all registered users, their status, and subscription plans.
             </p>
           </div>
-
-          {/* Users Table */}
-          <UsersTable users={managedUsers} onUserUpdate={handleUserUpdate} />
+          <UsersTable
+            users={managedUsers}
+            onUserUpdate={handleUserUpdate}
+            searchQuery={searchQuery}
+            planFilter={planFilter}
+            statusFilter={statusFilter}
+          />
         </main>
       </div>
     </div>

@@ -68,7 +68,7 @@ export default function AdminSidebar() {
       {/* Logo */}
       <div className="p-6">
         <Link href="/admin/dashboard" className="flex items-center gap-2">
-          <Image src={logo_IMG} alt="Hayon" className="w-8 h-8" />
+          <Image width={200} height={200} src={logo_IMG} alt="Hayon" className="w-8 h-8" />
           <span className="text-xl font-semibold text-gray-900">Hayon</span>
           <span className="ml-1 px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-md">
             Admin

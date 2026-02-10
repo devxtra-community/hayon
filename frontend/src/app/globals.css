@@ -268,3 +268,12 @@
 .font-handwriting {
   font-family: 'Kalam', 'Patrick Hand', 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
 }
+
+/* Hide scrollbar for scroll wheel pickers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingH } from "@/components/ui/loading-h";
+import Router from "next/router";
 
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { PlatformSelection } from "@/components/create-post/PlatformSelection";
 import { CreatePostForm } from "@/components/create-post/CreatePostForm";
 import { PostPreview } from "@/components/create-post/PostPreview";
 import { useSearchParams } from "next/navigation";
+import { SubmittingOverlay } from "@/components/create-post/SubmittingOverlay";
 
 export default function CreatePostPage() {
   const searchParams = useSearchParams();
-
+  const router = Router;
   const {
     user,
     viewMode,
@@ -61,11 +64,7 @@ export default function CreatePostPage() {
   }, [searchParams, draftId, loadDraft]);
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingH />;
   }
 
   return (
@@ -84,7 +83,10 @@ export default function CreatePostPage() {
                 {successMessage || "Your post has been successfully processed."}
               </p>
               <Button
-                onClick={() => setIsSuccess(false)}
+                onClick={() => {
+                  router.push("/dashboard/create-post");
+                  setIsSuccess(false);
+                }}
                 className="w-full h-12 rounded-xl text-base"
               >
                 Create Another
@@ -94,14 +96,11 @@ export default function CreatePostPage() {
         )}
 
         {/* Loading/Submitting Overlay */}
-        {isSubmitting && !isSuccess && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-3xl">
-            <div className="flex flex-col items-center">
-              <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">Processing your post...</p>
-            </div>
-          </div>
-        )}
+        <SubmittingOverlay
+          isSubmitting={isSubmitting && !isSuccess}
+          selectedPlatformIds={selectedPlatforms}
+          availablePlatforms={availablePlatforms}
+        />
 
         {/* Main Content Area */}
         <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-8 lg:py-8 scrollbar-hide relative flex flex-col">

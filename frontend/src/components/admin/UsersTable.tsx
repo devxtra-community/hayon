@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Search,
   MoreVertical,
@@ -58,6 +57,9 @@ interface User {
 interface UsersTableProps {
   users: User[];
   onUserUpdate: (userId: string, updates: Partial<User>) => void;
+  searchQuery: string;
+  planFilter: PlanType | "all";
+  statusFilter: "all" | "active" | "inactive";
 }
 
 const planConfig: Record<PlanType, { label: string; color: string; icon: React.ReactNode }> = {
@@ -83,10 +85,13 @@ const planConfig: Record<PlanType, { label: string; color: string; icon: React.R
   },
 };
 
-export default function UsersTable({ users, onUserUpdate }: UsersTableProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [planFilter, setPlanFilter] = useState<PlanType | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+export default function UsersTable({
+  users,
+  onUserUpdate,
+  searchQuery,
+  planFilter,
+  statusFilter,
+}: UsersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -183,66 +188,6 @@ export default function UsersTable({ users, onUserUpdate }: UsersTableProps) {
 
   return (
     <Card className="border-gray-100 overflow-hidden p-0">
-      {/* Header & Filters */}
-      <CardHeader className="p-6 border-b border-gray-100">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <CardTitle className="text-xl">User Management</CardTitle>
-            <CardDescription className="mt-1">
-              Manage user accounts, plans, and permissions
-            </CardDescription>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <Input
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full sm:w-64 bg-gray-50 border-gray-200"
-              />
-            </div>
-
-            {/* Plan Filter */}
-            <Select
-              value={planFilter}
-              onValueChange={(value) => setPlanFilter(value as PlanType | "all")}
-            >
-              <SelectTrigger className="w-full sm:w-40 bg-gray-50 border-gray-200">
-                <SelectValue placeholder="Filter by plan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Plans</SelectItem>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="starter">Starter</SelectItem>
-                <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="enterprise">Enterprise</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Status Filter */}
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}
-            >
-              <SelectTrigger className="w-full sm:w-36 bg-gray-50 border-gray-200">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </CardHeader>
-
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -273,6 +218,8 @@ export default function UsersTable({ users, onUserUpdate }: UsersTableProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
                       <Image
+                        width={200}
+                        height={200}
                         src={user.avatar || "/default-avatar.png"}
                         alt={user.name}
                         className="w-full h-full object-cover"
