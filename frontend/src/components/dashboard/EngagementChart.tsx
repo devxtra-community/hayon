@@ -76,13 +76,6 @@ export default function EngagementChart({ data }: EngagementChartProps) {
               tickLine={false}
               tick={{ fill: "#64748B", fontSize: 12 }}
             />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              axisLine={false}
-              tickLine={false}
-              hide={true}
-            />
             <Tooltip
               contentStyle={{
                 borderRadius: "16px",
@@ -112,7 +105,7 @@ export default function EngagementChart({ data }: EngagementChartProps) {
 
             {/* Posts Bar */}
             <Bar
-              yAxisId="right"
+              yAxisId="left"
               dataKey="posts"
               name="Posts"
               fill="#94A3B8"

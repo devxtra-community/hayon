@@ -1,5 +1,6 @@
 import AnalyticsSnapshotModel from "../models/analyticsSnapshot.model";
 import AccountSnapshotModel from "../models/accountSnapshot.model";
+import PostModel from "../models/post.model";
 import { Types } from "mongoose";
 
 /**
@@ -121,6 +122,9 @@ export const getLatestFollowerCounts = async (userId: string) => {
 
 /**
  * Get engagement timeline (aggregated by day)
+ * Logic:
+ * 1. Calculate platform-specific post completions from PostModel
+ * 2. Calculate daily engagement gains by comparing totals between consecutive days
  */
 export const getEngagementTimeline = async (
   userId: string,
@@ -128,33 +132,105 @@ export const getEngagementTimeline = async (
   endDate: Date,
   platform?: string,
 ) => {
-  const matchStage: any = {
+  // To calculate gain for the first day, we need the total from the day before
+  const baselineDate = new Date(startDate);
+  baselineDate.setDate(baselineDate.getDate() - 1);
+
+  // 1. Get platform-specific post completions
+  const postMatch: any = {
     userId: new Types.ObjectId(userId),
-    snapshotAt: { $gte: startDate, $lte: endDate },
+    "platformStatuses.status": "completed",
+    "platformStatuses.completedAt": { $gte: startDate, $lte: endDate },
   };
 
   if (platform && platform !== "all") {
-    matchStage.platform = platform;
+    postMatch["platformStatuses.platform"] = platform;
   }
 
-  const data = await AnalyticsSnapshotModel.aggregate([
-    {
-      $match: matchStage,
-    },
+  const postsData = await PostModel.aggregate([
+    { $match: { userId: new Types.ObjectId(userId) } },
+    { $unwind: "$platformStatuses" },
+    { $match: postMatch },
     {
       $group: {
         _id: {
-          $dateToString: { format: "%Y-%m-%d", date: "$snapshotAt" },
+          $dateToString: { format: "%Y-%m-%d", date: "$platformStatuses.completedAt" },
         },
-        totalEngagement: { $sum: "$derived.totalEngagement" },
         postCount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // 2. Get daily absolute engagement totals
+  const snapshotMatch: any = {
+    userId: new Types.ObjectId(userId),
+    snapshotAt: { $gte: baselineDate, $lte: endDate },
+  };
+
+  if (platform && platform !== "all") {
+    snapshotMatch.platform = platform;
+  }
+
+  const snapshotData = await AnalyticsSnapshotModel.aggregate([
+    { $match: snapshotMatch },
+    // Sort to get latest snapshot first
+    { $sort: { snapshotAt: -1 } },
+    {
+      $group: {
+        _id: {
+          date: { $dateToString: { format: "%Y-%m-%d", date: "$snapshotAt" } },
+          postId: "$postId",
+          platform: "$platform",
+        },
+        engagement: { $first: "$derived.totalEngagement" },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id.date",
+        totalEngagement: { $sum: "$engagement" },
       },
     },
     { $sort: { _id: 1 } },
   ]);
 
-  // Fill gaps with zeros for missing dates
-  return fillTimelineGaps(data, startDate, endDate, { totalEngagement: 0, postCount: 0 });
+  // 3. Process gains and merge
+  const postCountsMap = new Map(postsData.map((d) => [d._id, d.postCount]));
+  const engagementTotalsMap = new Map(snapshotData.map((d) => [d._id, d.totalEngagement]));
+
+  const timelineData = [];
+  const current = new Date(startDate);
+  const endLimit = new Date(endDate);
+
+  while (current <= endLimit) {
+    const todayStr = current.toISOString().split("T")[0];
+
+    // Calculate Gain
+    const yesterday = new Date(current);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+    const todayTotal = engagementTotalsMap.get(todayStr);
+    const yesterdayTotal = engagementTotalsMap.get(yesterdayStr);
+
+    let gain = 0;
+    if (todayTotal !== undefined) {
+      // If we have data for today, subtract previous known total
+      // Handle the case where yesterday data is missing by searching backwards or assuming 0
+      const prevTotal = yesterdayTotal ?? 0;
+      gain = Math.max(0, todayTotal - prevTotal);
+    }
+
+    timelineData.push({
+      _id: todayStr,
+      totalEngagement: gain,
+      postCount: postCountsMap.get(todayStr) || 0,
+    });
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return timelineData;
 };
 
 /**
