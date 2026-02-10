@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/axios";
-import { Sidebar, Header } from "@/components/dashboard";
+import { Sidebar, Header } from "@/components/shared";
 import DeviceList from "@/components/DeviceList";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";

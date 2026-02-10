@@ -57,6 +57,8 @@ export default function AdminHeader({
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-red-500/30 shadow-sm bg-gray-200">
             <Image
+              width={40}
+              height={40}
               src={userAvatar || "/default-avatar.png"}
               alt={userName}
               className="w-full h-full object-cover"

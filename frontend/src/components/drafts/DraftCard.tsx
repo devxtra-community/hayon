@@ -120,7 +120,7 @@ export function DraftCard({
                 title={platform}
               >
                 <Image
-                  src={`/images/logos/${platform.toLowerCase()}.png`}
+                  src={`/images/platform-logos/${platform.toLowerCase()}.png`}
                   alt={platform}
                   fill
                   className="object-cover"

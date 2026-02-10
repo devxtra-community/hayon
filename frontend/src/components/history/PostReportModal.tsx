@@ -96,7 +96,7 @@ export function PostReportModal({ isOpen, onClose, post, onRetry }: PostReportMo
                 <div className="flex items-center gap-3">
                   <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-sm">
                     <Image
-                      src={`/images/logos/${p.platform.toLowerCase()}.png`}
+                      src={`/images/platform-logos/${p.platform.toLowerCase()}.png`}
                       alt={p.platform}
                       fill
                       className="object-cover"

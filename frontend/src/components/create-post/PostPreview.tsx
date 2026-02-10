@@ -131,7 +131,7 @@ export function PostPreview({
                     <div className="flex items-center gap-2.5">
                       <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-sm">
                         <Image
-                          src={`/images/logos/${platform.id.toLowerCase()}.png`}
+                          src={`/images/platform-logos/${platform.id.toLowerCase()}.png`}
                           alt={platform.name}
                           fill
                           className="object-cover"

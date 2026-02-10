@@ -129,6 +129,12 @@ export default function ConnectedPlatformsCard() {
 
   const connectedList = getConnectedList();
 
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+
+  const handleImageError = (id: string) => {
+    setFailedImages((prev) => ({ ...prev, [id]: true }));
+  };
+
   return (
     <div className="bg-white rounded-2xl p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
@@ -153,65 +159,70 @@ export default function ConnectedPlatformsCard() {
       <div className="flex-1 flex flex-col justify-center min-h-[140px]">
         {connectedList.length > 0 ? (
           <div className="space-y-4">
-            {connectedList.map((account, i) => (
-              <div
-                key={`${account.platform}-${i}`}
-                className="flex items-center justify-between group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0 shadow-sm transition-transform group-hover:scale-105">
-                    {account.avatar ? (
-                      <Image
-                        src={account.avatar}
-                        alt={account.platform}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="relative w-full h-full">
+            {connectedList.map((account, i) => {
+              const accountId = `${account.platform}-${account.handle || i}`;
+              const useFallback = !account.avatar || failedImages[accountId];
+
+              return (
+                <div key={accountId} className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0 shadow-sm transition-transform group-hover:scale-105 bg-gray-50">
+                      {useFallback ? (
                         <Image
-                          src={`/images/logos/${account.platform.toLowerCase()}.png`}
+                          src={`/images/platform-logos/${account.platform.toLowerCase()}.png`}
                           alt={account.platform}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-medium text-gray-900 truncate block">
-                      {account.displayName || (account.handle ? account.handle : account.platform)}
-                    </span>
-                    <span className="text-xs text-gray-500 truncate block">{account.platform}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 transition-opacity">
-                  <button
-                    onClick={() => handleRefresh(account.platform)}
-                    disabled={refreshing[account.platform.toLowerCase()]}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                    title="Refresh Profile"
-                  >
-                    <RefreshCw
-                      size={14}
-                      className={cn(
-                        refreshing[account.platform.toLowerCase()] ? "animate-spin" : "",
+                      ) : (
+                        <Image
+                          src={account.avatar!}
+                          alt={account.platform}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                          onError={() => handleImageError(accountId)}
+                        />
                       )}
-                    />
-                  </button>
-                  <a
-                    href={getProfileUrl(account)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                    title="Visit Profile"
-                  >
-                    <ExternalLink size={14} />
-                  </a>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-gray-900 truncate block">
+                        {account.displayName ||
+                          (account.handle ? account.handle : account.platform)}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate block">
+                        {account.platform}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 transition-opacity">
+                    <button
+                      onClick={() => handleRefresh(account.platform)}
+                      disabled={refreshing[account.platform.toLowerCase()]}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                      title="Refresh Profile"
+                    >
+                      <RefreshCw
+                        size={14}
+                        className={cn(
+                          refreshing[account.platform.toLowerCase()] ? "animate-spin" : "",
+                        )}
+                      />
+                    </button>
+                    <a
+                      href={getProfileUrl(account)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                      title="Visit Profile"
+                    >
+                      <ExternalLink size={14} />
+                    </a>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center text-center py-4">

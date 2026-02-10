@@ -2,8 +2,9 @@ import { Request, Response } from "express";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import logger from "../utils/logger";
 import * as postRepository from "../repositories/post.repository";
-import { Producer } from "../lib/queues/producer";
-import { PostStatus, PlatformStatus, Post } from "../interfaces/post.interface";
+import { Producer } from "../lib/queues/posting.producer";
+import { PostStatus, PlatformStatus, Post, PlatformType } from "../interfaces/post.interface";
+import { getLatestSnapshotsForPost } from "../repositories/analytics.repository";
 import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
@@ -185,8 +186,10 @@ export const getPostById = async (req: Request, res: Response) => {
       return new ErrorResponse("Unauthorized", { status: 403 }).send(res);
     }
 
+    const analytics = await getLatestSnapshotsForPost(postId);
+
     return new SuccessResponse("Post fetched successfully", {
-      data: { post },
+      data: { post, analytics },
     }).send(res);
   } catch (error) {
     logger.error("Get post by ID error", error);
@@ -280,7 +283,7 @@ export const retryPost = async (req: Request, res: Response) => {
     // Reset status for failed platforms and re-enqueue
     const retryPromises = failedPlatforms.map(async (platform) => {
       // Update DB status back to pending
-      await postRepository.updatePlatformStatus(postId, platform, {
+      await postRepository.updatePlatformStatus(postId, platform as PlatformType, {
         status: "pending",
         error: undefined,
       });

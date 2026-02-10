@@ -1,8 +1,21 @@
 import mongoose, { Schema, Model, Types, Document } from "mongoose";
 import { Post, ALL_PLATFORMS, PlatformStatus } from "../interfaces/post.interface";
 
-export interface IPostDocument extends Post, Document {
+export interface IPostDocument extends Omit<Post, "platformStatuses">, Document {
   _id: Types.ObjectId;
+  platformStatuses: Types.DocumentArray<
+    {
+      platform: string;
+      status: string;
+      platformPostId?: string;
+      platformPostUrl?: string;
+      error?: string;
+      attemptCount: number;
+      lastAttemptAt?: Date;
+      completedAt?: Date;
+      lastAnalyticsFetch?: Date;
+    } & Document
+  >;
 }
 
 const mediaItemSchema = new Schema(
@@ -56,6 +69,7 @@ const platformPostStatusSchema = new Schema(
     },
     lastAttemptAt: Date,
     completedAt: Date,
+    lastAnalyticsFetch: Date, // Track when we last fetched analytics
   },
   {
     _id: false,
