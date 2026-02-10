@@ -2,12 +2,15 @@
 
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { SiMastodon, SiBluesky, SiTumblr } from "react-icons/si";
 
 interface ScheduledPost {
   _id: string;
   content: {
     text: string;
+    mediaItems?: Array<{
+      s3Url: string;
+      mimeType: string;
+    }>;
   };
   selectedPlatforms: string[];
   scheduledAt: string;
@@ -18,29 +21,18 @@ interface UpcomingPostsCarouselProps {
 }
 
 function getPlatformIcon(platform: string) {
-  switch (platform) {
-    case "mastodon":
-      return <SiMastodon size={16} />;
-    case "bluesky":
-      return <SiBluesky size={16} />;
-    case "tumblr":
-      return <SiTumblr size={16} />;
-    default:
-      return <SiMastodon size={16} />;
-  }
-}
+  const logoPath = `/images/platform-logos/${platform}.png`;
 
-function getPlatformColors(platform: string) {
-  switch (platform) {
-    case "mastodon":
-      return "bg-purple-100 text-purple-500";
-    case "bluesky":
-      return "bg-blue-100 text-blue-500";
-    case "tumblr":
-      return "bg-slate-200 text-slate-600";
-    default:
-      return "bg-slate-100 text-slate-500";
-  }
+  return (
+    <img
+      src={logoPath}
+      alt={platform}
+      className="w-5 h-5 object-contain"
+      onError={(e) => {
+        (e.target as HTMLImageElement).style.display = "none";
+      }}
+    />
+  );
 }
 
 function formatScheduledTime(dateStr: string): string {
@@ -55,13 +47,16 @@ function formatScheduledTime(dateStr: string): string {
     hour12: true,
   });
 
+  const monthStr = date.toLocaleDateString("en-US", { month: "short" });
+  const dayOfMonth = date.getDate();
+
   if (date.toDateString() === now.toDateString()) {
     return `Today, ${timeStr}`;
   } else if (date.toDateString() === tomorrow.toDateString()) {
     return `Tomorrow, ${timeStr}`;
   } else {
-    const dayStr = date.toLocaleDateString("en-US", { weekday: "short" });
-    return `${dayStr}, ${timeStr}`;
+    const dayOfWeek = date.toLocaleDateString("en-US", { weekday: "short" });
+    return `${dayOfWeek}, ${monthStr} ${dayOfMonth}, ${timeStr}`;
   }
 }
 
@@ -91,45 +86,70 @@ export default function UpcomingPostsCarousel({ posts }: UpcomingPostsCarouselPr
   };
 
   const currentPost = displayPosts[currentIndex];
-  const platform = currentPost.selectedPlatforms?.[0] || "mastodon";
+  const platforms = currentPost.selectedPlatforms || [];
+  const media = currentPost.content.mediaItems?.[0];
 
   return (
-    <div className="bg-white rounded-2xl p-6 h-full flex flex-col border border-slate-100 shadow-sm relative group">
+    <div className="bg-white rounded-2xl p-6 h-full flex flex-col border border-slate-100 shadow-sm relative group overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-slate-800">Upcoming Posts</h3>
         {displayPosts.length > 1 && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative z-10">
             <button
               onClick={prevSlide}
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors bg-white/50 backdrop-blur-sm shadow-sm"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
             <button
               onClick={nextSlide}
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors bg-white/50 backdrop-blur-sm shadow-sm"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </div>
         )}
       </div>
 
       <div className="flex-1 flex flex-col justify-between">
-        <div className="bg-slate-50 rounded-xl p-4 flex-1 mb-4 relative overflow-hidden">
-          {/* Platform Icon Badge */}
-          <div className={`absolute top-4 right-4 p-2 rounded-full ${getPlatformColors(platform)}`}>
-            {getPlatformIcon(platform)}
+        <div className="bg-slate-50 rounded-xl p-4 flex-1 mb-4 relative overflow-hidden flex flex-col">
+          {/* Platforms List (Vertical) */}
+          <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
+            {platforms.map((p) => (
+              <div
+                key={p}
+                className={`p-1 rounded-md border bg-white shadow-sm transition-transform hover:scale-110`}
+                title={p}
+              >
+                {getPlatformIcon(p)}
+              </div>
+            ))}
           </div>
 
-          <p className="text-slate-700 font-medium line-clamp-4 leading-relaxed pr-8">
+          {/* Media Preview */}
+          {media?.s3Url && (
+            <div className="w-full h-40 mb-3 rounded-lg overflow-hidden border border-slate-200 bg-slate-200">
+              <img
+                src={media.s3Url}
+                alt="Post preview"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </div>
+          )}
+
+          <p className="text-slate-700 font-medium text-sm line-clamp-2 leading-relaxed flex-1 pr-10">
             {currentPost.content.text}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
-          <Clock size={16} className="text-[#318D62]" />
-          <span>
+        <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold mt-auto px-1">
+          <div className="h-6 w-6 rounded-full bg-green-50 flex items-center justify-center">
+            <Clock size={14} className="text-[#318D62]" />
+          </div>
+          <span className="truncate">
             {currentPost._id === "placeholder" ? "—" : formatScheduledTime(currentPost.scheduledAt)}
           </span>
         </div>
@@ -137,7 +157,7 @@ export default function UpcomingPostsCarousel({ posts }: UpcomingPostsCarouselPr
 
       {/* Pagination dots */}
       {displayPosts.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-2">
+        <div className="flex justify-center gap-1.5 mt-3">
           {displayPosts.map((_, idx) => (
             <div
               key={idx}
