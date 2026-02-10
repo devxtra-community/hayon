@@ -124,6 +124,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
       });
     }
 
+    // console.log("Admin login attempt with body:", req.body); // Debugging line to check email
     const { user, accessToken, refreshToken } = await adminLoginService(
       req.body,
       req.ip,

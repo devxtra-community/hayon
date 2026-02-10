@@ -8,6 +8,10 @@ import authRoutes from "./routes/auth.routes";
 import paymentRoutes from "./routes/payment.routes";
 import profileRoutes from "./routes/profile.routes";
 import generativeRoutes from "./routes/generative.routes";
+import analyticsRoutes from "./routes/analytics.routes";
+import platformRoutes from "./routes/platform.routes";
+import postRoutes from "./routes/post.routes";
+import adminRoutes from "./routes/admin.routes";
 // =========
 import passport from "./config/passport";
 import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
@@ -19,10 +23,7 @@ import logger from "./utils/logger";
 import https from "https";
 import fs from "fs";
 import path from "path";
-import platformRoutes from "./routes/platform.routes";
-import postRoutes from "./routes/post.routes";
 import { connectRabbitMQ } from "./config/rabbitmq";
-import analyticsRoutes from "./routes/analytics.routes"; // Import analytics routes
 import { AnalyticsCronService } from "./services/cron/analytics.cron";
 
 const expressInstance: Application = express();
@@ -40,7 +41,7 @@ const bootstrap = async () => {
     ) => {
       if (!origin) return callback(null, true);
 
-      if (origin === ENV.APP.FRONTEND_URL || origin === "http://localhost:3000") {
+      if (origin === ENV.APP.FRONTEND_URL || origin === "http://localhost:3001") {
         return callback(null, true);
       } else {
         logger.warn(`Blocked CORS request from origin: ${origin}`);
@@ -73,8 +74,8 @@ const bootstrap = async () => {
   appRouter.use("/platform", platformRoutes);
   appRouter.use("/posts", postRoutes);
   appRouter.use("/generate", generativeRoutes);
-  appRouter.use("/analytics", analyticsRoutes); 
-
+  appRouter.use("/analytics", analyticsRoutes);
+  appRouter.use("/admin", adminRoutes);
 
   expressInstance.use(notFoundHandler);
   expressInstance.use(serverErrorHandler);

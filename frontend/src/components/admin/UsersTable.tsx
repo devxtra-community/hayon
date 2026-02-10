@@ -22,7 +22,6 @@ import {
   UserCheck,
   UserX,
   Crown,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { api } from "@/lib/axios";
@@ -38,49 +37,29 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
-
-// Plan types
-type PlanType = "free" | "starter" | "professional" | "enterprise";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  role: "user" | "admin";
-  isActive: boolean;
-  plan: PlanType;
-  createdAt: string;
-  lastLogin?: string;
-}
+import type { DeepPartial, IUser, SubscriptionPlan } from "@/types/user.types";
 
 interface UsersTableProps {
-  users: User[];
-  onUserUpdate: (userId: string, updates: Partial<User>) => void;
+  users: IUser[];
+  onUserUpdate: (userId: string, updates: DeepPartial<IUser>) => void;
   searchQuery: string;
-  planFilter: PlanType | "all";
+  planFilter: SubscriptionPlan | "all";
   statusFilter: "all" | "active" | "inactive";
 }
 
-const planConfig: Record<PlanType, { label: string; color: string; icon: React.ReactNode }> = {
+const planConfig: Record<
+  SubscriptionPlan,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
   free: {
     label: "Free",
     color: "bg-gray-100 text-gray-700 border-gray-200",
     icon: <Zap size={12} />,
   },
-  starter: {
-    label: "Starter",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
-    icon: <Sparkles size={12} />,
-  },
-  professional: {
+
+  pro: {
     label: "Professional",
     color: "bg-purple-50 text-purple-700 border-purple-200",
-    icon: <Crown size={12} />,
-  },
-  enterprise: {
-    label: "Enterprise",
-    color: "bg-amber-50 text-amber-700 border-amber-200",
     icon: <Crown size={12} />,
   },
 };
@@ -97,7 +76,7 @@ export default function UsersTable({
     open: boolean;
     userId: string;
     action: "enable" | "disable" | "changePlan";
-    newPlan?: PlanType;
+    newPlan?: SubscriptionPlan;
     userName?: string;
   }>({ open: false, userId: "", action: "enable" });
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -110,11 +89,11 @@ export default function UsersTable({
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPlan = planFilter === "all" || user.plan === planFilter;
+    const matchesPlan = planFilter === "all" || user.subscription?.plan === planFilter;
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "active" && user.isActive) ||
-      (statusFilter === "inactive" && !user.isActive);
+      (statusFilter === "active" && !user.isDisabled) ||
+      (statusFilter === "inactive" && user.isDisabled);
     return matchesSearch && matchesPlan && matchesStatus;
   });
 
@@ -125,16 +104,16 @@ export default function UsersTable({
     currentPage * itemsPerPage,
   );
 
-  const handleToggleStatus = async (userId: string, currentStatus: boolean, userName: string) => {
+  const handleToggleStatus = async (userId: string, isEnabled: boolean, userName: string) => {
     setConfirmDialog({
       open: true,
       userId,
-      action: currentStatus ? "disable" : "enable",
+      action: isEnabled ? "disable" : "enable",
       userName,
     });
   };
 
-  const handlePlanChange = async (userId: string, newPlan: PlanType, userName: string) => {
+  const handlePlanChange = async (userId: string, newPlan: SubscriptionPlan, userName: string) => {
     setConfirmDialog({
       open: true,
       userId,
@@ -153,7 +132,7 @@ export default function UsersTable({
         const newStatus = action === "enable";
         // API call to update user status
         await api.patch(`/admin/users/${userId}/status`, { isActive: newStatus });
-        onUserUpdate(userId, { isActive: newStatus });
+        onUserUpdate(userId, { isDisabled: !newStatus });
         showToast(
           "success",
           `User ${action === "enable" ? "Enabled" : "Disabled"}`,
@@ -161,8 +140,8 @@ export default function UsersTable({
         );
       } else if (action === "changePlan" && newPlan) {
         // API call to update user plan
-        await api.patch(`/admin/users/${userId}/plan`, { plan: newPlan });
-        onUserUpdate(userId, { plan: newPlan });
+        await api.patch(`/admin/update-user-plan/${userId}?plan=${newPlan}`);
+        onUserUpdate(userId, { subscription: { plan: newPlan } });
         showToast(
           "success",
           "Plan Updated",
@@ -212,7 +191,7 @@ export default function UsersTable({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {paginatedUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+              <tr key={user._id} className="hover:bg-gray-50/50 transition-colors">
                 {/* User Info */}
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">
@@ -238,17 +217,19 @@ export default function UsersTable({
                 {/* Plan */}
                 <td className="py-4 px-6">
                   <Select
-                    value={user.plan}
+                    value={user?.subscription?.plan}
                     onValueChange={(value) =>
-                      handlePlanChange(user.id, value as PlanType, user.name)
+                      handlePlanChange(user._id, value as SubscriptionPlan, user.name)
                     }
-                    disabled={isUpdating === user.id}
+                    disabled={isUpdating === user._id}
                   >
-                    <SelectTrigger className={`w-36 h-8 ${planConfig[user.plan].color} border`}>
+                    <SelectTrigger className={`w-36 h-8 border`}>
                       <SelectValue>
                         <div className="flex items-center gap-1.5">
-                          {planConfig[user.plan].icon}
-                          <span className="text-xs font-medium">{planConfig[user.plan].label}</span>
+                          {planConfig[user?.subscription?.plan]?.icon}
+                          <span className="text-xs font-medium">
+                            {planConfig[user?.subscription?.plan]?.label}
+                          </span>
                         </div>
                       </SelectValue>
                     </SelectTrigger>
@@ -259,22 +240,11 @@ export default function UsersTable({
                           <span>Free</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="starter">
-                        <div className="flex items-center gap-2">
-                          <Sparkles size={14} className="text-blue-500" />
-                          <span>Starter</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="professional">
+
+                      <SelectItem value="pro">
                         <div className="flex items-center gap-2">
                           <Crown size={14} className="text-purple-500" />
                           <span>Professional</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="enterprise">
-                        <div className="flex items-center gap-2">
-                          <Crown size={14} className="text-amber-500" />
-                          <span>Enterprise</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -285,20 +255,22 @@ export default function UsersTable({
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">
                     <Switch
-                      checked={user.isActive}
-                      onCheckedChange={() => handleToggleStatus(user.id, user.isActive, user.name)}
-                      disabled={isUpdating === user.id}
+                      checked={!user.isDisabled}
+                      onCheckedChange={() =>
+                        handleToggleStatus(user._id, !user.isDisabled, user.name)
+                      }
+                      disabled={isUpdating === user._id}
                       className="data-[state=checked]:bg-green-500"
                     />
                     <Badge
                       variant="outline"
                       className={`text-xs ${
-                        user.isActive
+                        !user.isDisabled
                           ? "bg-green-50 text-green-700 border-green-200"
                           : "bg-red-50 text-red-600 border-red-200"
                       }`}
                     >
-                      {user.isActive ? (
+                      {!user.isDisabled ? (
                         <span className="flex items-center gap-1">
                           <UserCheck size={12} />
                           Active
@@ -417,7 +389,7 @@ export default function UsersTable({
                 `Are you sure you want to disable ${confirmDialog.userName}? They will not be able to log in until re-enabled.`}
               {confirmDialog.action === "changePlan" &&
                 `Are you sure you want to change ${confirmDialog.userName}'s plan to ${
-                  confirmDialog.newPlan ? planConfig[confirmDialog.newPlan].label : ""
+                  confirmDialog.newPlan ? planConfig[confirmDialog?.newPlan]?.label : ""
                 }?`}
             </AlertDialogDescription>
           </AlertDialogHeader>

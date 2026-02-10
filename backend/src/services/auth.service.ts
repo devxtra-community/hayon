@@ -131,6 +131,7 @@ export const signupService = async (data: SignupData, ipAddress?: string, userAg
   await createRefreshToken({
     tokenId,
     userId: user._id,
+    role: user.role,
     expiresAt: refreshExpiresAt,
     ipAddress,
     userAgent,
@@ -144,6 +145,7 @@ export const signupService = async (data: SignupData, ipAddress?: string, userAg
   const refreshToken = generateRefreshToken({
     sub: user._id.toString(),
     tokenId,
+    role: user.role,
   });
 
   return {
@@ -184,6 +186,7 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
 
   await createRefreshToken({
     tokenId,
+    role: user.role,
     userId: user._id,
     expiresAt: refreshExpiresAt,
     ipAddress,
@@ -197,6 +200,7 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
 
   const refreshToken = generateRefreshToken({
     sub: user._id.toString(),
+    role: user.role,
     tokenId,
   });
 
@@ -243,10 +247,13 @@ export const adminLoginService = async (
   await createRefreshToken({
     tokenId,
     userId: user._id,
+    role: user.role,
     expiresAt: refreshExpiresAt,
     ipAddress,
     userAgent,
   });
+
+  console.log("refresh token created"); // Debugging line
 
   const accessToken = generateAccessToken({
     sub: user._id.toString(),
@@ -256,6 +263,7 @@ export const adminLoginService = async (
   const refreshToken = generateRefreshToken({
     sub: user._id.toString(),
     tokenId,
+    role: user.role,
   });
 
   return {
@@ -298,6 +306,7 @@ export const refreshService = async (
   await RefreshToken.create({
     tokenId: newTokenId,
     userId: existingToken.userId,
+    role: existingToken.role,
     expiresAt: newExpiresAt,
     ipAddress: ipAddress || existingToken.ipAddress, // Update if new, else keep old
     userAgent: userAgent || existingToken.userAgent,
@@ -305,12 +314,13 @@ export const refreshService = async (
 
   const accessToken = generateAccessToken({
     sub: existingToken.userId.toString(),
-    role: "user", // or fetch role if needed
+    role: existingToken.role,
   });
 
   const refreshToken = generateRefreshToken({
     sub: existingToken.userId.toString(),
     tokenId: newTokenId,
+    role: existingToken.role,
   });
 
   return { accessToken, refreshToken };

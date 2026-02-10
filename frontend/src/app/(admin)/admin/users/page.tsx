@@ -15,6 +15,7 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import type { DeepPartial, IUser, SubscriptionPlan } from "@/types/user.types";
 
 interface User {
   id: string;
@@ -24,159 +25,14 @@ interface User {
   avatar: string;
 }
 
-interface ManagedUser {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  role: "user" | "admin";
-  isActive: boolean;
-  plan: "free" | "starter" | "professional" | "enterprise";
-  createdAt: string;
-  lastLogin?: string;
-}
-
-type PlanType = "free" | "starter" | "professional" | "enterprise";
-
-const mockUsers: ManagedUser[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "https://ui-avatars.com/api/?name=John+Doe&background=random",
-    role: "user",
-    isActive: true,
-    plan: "professional",
-    createdAt: "2024-01-15T10:30:00Z",
-    lastLogin: "2024-01-05T08:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Jane+Smith&background=random",
-    role: "user",
-    isActive: true,
-    plan: "starter",
-    createdAt: "2024-02-20T14:45:00Z",
-    lastLogin: "2024-01-04T16:30:00Z",
-  },
-  {
-    id: "3",
-    name: "Mike Johnson",
-    email: "mike@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Mike+Johnson&background=random",
-    role: "user",
-    isActive: false,
-    plan: "free",
-    createdAt: "2024-03-10T09:15:00Z",
-  },
-  {
-    id: "4",
-    name: "Sarah Williams",
-    email: "sarah@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Sarah+Williams&background=random",
-    role: "user",
-    isActive: true,
-    plan: "enterprise",
-    createdAt: "2024-01-05T11:20:00Z",
-    lastLogin: "2024-01-05T10:00:00Z",
-  },
-  {
-    id: "5",
-    name: "Alex Brown",
-    email: "alex@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Alex+Brown&background=random",
-    role: "user",
-    isActive: true,
-    plan: "professional",
-    createdAt: "2024-04-01T08:00:00Z",
-    lastLogin: "2024-01-03T14:15:00Z",
-  },
-  {
-    id: "6",
-    name: "Emily Davis",
-    email: "emily@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Emily+Davis&background=random",
-    role: "user",
-    isActive: true,
-    plan: "free",
-    createdAt: "2024-05-15T16:30:00Z",
-  },
-  {
-    id: "7",
-    name: "Chris Wilson",
-    email: "chris@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Chris+Wilson&background=random",
-    role: "user",
-    isActive: false,
-    plan: "starter",
-    createdAt: "2024-06-20T12:00:00Z",
-  },
-  {
-    id: "8",
-    name: "Rachel Green",
-    email: "rachel@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Rachel+Green&background=random",
-    role: "user",
-    isActive: true,
-    plan: "professional",
-    createdAt: "2024-07-10T09:45:00Z",
-    lastLogin: "2024-01-05T07:30:00Z",
-  },
-  {
-    id: "9",
-    name: "David Miller",
-    email: "david@example.com",
-    avatar: "https://ui-avatars.com/api/?name=David+Miller&background=random",
-    role: "user",
-    isActive: true,
-    plan: "starter",
-    createdAt: "2024-08-22T13:00:00Z",
-    lastLogin: "2024-01-04T09:20:00Z",
-  },
-  {
-    id: "10",
-    name: "Lisa Anderson",
-    email: "lisa@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Lisa+Anderson&background=random",
-    role: "user",
-    isActive: true,
-    plan: "enterprise",
-    createdAt: "2024-09-05T10:15:00Z",
-    lastLogin: "2024-01-05T11:45:00Z",
-  },
-  {
-    id: "11",
-    name: "Tom Harris",
-    email: "tom@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Tom+Harris&background=random",
-    role: "user",
-    isActive: false,
-    plan: "free",
-    createdAt: "2024-10-18T15:30:00Z",
-  },
-  {
-    id: "12",
-    name: "Sophie Turner",
-    email: "sophie@example.com",
-    avatar: "https://ui-avatars.com/api/?name=Sophie+Turner&background=random",
-    role: "user",
-    isActive: true,
-    plan: "professional",
-    createdAt: "2024-11-25T08:45:00Z",
-    lastLogin: "2024-01-05T06:00:00Z",
-  },
-];
-
 export default function AdminUsersPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null); //TODO :: ANDD A TYPE FOR uSER
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [managedUsers, setManagedUsers] = useState<ManagedUser[]>(mockUsers);
+  const [managedUsers, setManagedUsers] = useState<IUser[]>([]);
 
   // Lifted state for search and filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [planFilter, setPlanFilter] = useState<PlanType | "all">("all");
+  const [planFilter, setPlanFilter] = useState<SubscriptionPlan | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   useEffect(() => {
@@ -192,8 +48,36 @@ export default function AdminUsersPage() {
     fetchUser();
   }, []);
 
-  const handleUserUpdate = (userId: string, updates: Partial<ManagedUser>) => {
-    setManagedUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updates } : u)));
+  // Supperating for
+  useEffect(() => {
+    const fetchManagedUsers = async () => {
+      try {
+        const { data } = await api.get("/admin/get-all-users");
+        setManagedUsers(data.data);
+      } catch (error) {
+        console.error("Failed to fetch managed users", error);
+      }
+    };
+
+    fetchManagedUsers();
+  }, []);
+
+  const handleUserUpdate = (userId: string, updates: DeepPartial<IUser>) => {
+    setManagedUsers((prev) =>
+      prev.map((u) => {
+        if (u._id !== userId) return u;
+        return {
+          ...u,
+          ...updates,
+          auth: updates.auth ? { ...u.auth, ...updates.auth } : u.auth,
+          subscription: updates.subscription
+            ? { ...u.subscription, ...updates.subscription }
+            : u.subscription,
+          usage: updates.usage ? { ...u.usage, ...updates.usage } : u.usage,
+          limits: updates.limits ? { ...u.limits, ...updates.limits } : u.limits,
+        };
+      }),
+    );
   };
 
   if (!user) {
@@ -267,7 +151,7 @@ export default function AdminUsersPage() {
                   </DropdownMenuLabel>
                   <DropdownMenuRadioGroup
                     value={planFilter}
-                    onValueChange={(v) => setPlanFilter(v as PlanType | "all")}
+                    onValueChange={(v) => setPlanFilter(v as SubscriptionPlan | "all")}
                   >
                     <DropdownMenuRadioItem value="all" className="rounded-xl">
                       All Plans
@@ -275,14 +159,8 @@ export default function AdminUsersPage() {
                     <DropdownMenuRadioItem value="free" className="rounded-xl">
                       Free
                     </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="starter" className="rounded-xl">
-                      Starter
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="professional" className="rounded-xl">
-                      Professional
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="enterprise" className="rounded-xl">
-                      Enterprise
+                    <DropdownMenuRadioItem value="pro" className="rounded-xl">
+                      Pro
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
 

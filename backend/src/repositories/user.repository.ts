@@ -82,3 +82,11 @@ export const IncreaseCaptionGenerations = async (userId: string) => {
 export const IncreasePostsCreated = async (userId: string) => {
   return User.findByIdAndUpdate(userId, { $inc: { "usage.postsCreated": 1 } }, { new: true });
 };
+
+export const findAllUsers = async () => {
+  return User.find();
+};
+
+export const updateUserSubscription = async (userId: string, plan: "free" | "pro") => {
+  return User.findByIdAndUpdate(userId, { $set: { "subscription.plan": plan } }, { new: true });
+};
