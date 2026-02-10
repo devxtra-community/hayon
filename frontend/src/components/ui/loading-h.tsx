@@ -1,8 +1,8 @@
 "use client";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 export const LoadingH = () => {
-  const dotVariants = {
+  const dotVariants: Variants = {
     initial: { opacity: 0.3, scale: 0.9 },
     animate: (i: number) => ({
       opacity: [0.3, 1, 0.3],
