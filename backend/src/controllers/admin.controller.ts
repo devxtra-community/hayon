@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import { findAllUsers, updateUserSubscription } from "../repositories/user.repository";
+import {
+  findAllUsers,
+  updateUserSubscription,
+  updateUserActivityById,
+  getUsersAnalytics,
+} from "../repositories/user.repository";
 import { SuccessResponse, ErrorResponse } from "../utils/responses";
 import logger from "../utils/logger";
 
@@ -31,5 +36,49 @@ export const updateUserPlan = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Failed to update user plan", { error, userId, plan });
     return new ErrorResponse("Failed to update user plan", { status: 500 }).send(res);
+  }
+};
+
+export const updateUserActivity = async (req: Request, res: Response) => {
+  const userId = req.params.id;
+  const { activity } = req.body;
+
+  if (typeof activity !== "boolean") {
+    return new ErrorResponse("Invalid activity status. Must be a boolean.", { status: 400 }).send(
+      res,
+    );
+  }
+  try {
+    const updatedUser = await updateUserActivityById(userId, activity);
+    return new SuccessResponse("User activity status updated successfully", {
+      data: updatedUser,
+    }).send(res);
+  } catch (error) {
+    logger.error("Failed to update user activity status", { error, userId, activity });
+    return new ErrorResponse("Failed to update user activity status", { status: 500 }).send(res);
+  }
+};
+
+export const getAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { totalUsers, activeUsers, inactiveUsers, paidUsers, topPlan } =
+      await getUsersAnalytics();
+
+    // Implement analytics logic here (e.g., aggregate user data, usage statistics, etc.)
+    const analyticsData = {
+      totalUsers: totalUsers,
+      activeUsers: activeUsers,
+      inactiveUsers: inactiveUsers,
+      paidUsers: paidUsers,
+      monthlyGrowth: 25.5, // Example of a simple analytics metric
+      topPlan: topPlan === "pro" ? "Professional" : "Free",
+    };
+
+    return new SuccessResponse("Analytics retrieved successfully", { data: analyticsData }).send(
+      res,
+    );
+  } catch (error) {
+    logger.error("Failed to retrieve analytics", { error });
+    return new ErrorResponse("Failed to retrieve analytics", { status: 500 }).send(res);
   }
 };

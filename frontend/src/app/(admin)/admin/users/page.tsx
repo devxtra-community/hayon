@@ -5,6 +5,7 @@ import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { AdminSidebar, AdminHeader, UsersTable } from "@/components/admin";
 import { Filter } from "lucide-react";
+import { LoadingH } from "@/components/ui/loading-h";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,10 +84,7 @@ export default function AdminUsersPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-          <p className="text-gray-500 font-medium">Loading...</p>
-        </div>
+        <LoadingH theme="admin" />
       </div>
     );
   }

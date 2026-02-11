@@ -90,3 +90,27 @@ export const findAllUsers = async () => {
 export const updateUserSubscription = async (userId: string, plan: "free" | "pro") => {
   return User.findByIdAndUpdate(userId, { $set: { "subscription.plan": plan } }, { new: true });
 };
+
+export const updateUserActivityById = async (userId: string, activity: boolean) => {
+  return User.findByIdAndUpdate(userId, { $set: { isDisabled: activity } }, { new: true });
+};
+
+export const getUsersAnalytics = async () => {
+  const totalUsers = await User.countDocuments();
+  const activeUsers = await User.countDocuments({ isDisabled: false });
+  const inactiveUsers = await User.countDocuments({ isDisabled: true });
+  const paidUsers = await User.countDocuments({ "subscription.plan": "pro" });
+  const topPlan = await User.aggregate([
+    { $group: { _id: "$subscription.plan", count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 1 },
+  ]);
+
+  return {
+    totalUsers,
+    activeUsers,
+    inactiveUsers,
+    paidUsers,
+    topPlan: topPlan[0]?._id || "None",
+  };
+};

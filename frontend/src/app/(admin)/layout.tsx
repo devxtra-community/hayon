@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, getAccessToken, setAccessToken } from "@/lib/axios";
+import { LoadingH } from "@/components/ui/loading-h";
 
 interface User {
   id: string;
@@ -55,8 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-        <p className="ml-4 text-gray-600">Loading admin...</p>
+        <LoadingH theme="admin" />
       </div>
     );
   }

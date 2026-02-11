@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { api, clearAccessToken } from "@/lib/axios";
-import logo_IMG from "@/assets/logo.png";
+import logo_IMG from "@/assets/logo-red.png";
 
 import {
   LayoutDashboard,
@@ -66,7 +66,7 @@ export default function AdminSidebar() {
   return (
     <aside className="w-64 h-full bg-[#F7F7F7] rounded-xl flex flex-col shadow-sm">
       {/* Logo */}
-      <div className="p-6">
+      <div className="w-full h-20 flex justify-center items-center gap-2">
         <Link href="/admin/dashboard" className="flex items-center gap-2">
           <Image width={200} height={200} src={logo_IMG} alt="Hayon" className="w-8 h-8" />
           <span className="text-xl font-semibold text-gray-900">Hayon</span>

@@ -7,6 +7,7 @@ import { AdminSidebar, AdminHeader, StatsCards } from "@/components/admin";
 import { ActivityChart } from "@/components/admin/charts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LoadingH } from "@/components/ui/loading-h";
 import Link from "next/link";
 import { RefreshCw, Users, BarChart3, ArrowRight } from "lucide-react";
 
@@ -22,6 +23,14 @@ export default function AdminDashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    inactiveUsers: 0,
+    paidUsers: 0,
+    monthlyGrowth: 0,
+    topPlan: "",
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,29 +46,30 @@ export default function AdminDashboardPage() {
     fetchUser();
   }, []);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data } = await api.get("/admin/analytics");
+        setStats(data.data);
+        console.log("Fetched dashboard stats:", data.data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsRefreshing(false);
   };
 
-  // Mock stats
-  const stats = {
-    totalUsers: 1380,
-    activeUsers: 1120,
-    inactiveUsers: 260,
-    paidUsers: 930,
-    monthlyGrowth: 15.2,
-    topPlan: "Professional",
-  };
-
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-          <p className="text-gray-500 font-medium">Loading admin dashboard...</p>
-        </div>
+        <LoadingH theme="admin" />
       </div>
     );
   }

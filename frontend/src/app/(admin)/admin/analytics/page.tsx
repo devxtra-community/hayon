@@ -11,6 +11,7 @@ import {
   ActivityChart,
 } from "@/components/admin/charts";
 import { Button } from "@/components/ui/button";
+import { LoadingH } from "@/components/ui/loading-h";
 import {
   Select,
   SelectContent,
@@ -59,10 +60,7 @@ export default function AdminAnalyticsPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-          <p className="text-gray-500 font-medium">Loading...</p>
-        </div>
+        <LoadingH theme="admin" />
       </div>
     );
   }

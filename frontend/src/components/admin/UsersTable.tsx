@@ -130,8 +130,8 @@ export default function UsersTable({
     try {
       if (action === "enable" || action === "disable") {
         const newStatus = action === "enable";
-        // API call to update user status
-        await api.patch(`/admin/users/${userId}/status`, { isActive: newStatus });
+
+        await api.patch(`/admin/update-user-activity/${userId}`, { activity: newStatus });
         onUserUpdate(userId, { isDisabled: !newStatus });
         showToast(
           "success",
