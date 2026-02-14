@@ -1,9 +1,10 @@
 "use client";
 
-import { Search, Bell, Menu, Filter } from "lucide-react";
+import { Search, Menu, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 interface HeaderProps {
   userName: string;
@@ -67,13 +68,7 @@ export default function Header({
       {/* Right Section */}
       <div className="flex items-center gap-4 ml-auto">
         {/* Notification Bell */}
-        <button className="relative w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors">
-          <Bell size={20} className="text-black" strokeWidth={2} />
-          {/* Notification dot */}
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-white border-[1.5px] border-white rounded-full flex items-center justify-center">
-            <span className="w-1.5 h-1.5 bg-black rounded-full block"></span>
-          </span>
-        </button>
+        <NotificationDropdown />
 
         {/* User Profile */}
         <div className="flex items-center gap-3">
