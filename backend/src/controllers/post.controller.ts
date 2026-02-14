@@ -10,6 +10,7 @@ import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
 import { timezoneSchema, platformSpecificPostSchema } from "@hayon/schemas";
 import { IncreasePostsCreated } from "../repositories/user.repository";
+import { NotificationService } from "../services/notification.service";
 
 const createPostSchema = z.object({
   content: z.object({
@@ -123,6 +124,15 @@ export const createPost = async (req: Request, res: Response) => {
     }
 
     await IncreasePostsCreated(userId);
+
+    // Notify user
+    await NotificationService.createNotification(
+      userId,
+      `Your post was created successfully and is now ${postStatus.toLowerCase()}.`,
+      "success",
+      { type: "post", id: post._id.toString(), model: "Post" },
+    );
+
     return new SuccessResponse("Post created successfully", {
       data: {
         postId: post._id,
