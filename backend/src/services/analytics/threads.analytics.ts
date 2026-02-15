@@ -1,5 +1,6 @@
 import axios from "axios";
 import logger from "../../utils/logger";
+import { AnalyticsErrorType, SocialMediaAnalyticsError } from "./errors";
 
 export interface PostMetrics {
   likes: number;
@@ -92,11 +93,34 @@ export class ThreadsAnalyticsService {
 
       return metrics;
     } catch (error: any) {
+      const errorData = error.response?.data?.error;
+      const statusCode = error.response?.status;
+
+      if (errorData?.code === 190 || statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Threads session expired or revoked",
+          error,
+        );
+      }
+
+      if (errorData?.code === 100 || statusCode === 404) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.DELETED,
+          "Post may have been deleted on Threads",
+          error,
+        );
+      }
+
       const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
       logger.error(`[ThreadsAnalytics] Failed to fetch post metrics: ${errorMsg}`, {
         platformPostId,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(
+        AnalyticsErrorType.UNKNOWN,
+        errorData?.message || error.message,
+        error,
+      );
     }
   }
 
@@ -123,10 +147,25 @@ export class ThreadsAnalyticsService {
         totalPosts: 0, // Not available via threads_insights
       };
     } catch (error: any) {
+      const errorData = error.response?.data?.error;
+      const statusCode = error.response?.status;
+
+      if (errorData?.code === 190 || statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Threads session expired or revoked",
+          error,
+        );
+      }
+
       logger.error(`[ThreadsAnalytics] Failed to fetch account metrics`, {
         error: error.response?.data || error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(
+        AnalyticsErrorType.UNKNOWN,
+        errorData?.message || error.message,
+        error,
+      );
     }
   }
 }

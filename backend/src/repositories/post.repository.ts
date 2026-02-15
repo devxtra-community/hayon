@@ -19,7 +19,7 @@ export const updatePlatformStatus = async (
   postId: string,
   platform: PlatformType,
   statusUpdate: {
-    status: "pending" | "processing" | "completed" | "failed";
+    status: "pending" | "processing" | "completed" | "failed" | "deleted";
     platformPostId?: string;
     platformPostUrl?: string;
     error?: string;

@@ -57,7 +57,7 @@ const platformPostStatusSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "processing", "completed", "failed"],
+      enum: ["pending", "processing", "completed", "failed", "deleted"],
       default: "pending",
     },
     platformPostId: String,

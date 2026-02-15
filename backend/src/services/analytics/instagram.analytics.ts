@@ -1,5 +1,6 @@
 import axios from "axios";
 import logger from "../../utils/logger";
+import { AnalyticsErrorType, SocialMediaAnalyticsError } from "./errors";
 
 export interface PostMetrics {
   likes: number;
@@ -79,11 +80,34 @@ export class InstagramAnalyticsService {
 
       return metrics;
     } catch (error: any) {
+      const errorData = error.response?.data?.error;
+      const statusCode = error.response?.status;
+
+      if (errorData?.code === 190 || statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Instagram session expired or revoked",
+          error,
+        );
+      }
+
+      if (errorData?.code === 100 || statusCode === 404) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.DELETED,
+          "Post may have been deleted on Instagram",
+          error,
+        );
+      }
+
       logger.error(`[InstagramAnalytics] Failed to fetch post metrics`, {
         platformPostId,
         error: error.response?.data || error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(
+        AnalyticsErrorType.UNKNOWN,
+        errorData?.message || error.message,
+        error,
+      );
     }
   }
 
@@ -110,11 +134,26 @@ export class InstagramAnalyticsService {
         totalPosts: data.media_count || 0,
       };
     } catch (error: any) {
+      const errorData = error.response?.data?.error;
+      const statusCode = error.response?.status;
+
+      if (errorData?.code === 190 || statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Instagram session expired or revoked",
+          error,
+        );
+      }
+
       logger.error(`[InstagramAnalytics] Failed to fetch account metrics`, {
         igUserId,
         error: error.response?.data || error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(
+        AnalyticsErrorType.UNKNOWN,
+        errorData?.message || error.message,
+        error,
+      );
     }
   }
 }

@@ -2,6 +2,7 @@ import axios from "axios";
 import { tumblrOAuth } from "../../utils/tumblrOAuth";
 import logger from "../../utils/logger";
 import type { AxiosRequestHeaders } from "axios";
+import { AnalyticsErrorType, SocialMediaAnalyticsError } from "./errors";
 
 export interface PostMetrics {
   likes: number;
@@ -59,7 +60,10 @@ export class TumblrAnalyticsService {
 
       const posts = response.data.response.posts;
       if (!posts || posts.length === 0) {
-        throw new Error(`Post not found: ${platformPostId}`);
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.DELETED,
+          `Post not found on Tumblr: ${platformPostId}`,
+        );
       }
 
       const post = posts[0];
@@ -75,12 +79,32 @@ export class TumblrAnalyticsService {
         comments: 0, // Tumblr doesn't expose replies separately
       };
     } catch (error: any) {
+      if (error instanceof SocialMediaAnalyticsError) throw error;
+
+      const statusCode = error.response?.status;
+
+      if (statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Tumblr session expired or revoked",
+          error,
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.DELETED,
+          "Post not found on Tumblr",
+          error,
+        );
+      }
+
       logger.error(`[TumblrAnalytics] Failed to fetch post metrics`, {
         platformPostId,
         blogHostname,
         error: error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(AnalyticsErrorType.UNKNOWN, error.message, error);
     }
   }
 
@@ -131,11 +155,21 @@ export class TumblrAnalyticsService {
         totalPosts: blogInfoResponse.data.response.blog?.posts || 0,
       };
     } catch (error: any) {
+      const statusCode = error.response?.status;
+
+      if (statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Tumblr session expired or revoked",
+          error,
+        );
+      }
+
       logger.error(`[TumblrAnalytics] Failed to fetch account metrics`, {
         blogHostname,
         error: error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(AnalyticsErrorType.UNKNOWN, error.message, error);
     }
   }
 }

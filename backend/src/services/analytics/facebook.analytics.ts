@@ -1,5 +1,6 @@
 import axios from "axios";
 import logger from "../../utils/logger";
+import { AnalyticsErrorType, SocialMediaAnalyticsError } from "./errors";
 
 export interface PostMetrics {
   likes: number;
@@ -78,6 +79,32 @@ export class FacebookAnalyticsService {
       return metrics;
     } catch (error: any) {
       const errorData = error.response?.data?.error;
+      const statusCode = error.response?.status;
+
+      if (errorData?.code === 190 || statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Facebook session expired or revoked",
+          error,
+        );
+      }
+
+      if (errorData?.code === 100 || statusCode === 404) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.DELETED,
+          "Post may have been deleted on Facebook",
+          error,
+        );
+      }
+
+      if (errorData?.code === 80004 || statusCode === 429) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.RATE_LIMITED,
+          "Facebook API rate limit reached",
+          error,
+        );
+      }
+
       if (errorData?.code === 10) {
         logger.error(
           `[FacebookAnalytics] Permission Error: This app requires 'pages_read_engagement' to fetch engagement metrics.`,
@@ -91,7 +118,11 @@ export class FacebookAnalyticsService {
           error: errorData || error.message,
         });
       }
-      throw error;
+      throw new SocialMediaAnalyticsError(
+        AnalyticsErrorType.UNKNOWN,
+        errorData?.message || error.message,
+        error,
+      );
     }
   }
 
@@ -118,11 +149,26 @@ export class FacebookAnalyticsService {
         totalPosts: 0,
       };
     } catch (error: any) {
+      const errorData = error.response?.data?.error;
+      const statusCode = error.response?.status;
+
+      if (errorData?.code === 190 || statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Facebook session expired or revoked",
+          error,
+        );
+      }
+
       logger.error(`[FacebookAnalytics] Failed to fetch account metrics`, {
         pageId: platformId,
         error: error.response?.data || error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(
+        AnalyticsErrorType.UNKNOWN,
+        errorData?.message || error.message,
+        error,
+      );
     }
   }
 }
