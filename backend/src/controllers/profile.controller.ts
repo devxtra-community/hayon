@@ -9,9 +9,63 @@ import {
   updateUserAvatar,
   changeUserName,
   findUserByIdSafe,
+  findUserByIdWithAuth,
+  updateUserPassword,
 } from "../repositories/user.repository";
 import logger from "../utils/logger";
-import { timezoneSchema } from "@hayon/schemas";
+import { timezoneSchema, changePasswordSchema } from "@hayon/schemas";
+import bcrypt from "bcrypt";
+
+export async function changePasswordController(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req?.auth?.id as string;
+    const body = req.body;
+
+    // Validation
+    const validationResult = changePasswordSchema.safeParse(body);
+    if (!validationResult.success) {
+      new ErrorResponse("Invalid password data", {
+        status: 400,
+        data: validationResult.error.format(),
+      }).send(res);
+      return;
+    }
+
+    const { currentPassword, newPassword } = validationResult.data;
+
+    // Fetch user with password hash
+    const user = await findUserByIdWithAuth(userId);
+    if (!user || user.auth.provider !== "email" || !user.auth.passwordHash) {
+      new ErrorResponse("Password change not supported for this account", { status: 400 }).send(
+        res,
+      );
+      return;
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.auth.passwordHash);
+    if (!isMatch) {
+      new ErrorResponse("Incorrect current password", { status: 400 }).send(res);
+      return;
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(12);
+    const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    await updateUserPassword(userId, newPasswordHash);
+
+    new SuccessResponse("Password changed successfully").send(res);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      logger.info("Error changing password:", err.message);
+      new ErrorResponse(err.message || "Failed to change password", { status: 400 }).send(res);
+    } else {
+      new ErrorResponse("Failed to change password", { status: 400 }).send(res);
+    }
+  }
+}
 
 export async function getProfileUploadUrlController(req: Request, res: Response): Promise<void> {
   try {
@@ -33,15 +87,7 @@ export async function getProfileUploadUrlController(req: Request, res: Response)
 
     if (usage === "post") {
       folder = "temp";
-      // for temp/post uploads, s3.upload.ts handles UUID generation if we pass a simple name
-      // or we can just pass the name and it will be used?
-      // checking s3.upload.ts:
-      // const s3Key = folder === "profiles" ? `${folder}/${filename}` : `${folder}/${userId}/${uuid}.${ext}`;
-      // So if folder is NOT profiles, it generates UUID. Filename arg is ignored for the key generation in that case?
-      // Wait, let's re-read s3.upload.ts logic in next step if needed, but assuming standard behavior:
-      // const ext = filename.split('.').pop() || 'bin';
-      // so it uses the extension from the filename.
-      filename = `image.${ext}`; // just to provide extension
+      filename = `image.${ext}`;
     }
 
     // Generate presigned URL

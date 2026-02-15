@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { api } from "@/lib/axios";
 import { useToast } from "@/context/ToastContext";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 interface ProfileCardProps {
   user: {
@@ -26,6 +27,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   const previewImgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -271,6 +273,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
             <Button
               variant="outline"
               className="h-9 px-4 text-xs font-medium border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+              onClick={() => setIsChangePasswordModalOpen(true)}
             >
               Change Password
             </Button>
@@ -327,6 +330,10 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
           </div>
         </div>
       )}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
     </>
   );
 };

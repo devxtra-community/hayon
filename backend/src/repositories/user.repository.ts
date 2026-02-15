@@ -16,8 +16,12 @@ export const createUser = async (data: Partial<IUser>) => {
 
 export const findUserByIdSafe = async (userId: string) => {
   return User.findById(userId).select(
-    "-auth.passwordHash -auth.verificationToken -auth.resetToken",
+    "-auth.passwordHash -auth.verificationToken -auth.resetToken -auth.passwordResetToken",
   );
+};
+
+export const findUserByIdWithAuth = async (userId: string) => {
+  return User.findById(userId).select("+auth.passwordHash");
 };
 
 export const setPasswordResetToken = async (email: string) => {
@@ -53,8 +57,8 @@ export const findResetPasswordToken = async (email: string) => {
   return user.auth.passwordResetToken?.token;
 };
 
-export const updateUserPassword = async (email: string, newPasswordHash: string) => {
-  return User.updateOne({ email }, { auth: { passwordHash: newPasswordHash } });
+export const updateUserPassword = async (userId: string, newPasswordHash: string) => {
+  return User.updateOne({ _id: userId }, { $set: { "auth.passwordHash": newPasswordHash } });
 };
 
 export const updateAvatar = async (userId: string, avatarUrl: string) => {
