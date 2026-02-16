@@ -34,10 +34,10 @@ export default function AnalyticsInsightsCard({ heatmapData }: AnalyticsInsights
   }, [heatmapData]);
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-8">
+    <div className="bg-white rounded-[2rem] px-10 py-8 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8">
       {/* Best Time Section */}
       <div className="flex-1 w-full">
-        <h3 className="text-gray-500 text-sm font-medium mb-1 uppercase tracking-wide">
+        <h3 className="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-widest">
           Best Time to Post
         </h3>
         {bestTime ? (

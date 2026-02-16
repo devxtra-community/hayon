@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   userName: string;
@@ -13,6 +14,7 @@ interface HeaderProps {
   onMenuClick?: () => void;
   filterContent?: React.ReactNode;
   onSearchChange?: (query: string) => void;
+  className?: string;
 }
 
 export default function Header({
@@ -22,6 +24,7 @@ export default function Header({
   onMenuClick,
   filterContent,
   onSearchChange,
+  className,
 }: HeaderProps) {
   const pathname = usePathname();
 
@@ -37,7 +40,12 @@ export default function Header({
   };
 
   return (
-    <header className="flex items-center justify-between w-full px-6 py-3 bg-[#F7F7F7] rounded-[1rem] h-[13vh]">
+    <header
+      className={cn(
+        "flex items-center justify-between w-full px-6 py-3 bg-[#F7F7F7] rounded-[1rem] h-[13vh]",
+        className,
+      )}
+    >
       {/* Mobile Menu Button - Visible on small screens */}
       <button
         onClick={onMenuClick}

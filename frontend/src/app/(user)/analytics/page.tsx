@@ -11,7 +11,7 @@ import {
   AnalyticsInsightsCard,
 } from "@/components/analytics";
 import { analyticsService } from "@/services/analytics.service";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Calendar } from "lucide-react";
 import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { LoadingH } from "@/components/ui/loading-h";
@@ -30,7 +30,8 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
-  const [selectedPeriod] = useState("30d");
+  const [growthPeriod, setGrowthPeriod] = useState("7d");
+  const [engagementPeriod, setEngagementPeriod] = useState("7d");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,8 +45,8 @@ export default function AnalyticsPage() {
 
         // Fetch each endpoint separately to handle partial failures
         const results = await Promise.allSettled([
-          analyticsService.getOverview(selectedPeriod),
-          analyticsService.getTimeline(selectedPeriod),
+          analyticsService.getOverview("30d"),
+          analyticsService.getTimeline("30d"),
           analyticsService.getHeatmap(),
           analyticsService.getTopPosts(5, "totalEngagement"),
         ]);
@@ -71,7 +72,7 @@ export default function AnalyticsPage() {
     };
 
     fetchData();
-  }, [selectedPeriod]);
+  }, []);
 
   return (
     <>
@@ -94,18 +95,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="pb-2 lg:pb-4">
-        <Header
-          userName={user?.name || ""}
-          userEmail={user?.email || ""}
-          userAvatar={user?.avatar || ""}
-          onMenuClick={() => setIsMobileMenuOpen(true)}
-        />
-      </div>
-
-      {/* Main Content */}
-      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
+      <main className="flex-1 bg-[#F1F5F9]/50 rounded-[2.5rem] overflow-y-auto px-4 py-4 lg:px-8 lg:py-6 scrollbar-hide flex flex-col gap-6">
         {loading || !user ? (
           <div className="flex items-center justify-center h-full">
             <LoadingH />
@@ -122,27 +112,89 @@ export default function AnalyticsPage() {
             </button>
           </div>
         ) : (
-          <div className="max-w-[1600px] mx-auto space-y-8 pb-10">
-            {/* Top Cards Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="h-[340px]">
+          <div className="max-w-[1600px] mx-auto w-full space-y-6 lg:space-y-10 pb-10">
+            {/* Header Integrated */}
+            <Header
+              userName={user?.name || ""}
+              userEmail={user?.email || ""}
+              userAvatar={user?.avatar || ""}
+              onMenuClick={() => setIsMobileMenuOpen(true)}
+              className="bg-transparent h-auto py-2 px-0 shadow-none border-none"
+            />
+
+            {/* Hero Section */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div className="space-y-1.5 px-1">
+                <h1 className="text-3xl lg:text-5xl font-extrabold text-[#111827] tracking-tight">
+                  Your Performance <span className="text-[#10B981] italic">Snapshot</span>
+                </h1>
+                <p className="text-gray-500 text-sm lg:text-lg font-medium">
+                  Track, analyze and optimize your cross-platform strategy.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button className="flex items-center gap-2 bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">
+                  <Calendar size={18} className="text-primary" />
+                  Last 30 Days
+                </button>
+                <button className="p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M12 3l1.912 5.885h6.188l-5.007 3.638 1.912 5.885-5.005-3.638-5.005 3.638 1.912-5.885-5.007-3.638h6.188L12 3z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Main Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+              {/* Analytics Card */}
+              <div className="xl:col-span-1 hover:scale-[1.02] transition-transform duration-500">
                 <PlatformMetricsCard
                   platformStats={data.overview?.platformPerformance || []}
                   followerCounts={data.overview?.followers?.breakdown || {}}
                 />
               </div>
-              <div className="h-[340px]">
+
+              {/* Follower Breakdown Chart */}
+              <div className="xl:col-span-1 hover:scale-[1.02] transition-transform duration-500">
                 <FollowersPieChart data={data.overview?.followers?.breakdown || {}} />
               </div>
-              <div className="h-[340px]">
+
+              {/* Best Content Card */}
+              <div className="xl:col-span-1 hover:scale-[1.02] transition-transform duration-500">
                 <TopPerformingPostCard initialData={data.topPosts?.[0]} />
               </div>
             </div>
 
             {/* Growth & Engagement Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[450px]">
-              <GrowthChart />
-              <AnalyticsEngagementChart />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div
+                className={cn(
+                  "h-[450px] transition-all duration-700 ease-in-out",
+                  growthPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
+                )}
+              >
+                <GrowthChart period={growthPeriod} setPeriod={setGrowthPeriod} />
+              </div>
+              <div
+                className={cn(
+                  "h-[450px] transition-all duration-700 ease-in-out",
+                  engagementPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
+                )}
+              >
+                <AnalyticsEngagementChart
+                  period={engagementPeriod}
+                  setPeriod={setEngagementPeriod}
+                />
+              </div>
             </div>
 
             {/* Bottom Row - Unified Insights Card */}

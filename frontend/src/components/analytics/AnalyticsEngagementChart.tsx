@@ -16,10 +16,17 @@ const PLATFORMS = [
   { id: "tumblr", label: "Tumblr" },
 ];
 
-export default function AnalyticsEngagementChart() {
+interface AnalyticsEngagementChartProps {
+  period: string;
+  setPeriod: (period: string) => void;
+}
+
+export default function AnalyticsEngagementChart({
+  period,
+  setPeriod,
+}: AnalyticsEngagementChartProps) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("30d");
   const [platform, setPlatform] = useState("all");
 
   useEffect(() => {
@@ -39,10 +46,10 @@ export default function AnalyticsEngagementChart() {
   }, [period, platform]);
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full flex flex-col">
+    <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-900">Engagement Timeline</h3>
+          <h3 className="text-xl font-black text-slate-800">Engagement Timeline</h3>
           <p className="text-sm text-gray-500">Likes, comments & shares</p>
         </div>
 
