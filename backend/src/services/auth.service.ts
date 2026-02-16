@@ -13,7 +13,7 @@ import {
 import { updateOtpAttempts } from "../repositories/pendingSignup.repository";
 import { sendOtpMail } from "../utils/nodemailer";
 import { v4 as uuidv4 } from "uuid";
-import { RefreshToken } from "../models/refreshToken.model";
+import * as RefreshTokenRepository from "../repositories/refreshToken.repository";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
 import { createRefreshToken } from "../repositories/refreshToken.repository";
 import s3Service from "./s3/s3.service";
@@ -280,9 +280,7 @@ export const refreshService = async (
 ) => {
   const payload = verifyRefreshToken(refreshTokenJwt);
 
-  const existingToken = await RefreshToken.findOne({
-    tokenId: payload.tokenId,
-  });
+  const existingToken = await RefreshTokenRepository.findByTokenId(payload.tokenId);
 
   if (!existingToken) {
     throw new Error("Invalid refresh token");
@@ -297,19 +295,18 @@ export const refreshService = async (
     throw new Error("Invalid refresh token");
   }
 
-  existingToken.revoked = true;
-  await existingToken.save();
+  await RefreshTokenRepository.revokeToken(existingToken.tokenId);
 
   const newTokenId = uuidv4();
   const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  await RefreshToken.create({
+  await RefreshTokenRepository.createRefreshToken({
     tokenId: newTokenId,
     userId: existingToken.userId,
     role: existingToken.role,
     expiresAt: newExpiresAt,
-    ipAddress: ipAddress || existingToken.ipAddress, // Update if new, else keep old
-    userAgent: userAgent || existingToken.userAgent,
+    ipAddress: ipAddress || (existingToken as any).ipAddress, // Update if new, else keep old
+    userAgent: userAgent || (existingToken as any).userAgent,
   });
 
   const accessToken = generateAccessToken({
@@ -339,11 +336,11 @@ export const getCurrentUserService = async (userId: string) => {
 export const logoutService = async (refreshTokenJwt: string) => {
   const payload = verifyRefreshToken(refreshTokenJwt);
 
-  await RefreshToken.updateOne({ tokenId: payload.tokenId }, { revoked: true });
+  await RefreshTokenRepository.revokeToken(payload.tokenId);
 };
 
 export const logoutAllService = async (userId: string) => {
-  await RefreshToken.updateMany({ userId, revoked: false }, { revoked: true });
+  await RefreshTokenRepository.revokeAllForUser(userId);
 };
 
 export const sendResetPasswordEmailService = async (email: string) => {
@@ -382,13 +379,7 @@ export const getDevicesService = async (userId: string, currentRefreshTokenJwt?:
     }
   }
 
-  const devices = await RefreshToken.find({
-    userId,
-    revoked: false,
-    expiresAt: { $gt: new Date() },
-  })
-    .select("tokenId ipAddress userAgent lastActive createdAt")
-    .lean();
+  const devices = await RefreshTokenRepository.findActiveByUserId(userId);
 
   return devices.map((device) => ({
     ...device,
@@ -397,10 +388,9 @@ export const getDevicesService = async (userId: string, currentRefreshTokenJwt?:
 };
 
 export const logoutDeviceService = async (userId: string, tokenId: string) => {
-  const token = await RefreshToken.findOne({ tokenId, userId });
-  if (!token) {
+  const token = await RefreshTokenRepository.findByTokenId(tokenId);
+  if (!token || token.userId.toString() !== userId) {
     throw new Error("Device not found or unauthorized");
   }
-  token.revoked = true;
-  await token.save();
+  await RefreshTokenRepository.revokeToken(tokenId);
 };

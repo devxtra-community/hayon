@@ -6,7 +6,7 @@ import { FacebookPostingService } from "./facebook.posting.service";
 import { MastodonPostingService } from "./mastodon.posting.service";
 import { TumblrPostingService } from "./tumblr.posting.service";
 import { PlatformType } from "../../interfaces/post.interface";
-import SocialAccountModel from "../../models/socialAccount.model";
+import * as SocialAccountRepository from "../../repositories/socialAccount.repository";
 
 const serviceMap: Record<PlatformType, new () => BasePostingService> = {
   bluesky: BlueskyPostingService,
@@ -36,28 +36,12 @@ export async function getCredentialsForPlatform(
   userId: string,
   platform: PlatformType,
 ): Promise<any | null> {
-  const socialAccount = await SocialAccountModel.findOne(
-    { userId },
-    { [platform]: 1 }, // Projection: only fetch the platform we need
-  ).lean();
-
-  if (!socialAccount) {
-    return null;
-  }
-
-  const platformData = (socialAccount as any)[platform];
+  const platformData = await SocialAccountRepository.getCredentials(userId, platform);
 
   if (platform === "instagram") {
     console.log("🔍 Instagram credentials fetched:", JSON.stringify(platformData, null, 2));
   }
 
-  // For some reason Mongoose might return the key but with no data
-  if (!platformData || !platformData.connected) {
-    return null;
-  }
-
-  // Return the full platform object.
-  // The specific service will destructure what it needs (auth, instanceUrl, etc.)
   return platformData;
 }
 

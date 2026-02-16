@@ -1,6 +1,7 @@
 import { AtpAgent } from "@atproto/api";
 import logger from "../../utils/logger";
-import SocialAccountModel from "../../models/socialAccount.model";
+import { AnalyticsErrorType, SocialMediaAnalyticsError } from "./errors";
+import * as SocialAccountRepository from "../../repositories/socialAccount.repository";
 
 export interface PostMetrics {
   likes: number;
@@ -36,17 +37,10 @@ export class BlueskyAnalyticsService {
         if (session) {
           // Persist refreshed tokens to DB
           try {
-            await SocialAccountModel.updateOne(
-              { userId },
-              {
-                $set: {
-                  "bluesky.auth.accessJwt": session.accessJwt,
-                  "bluesky.auth.refreshJwt": session.refreshJwt,
-                  "bluesky.health.lastSuccessfulRefresh": new Date(),
-                  "bluesky.health.status": "active",
-                },
-              },
-            );
+            await SocialAccountRepository.updateBlueskyAuth(userId, {
+              accessJwt: session.accessJwt,
+              refreshJwt: session.refreshJwt,
+            });
           } catch (err) {
             logger.error("[BlueskyAnalytics] Failed to persist session", { error: err });
           }
@@ -91,11 +85,27 @@ export class BlueskyAnalyticsService {
         comments: post.replyCount || 0,
       };
     } catch (error: any) {
+      if (error.status === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Bluesky session expired or revoked",
+          error,
+        );
+      }
+
+      if (error.status === 404 || error.message?.includes("could not be resolved")) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.DELETED,
+          "Post may have been deleted on Bluesky",
+          error,
+        );
+      }
+
       logger.error(`[BlueskyAnalytics] Failed to fetch post metrics`, {
         platformPostId,
         error: error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(AnalyticsErrorType.UNKNOWN, error.message, error);
     }
   }
 
@@ -116,10 +126,18 @@ export class BlueskyAnalyticsService {
         totalPosts: response.data.postsCount || 0,
       };
     } catch (error: any) {
+      if (error.status === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Bluesky session expired or revoked",
+          error,
+        );
+      }
+
       logger.error(`[BlueskyAnalytics] Failed to fetch account metrics`, {
         error: error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(AnalyticsErrorType.UNKNOWN, error.message, error);
     }
   }
 }

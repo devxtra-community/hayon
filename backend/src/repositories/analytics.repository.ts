@@ -528,3 +528,16 @@ export const getLatestSnapshotsForPost = async (postId: string) => {
 
   return analyticsByPlatform;
 };
+/**
+ * Create a new post analytics snapshot
+ */
+export const createPostSnapshot = async (data: any) => {
+  return await AnalyticsSnapshotModel.create(data);
+};
+
+/**
+ * Create a new account metrics snapshot
+ */
+export const createAccountSnapshot = async (data: any) => {
+  return await AccountSnapshotModel.create(data);
+};

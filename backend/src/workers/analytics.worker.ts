@@ -1,11 +1,11 @@
 import { Channel, ConsumeMessage } from "amqplib";
 import { AnalyticsFetchMessage } from "../lib/queues/types";
 import logger from "../utils/logger";
-import SocialAccount from "../models/socialAccount.model";
-import PostModel from "../models/post.model";
-import AnalyticsSnapshotModel from "../models/analyticsSnapshot.model";
-import AccountSnapshotModel from "../models/accountSnapshot.model";
+import * as PostRepository from "../repositories/post.repository";
+import * as SocialAccountRepository from "../repositories/socialAccount.repository";
+import * as AnalyticsRepository from "../repositories/analytics.repository";
 import { getAnalyticsService } from "../services/analytics";
+import { AnalyticsErrorType, SocialMediaAnalyticsError } from "../services/analytics/errors";
 
 export class AnalyticsWorker {
   /**
@@ -48,7 +48,7 @@ export class AnalyticsWorker {
     }
 
     // 1. Fetch Post
-    const post = await PostModel.findById(msg.postId);
+    const post = await PostRepository.findById(msg.postId);
     if (!post) throw new Error(`Post not found: ${msg.postId}`);
 
     // 2. Find the platform status to get platformPostId
@@ -63,7 +63,7 @@ export class AnalyticsWorker {
     }
 
     // 3. Fetch Account Credentials
-    const account = await SocialAccount.findOne({ userId: post.userId });
+    const account = await SocialAccountRepository.findByUserId(post.userId.toString());
     if (!account) throw new Error(`Social account not found for user: ${post.userId}`);
 
     // 4. Get platform credentials
@@ -117,10 +117,41 @@ export class AnalyticsWorker {
           // Non-critical failure, continue with post metrics
         }
       } catch (error: any) {
+        if (error instanceof SocialMediaAnalyticsError) {
+          if (error.type === AnalyticsErrorType.DELETED) {
+            logger.warn(`[AnalyticsWorker] Post deleted on ${msg.platform}, marking as deleted`, {
+              postId: msg.postId,
+              platformPostId: platformStatus.platformPostId,
+            });
+
+            // Mark this platform status as deleted
+            await PostRepository.updatePlatformStatus(msg.postId, msg.platform as any, {
+              status: "deleted",
+            });
+            return; // Stop processing this post
+          }
+
+          if (error.type === AnalyticsErrorType.UNAUTHORIZED) {
+            logger.error(`[AnalyticsWorker] Authorization failed for ${msg.platform}`, {
+              userId: post.userId,
+              error: error.message,
+            });
+
+            // Update social account health via repository
+            await SocialAccountRepository.updateHealthStatus(
+              post.userId.toString(),
+              msg.platform as any,
+              "expired",
+              error.message,
+            );
+            return; // Stop processing this post
+          }
+        }
+
         logger.error(`[AnalyticsWorker] Failed to fetch analytics for ${msg.platform}:`, {
           error: error.message,
         });
-        // Continue to save snapshot with zero/partial metrics
+        // Continue to save snapshot with zero/partial metrics for other errors
       }
     } else {
       // Platform not yet implemented (Facebook, Instagram, Threads)
@@ -131,7 +162,7 @@ export class AnalyticsWorker {
     const totalEngagement = metrics.likes + metrics.shares + metrics.comments;
 
     // 6. Save Snapshot
-    await AnalyticsSnapshotModel.create({
+    await AnalyticsRepository.createPostSnapshot({
       postId: post._id,
       userId: post.userId,
       platform: msg.platform,
@@ -155,10 +186,14 @@ export class AnalyticsWorker {
     });
 
     // 7. Update Post's lastAnalyticsFetch flag
-    await PostModel.updateOne(
-      { _id: post._id, "platformStatuses.platform": msg.platform },
-      { $set: { "platformStatuses.$.lastAnalyticsFetch": new Date() } },
-    );
+    await PostRepository.updatePost(post._id.toString(), post.userId.toString(), {
+      platformStatuses: post.platformStatuses.map((ps) => {
+        if (ps.platform === msg.platform) {
+          ps.lastAnalyticsFetch = new Date();
+        }
+        return ps;
+      }) as any,
+    });
 
     logger.info(`[AnalyticsWorker] Saved snapshot for ${msg.platform}`, {
       postId: msg.postId,
@@ -178,7 +213,7 @@ export class AnalyticsWorker {
     const platforms = msg.platforms || [];
     logger.info(`[AnalyticsWorker] Fetching account metrics for user ${msg.userId}`, { platforms });
 
-    const account = await SocialAccount.findOne({ userId: msg.userId });
+    const account = await SocialAccountRepository.findByUserId(msg.userId);
     if (!account) {
       throw new Error(`Social account not found for user: ${msg.userId}`);
     }
@@ -200,7 +235,7 @@ export class AnalyticsWorker {
       try {
         const metrics = await analyticsService.getAccountMetrics(platformData, msg.userId);
 
-        await AccountSnapshotModel.create({
+        await AnalyticsRepository.createAccountSnapshot({
           userId: msg.userId,
           platform: platform,
           snapshotAt: new Date(),
@@ -215,10 +250,27 @@ export class AnalyticsWorker {
           followers: metrics.followers,
         });
       } catch (error: any) {
-        logger.error(`[AnalyticsWorker] Failed to fetch ${platform} account metrics`, {
-          error: error.response?.data || error.message,
-          userId: msg.userId,
-        });
+        if (
+          error instanceof SocialMediaAnalyticsError &&
+          error.type === AnalyticsErrorType.UNAUTHORIZED
+        ) {
+          logger.error(`[AnalyticsWorker] Authorization failed for ${platform} account metrics`, {
+            userId: msg.userId,
+            error: error.message,
+          });
+
+          await SocialAccountRepository.updateHealthStatus(
+            msg.userId,
+            platform as any,
+            "expired",
+            error.message,
+          );
+        } else {
+          logger.error(`[AnalyticsWorker] Failed to fetch ${platform} account metrics`, {
+            error: error.response?.data || error.message,
+            userId: msg.userId,
+          });
+        }
         // Continue with other platforms
       }
     }
