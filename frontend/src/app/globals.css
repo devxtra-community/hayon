@@ -240,17 +240,17 @@
 }
 @keyframes toast-slide-in {
   from {
-    transform: translateX(100%);
+    transform: translateY(-100%) scale(0.9);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
 .animate-toast-in {
-  animation: toast-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: toast-slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toast-container {
@@ -262,6 +262,19 @@
   flex-direction: column;
   align-items: flex-end;
   pointer-events: none;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    align-items: center;
+    width: 100%;
+    padding: 0 1.5rem;
+    max-width: 24rem;
+  }
 }
 
 
