@@ -7,6 +7,7 @@ import {
   validateCredentials,
 } from "../services/posting";
 import { findById, updatePlatformStatus } from "../repositories/post.repository";
+import { NotificationService } from "../services/notification.service";
 
 const isRetryableError = (error: any): boolean => {
   if (!error) return false;
@@ -99,6 +100,18 @@ export class PostWorker {
         console.log(
           `✅ [ACK] Finished: ${payload.postId} for ${payload.platform} in ${Date.now() - startTime}ms`,
         );
+
+        await NotificationService.createNotification(
+          payload.userId,
+          `Your post has been successfully posted on ${payload.platform}`,
+          "success",
+          {
+            type: "post",
+            id: payload.postId,
+            model: "Post",
+          },
+        );
+
         return;
       } else {
         if (result.rateLimited) {
@@ -183,23 +196,30 @@ export class PostWorker {
  *    - Generate fresh URLs before posting
  *    - Or use public bucket with long-lived URLs
  *
- * 4. PARTIAL PLATFORM SUCCESS
- *    - User selected 3 platforms, 1 fails
- *    - Each platform message is independent
- *    - DB tracks per-platform status
- *    - Overall post status = "PARTIAL_SUCCESS"
- *
- * 5. DUPLICATE MESSAGES (At-Least-Once Delivery)
- *    - RabbitMQ may redeliver if ACK times out
- *    - Check if platform already has status=completed
- *    - Idempotency key: postId + platform
- *
- * 6. WORKER CRASH MID-PROCESSING
- *    - Message not ACKed → RabbitMQ redelivers
- *    - Check DB status before processing
- *    - If status=completed, skip duplicate
- *
- * 7. LONG VIDEO PROCESSING (Instagram/Threads)
+ 
+
+//  * [==========={ compleated }============]
+
+//  * 4. PARTIAL PLATFORM SUCCESS
+//  *    - User selected 3 platforms, 1 fails
+//  *    - Each platform message is independent
+//  *    - DB tracks per-platform status
+//  *    - Overall post status = "PARTIAL_SUCCESS"
+
+
+//  * 5. DUPLICATE MESSAGES (At-Least-Once Delivery)
+//  *    - RabbitMQ may redeliver if ACK times out
+//  *    - Check if platform already has status=completed
+//  *    - Idempotency key: postId + platform
+
+
+//  * 6. WORKER CRASH MID-PROCESSING
+//  *    - Message not ACKed → RabbitMQ redelivers
+//  *    - Check DB status before processing
+//  *    - If status=completed, skip duplicate
+
+
+* 7. LONG VIDEO PROCESSING (Instagram/Threads)
  *    - Video containers need time to process
  *    - Poll for ready status before publishing
  *    - Consider: worker timeout vs processing time
