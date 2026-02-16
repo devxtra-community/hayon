@@ -12,7 +12,7 @@ export const checkUserGenerationLimit = async (req: Request, res: Response, next
     return res.status(404).json({ message: "User not found" });
   }
 
-  const limits = user.limits.maxCaptionGenerations;
+  const limits = user.subscription.plan === "free" ? 10 : 30;
   const usage = user.usage.captionGenerations;
 
   if (limits <= usage) {
@@ -33,7 +33,7 @@ export const checkUserPostLimit = async (req: Request, res: Response, next: Next
     return res.status(404).json({ message: "User not found" });
   }
 
-  const limits = user.limits.maxPosts;
+  const limits = user.subscription.plan === "free" ? 10 : 30;
   const usage = user.usage.postsCreated;
 
   if (limits <= usage) {

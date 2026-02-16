@@ -12,7 +12,7 @@ interface AuthTokenPayload {
 export const initSocket = (httpServer: HttpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: [ENV.APP.FRONTEND_URL, "http://localhost:3000"],
+      origin: [ENV.APP.FRONTEND_URL, "localhost:3000"],
       credentials: true,
     },
   });

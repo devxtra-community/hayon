@@ -1,9 +1,23 @@
 import express, { Application } from "express";
-import cookieParser from "cookie-parser";
+import fs from "fs";
 import cors from "cors";
-import connectDB from "./config/database";
+import path from "path";
+import https from "https";
+import { createServer } from "http";
 
-// routeres
+// [==={ dependencies }===]
+import passport from "./config/passport";
+import helmet from "helmet";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+
+// [==={ config }===]
+import connectDB from "./config/database";
+import { connectRabbitMQ } from "./config/rabbitmq";
+import { initSocket } from "./config/socket";
+import { ENV } from "./config/env";
+
+// [==={ routes }===]
 import authRoutes from "./routes/auth.routes";
 import paymentRoutes from "./routes/payment.routes";
 import profileRoutes from "./routes/profile.routes";
@@ -12,33 +26,27 @@ import analyticsRoutes from "./routes/analytics.routes";
 import platformRoutes from "./routes/platform.routes";
 import postRoutes from "./routes/post.routes";
 import adminRoutes from "./routes/admin.routes";
-// =========
-import passport from "./config/passport";
-import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
-import { ENV } from "./config/env";
-import helmet from "helmet";
-import { SuccessResponse } from "./utils/responses";
-import morgan from "morgan";
-import logger from "./utils/logger";
-import https from "https";
-import fs from "fs";
-import path from "path";
-import { connectRabbitMQ } from "./config/rabbitmq";
-import { AnalyticsCronService } from "./services/cron/analytics.cron";
-
-import { createServer } from "http";
-import { initSocket } from "./config/socket";
 import notificationRoutes from "./routes/notification.routes";
 
-const expressInstance: Application = express();
-const httpServer = createServer(expressInstance);
+// [==={ middleware / handlers }===]
+import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
+
+// [==={ utils }===]
+import { SuccessResponse } from "./utils/responses";
+import logger from "./utils/logger";
+
+// [==={ cron job }===]
+import { AnalyticsCronService } from "./services/cron/analytics.cron";
+
+// =====================================================================================
+// =====================================================================================
+
 export let io: any;
+const expressInstance: Application = express();
 
 const bootstrap = async () => {
   await connectDB();
   await connectRabbitMQ();
-
-  io = initSocket(httpServer);
 
   AnalyticsCronService.init();
 
@@ -91,50 +99,28 @@ const bootstrap = async () => {
 
   if (ENV.APP.NODE_ENV === "production") {
     expressInstance.enable("trust proxy");
+    const httpServer = createServer(expressInstance);
 
     httpServer.listen(ENV.APP.PORT, () => {
+      io = initSocket(httpServer);
       logger.info(`🚀 Production Server running on port ${ENV.APP.PORT}`);
       console.log(`Backend running at ${ENV.APP.FRONTEND_URL}`);
     });
   } else {
-    // In dev, we might still want to use https if that's what was there,
-    // but socket.io needs the server instance.
-    // The previous code used https.createServer for dev.
-    // We need to attach socket.io to THAT https server if we use it.
-    // However, initSocket takes 'http.Server'.
-    // Socket.io works with https.Server too.
-
-    // Let's reuse the existing logic but capture the server instance.
     const options = {
       key: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2-key.pem")),
       cert: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2.pem")),
     };
 
     const httpsServer = https.createServer(options, expressInstance);
-    // We need to initialize socket with this https server for dev
-    // But we already initialized 'io' with 'httpServer' above.
-    // This is tricky because we have two different servers depending on env and one is created inside the if/else?
-    // Actually, createServer(expressInstance) creates an HTTP server.
-    // If we want HTTPS in dev, we should probably just use the httpsServer for socket in dev.
-
-    // REFACTOR:
-    // Move initSocket call down.
-
-    if (ENV.APP.NODE_ENV === "production") {
-      // Use the http server created at top
-      io = initSocket(httpServer);
-      httpServer.listen(ENV.APP.PORT, () => {
-        logger.info(`🚀 Production Server running on port ${ENV.APP.PORT}`);
-        console.log(`Backend running at ${ENV.APP.FRONTEND_URL}`);
-      });
-    } else {
+    httpsServer.listen(ENV.APP.PORT, () => {
       io = initSocket(httpsServer);
-      httpsServer.listen(ENV.APP.PORT, () => {
-        console.log(`Backend running at https://dev.hayon.site:5000`);
-        logger.info(`Development Server running on port ${ENV.APP.PORT}`);
-      });
-    }
+      console.log(`Backend running at https://dev.hayon.site:5000`);
+      logger.info(`Development Server running on port ${ENV.APP.PORT}`);
+    });
   }
 };
 
-bootstrap();
+if (require.main === module) {
+  bootstrap();
+}
