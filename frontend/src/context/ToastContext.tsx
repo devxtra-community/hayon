@@ -19,7 +19,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
   const showToast = (type: ToastType, title: string, message: string) => {
     const id = Date.now();
-    setToasts((prev) => [...prev, { id, type, title, message }]);
+    setToasts((prev) => [{ id, type, title, message }, ...prev]);
   };
 
   const closeToast = (id: number) => {
