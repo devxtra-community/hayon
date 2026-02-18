@@ -9,7 +9,7 @@ import {
   updateUserAvatar,
   changeUserName,
   findUserByIdWithAuth,
-  updateUserPassword,
+  updateUserPasswordById,
 } from "../repositories/user.repository";
 import logger from "../utils/logger";
 import { timezoneSchema, changePasswordSchema } from "@hayon/schemas";
@@ -53,7 +53,7 @@ export async function changePasswordController(req: Request, res: Response): Pro
     const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
     // Update password
-    await updateUserPassword(userId, newPasswordHash);
+    await updateUserPasswordById(userId, newPasswordHash);
 
     new SuccessResponse("Password changed successfully").send(res);
   } catch (err: unknown) {

@@ -64,8 +64,12 @@ export const findResetPasswordToken = async (email: string) => {
   return user.auth.passwordResetToken?.token;
 };
 
-export const updateUserPassword = async (userId: string, newPasswordHash: string) => {
+export const updateUserPasswordById = async (userId: string, newPasswordHash: string) => {
   return User.updateOne({ _id: userId }, { $set: { "auth.passwordHash": newPasswordHash } });
+};
+
+export const updateUserPasswordByEmail = async (email: string, newPasswordHash: string) => {
+  return User.updateOne({ email }, { auth: { passwordHash: newPasswordHash } });
 };
 
 export const updateAvatar = async (userId: string, avatarUrl: string) => {

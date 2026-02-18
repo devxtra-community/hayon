@@ -18,7 +18,7 @@ import { parseBase64Image } from "../utils/bufferConvertion";
 import {
   findResetPasswordToken,
   setPasswordResetToken,
-  updateUserPassword,
+  updateUserPasswordByEmail,
 } from "../repositories/user.repository";
 import { sendResetPasswordEmail } from "../utils/nodemailer";
 import logger from "../utils/logger";
@@ -342,7 +342,7 @@ export const resetPasswordService = async (email: string, newPassword: string, t
 
   logger.info(`Reset token is valid for ${email}, updating password ${newPassword}.`);
   const passwordHash = bcrypt.hashSync(newPassword, 12);
-  await updateUserPassword(email, passwordHash);
+  await updateUserPasswordByEmail(email, passwordHash);
 };
 
 export const getDevicesService = async (userId: string, currentRefreshTokenJwt?: string) => {
