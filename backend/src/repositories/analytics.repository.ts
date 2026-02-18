@@ -48,7 +48,8 @@ export const getOverviewStats = async (userId: string, startDate: Date, endDate:
   return cacheAside(
     `analytics:overview:${userId}:${dateStr}`,
     async () => {
-      const result = await AnalyticsSnapshotModel.aggregate([
+      // 1. Get snapshot-based metrics (engagement, impressions, avg rate) within the period
+      const snapshotStats = await AnalyticsSnapshotModel.aggregate([
         {
           $match: {
             userId: new Types.ObjectId(userId),
@@ -68,7 +69,6 @@ export const getOverviewStats = async (userId: string, startDate: Date, endDate:
         {
           $group: {
             _id: null,
-            totalPosts: { $sum: 1 },
             totalEngagement: { $sum: "$latestSnapshot.derived.totalEngagement" },
             totalImpressions: { $sum: "$latestSnapshot.metrics.impressions" },
             avgEngagementRate: { $avg: "$latestSnapshot.derived.engagementRate" },
@@ -76,14 +76,27 @@ export const getOverviewStats = async (userId: string, startDate: Date, endDate:
         },
       ]);
 
-      return (
-        result[0] || {
-          totalPosts: 0,
-          totalEngagement: 0,
-          totalImpressions: 0,
-          avgEngagementRate: 0,
-        }
-      );
+      // 2. Get TOTAL lifetime completed posts count across the platform (independent of period)
+      // This counts each platform completion as a "post"
+      const totalPostsCount = await PostModel.aggregate([
+        { $match: { userId: new Types.ObjectId(userId) } },
+        { $unwind: "$platformStatuses" },
+        { $match: { "platformStatuses.status": "completed" } },
+        { $count: "total" },
+      ]);
+
+      const stats = snapshotStats[0] || {
+        totalEngagement: 0,
+        totalImpressions: 0,
+        avgEngagementRate: 0,
+      };
+
+      return {
+        totalPosts: totalPostsCount[0]?.total || 0,
+        totalEngagement: stats.totalEngagement,
+        totalImpressions: stats.totalImpressions,
+        avgEngagementRate: stats.avgEngagementRate,
+      };
     },
     300, // 5 minutes
   );

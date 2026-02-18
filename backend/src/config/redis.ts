@@ -6,7 +6,7 @@ const redisClient = createClient({
   url: `redis://${ENV.REDIS.HOST}:${ENV.REDIS.PORT}`,
 });
 
-redisClient.on("error", (err) => logger.error("Redis Client Error", err));
+redisClient.on("error", (err: Error) => logger.error("Redis Client Error", err));
 redisClient.on("connect", () => logger.info("Redis Client Connected"));
 
 export const connectRedis = async () => {
