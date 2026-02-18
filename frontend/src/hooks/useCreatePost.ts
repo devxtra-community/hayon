@@ -421,8 +421,10 @@ export function useCreatePost() {
       }
 
       updatePlatformPost(id, { text: refinedText });
-    } catch (error) {
-      console.error("LLM Refinement failed", error);
+    } catch (error: any) {
+      if (error.response?.status !== 429) {
+        console.error("LLM Refinement failed", error);
+      }
     } finally {
       setIsGenerating(false);
     }

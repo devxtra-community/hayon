@@ -118,11 +118,13 @@ export default function LoginForm({
       return router.push(redirectPath);
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
-      showToast(
-        "error",
-        "Login failed",
-        axiosError.response?.data?.message || "Login failed. Please try again.",
-      );
+      if (axiosError.response?.status !== 429) {
+        showToast(
+          "error",
+          "Login failed",
+          axiosError.response?.data?.message || "Login failed. Please try again.",
+        );
+      }
       console.error("Login error", error);
     } finally {
       setIsLoading(false);
