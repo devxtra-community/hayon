@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { ErrorResponse } from "../utils/responses";
 import bcrypt from "bcrypt";
 import logger from "../utils/logger";
+import { cacheAside, invalidateCache } from "../utils/cache";
 
 export const findUserByEmail = async (email: string) => {
   return User.findOne({ email });
@@ -15,8 +16,14 @@ export const createUser = async (data: Partial<IUser>) => {
 };
 
 export const findUserByIdSafe = async (userId: string) => {
-  return User.findById(userId).select(
-    "-auth.passwordHash -auth.verificationToken -auth.resetToken -auth.passwordResetToken",
+  return cacheAside(
+    `user:profile:${userId}`,
+    async () => {
+      return User.findById(userId).select(
+        "-auth.passwordHash -auth.verificationToken -auth.resetToken -auth.passwordResetToken",
+      );
+    },
+    3600, // 60 minutes
   );
 };
 
@@ -68,15 +75,21 @@ export const updateAvatar = async (userId: string, avatarUrl: string) => {
 };
 
 export const updateUserAvatar = async (userId: string, avatarUrl: string) => {
-  return User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true });
+  const updated = await User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true });
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
 };
 
 export const changeUserTimezone = async (userId: string, timezone: string) => {
-  return User.findByIdAndUpdate(userId, { timezone }, { new: true });
+  const updated = await User.findByIdAndUpdate(userId, { timezone }, { new: true });
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
 };
 
 export const changeUserName = async (userId: string, name: string) => {
-  return User.findByIdAndUpdate(userId, { name }, { new: true });
+  const updated = await User.findByIdAndUpdate(userId, { name }, { new: true });
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
 };
 
 export const IncreaseCaptionGenerations = async (userId: string) => {
@@ -92,11 +105,23 @@ export const findAllUsers = async () => {
 };
 
 export const updateUserSubscription = async (userId: string, plan: "free" | "pro") => {
-  return User.findByIdAndUpdate(userId, { $set: { "subscription.plan": plan } }, { new: true });
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    { $set: { "subscription.plan": plan } },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
 };
 
 export const updateUserActivityById = async (userId: string, activity: boolean) => {
-  return User.findByIdAndUpdate(userId, { $set: { isDisabled: activity } }, { new: true });
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    { $set: { isDisabled: activity } },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
 };
 
 export const getUsersAnalytics = async () => {

@@ -8,7 +8,6 @@ import {
   updateAvatar,
   updateUserAvatar,
   changeUserName,
-  findUserByIdSafe,
   findUserByIdWithAuth,
   updateUserPassword,
 } from "../repositories/user.repository";
@@ -120,10 +119,14 @@ export async function updateProfileController(req: Request, res: Response): Prom
       throw new Error("Invalid image URL");
     }
 
-    // Fetch user to get current avatar URL for cleanup
-    const user = await findUserByIdSafe(userId);
-    if (user?.avatar && user.avatar !== imageUrl && user.avatar.includes(ENV.AWS.S3_BUCKET_NAME)) {
-      const s3Key = user.avatar.split(".amazonaws.com/")[1];
+    // Use req.auth to get current avatar URL for cleanup
+    const currentAvatar = req.auth?.avatar;
+    if (
+      currentAvatar &&
+      currentAvatar !== imageUrl &&
+      currentAvatar.includes(ENV.AWS.S3_BUCKET_NAME)
+    ) {
+      const s3Key = currentAvatar.split(".amazonaws.com/")[1];
       if (s3Key) {
         await s3Service
           .deleteFile(s3Key)
@@ -153,12 +156,11 @@ export async function deleteProfileController(req: Request, res: Response): Prom
   try {
     const userId = req?.auth?.id as string;
 
-    // Fetch user to get current avatar URL
-    const user = await findUserByIdSafe(userId);
-    if (user?.avatar && user.avatar.includes(ENV.AWS.S3_BUCKET_NAME)) {
+    // Use req.auth to get current avatar URL
+    const currentAvatar = req.auth?.avatar;
+    if (currentAvatar && currentAvatar.includes(ENV.AWS.S3_BUCKET_NAME)) {
       // Extract key from URL
-      // Example: https://bucket.s3.region.amazonaws.com/profiles/userId.png
-      const s3Key = user.avatar.split(".amazonaws.com/")[1];
+      const s3Key = currentAvatar.split(".amazonaws.com/")[1];
       if (s3Key) {
         await s3Service.deleteFile(s3Key);
       }
