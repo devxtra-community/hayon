@@ -27,6 +27,7 @@ import platformRoutes from "./routes/platform.routes";
 import postRoutes from "./routes/post.routes";
 import adminRoutes from "./routes/admin.routes";
 import notificationRoutes from "./routes/notification.routes";
+import firebaseRoutes from "./routes/firebase.routes";
 
 // [==={ middleware / handlers }===]
 import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
@@ -93,6 +94,7 @@ const bootstrap = async () => {
   appRouter.use("/analytics", analyticsRoutes);
   appRouter.use("/admin", adminRoutes);
   appRouter.use("/notifications", notificationRoutes);
+  appRouter.use("/firebase", firebaseRoutes);
 
   expressInstance.use(notFoundHandler);
   expressInstance.use(serverErrorHandler);

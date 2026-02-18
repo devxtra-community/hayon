@@ -131,6 +131,10 @@ export const createPost = async (req: Request, res: Response) => {
       `Your post was created successfully and is now ${postStatus.toLowerCase()}.`,
       "success",
       { type: "post", id: post._id.toString(), model: "Post" },
+      {
+        image: content.mediaItems?.[0]?.s3Url,
+        link: `${process.env.FRONTEND_URL || "http://localhost:3000"}/history`,
+      },
     );
 
     return new SuccessResponse("Post created successfully", {

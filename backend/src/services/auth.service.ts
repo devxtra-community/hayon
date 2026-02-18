@@ -159,7 +159,6 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
   const { email, password } = data;
 
   const user = await findUserByEmail(email);
-
   if (!user) {
     throw new Error("User not found");
   }
@@ -168,12 +167,14 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
     throw new Error("You are not authorized to login here");
   }
 
+  console.log("checking provider and password hash", user.auth.provider, user.auth.passwordHash);
   if (user.auth.provider !== "email" || !user.auth.passwordHash) {
     throw new Error("Please login with Google");
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.auth.passwordHash);
 
+  console.log("Login service", isPasswordValid);
   if (!isPasswordValid) {
     throw new Error("Invalid password");
   }

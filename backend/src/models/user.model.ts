@@ -132,6 +132,11 @@ const userSchema = new Schema<IUser>(
       default: false,
     },
 
+    fcmTokens: {
+      type: [String],
+      default: [],
+    },
+
     auth: {
       type: authSchema,
       required: true,

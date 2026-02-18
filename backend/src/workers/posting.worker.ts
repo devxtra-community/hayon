@@ -61,6 +61,7 @@ export class PostWorker {
         channel.ack(msg);
         return;
       }
+
       const credentialCheck = await validateCredentials(payload.userId, payload.platform);
 
       if (!credentialCheck.valid) {
@@ -81,7 +82,6 @@ export class PostWorker {
         status: "processing",
         lastAttemptAt: new Date(),
       });
-      console.log("changed to processing");
 
       const credentials = await getCredentialsForPlatform(payload.userId, payload.platform);
       const service = getPostingService(payload.platform);
@@ -109,6 +109,10 @@ export class PostWorker {
             type: "post",
             id: payload.postId,
             model: "Post",
+          },
+          {
+            image: payload.content.mediaUrls?.[0],
+            link: result.platformPostUrl,
           },
         );
 

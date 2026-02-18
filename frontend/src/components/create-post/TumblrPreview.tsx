@@ -53,7 +53,7 @@ export const TumblrPreview = ({ user, postText, filePreviews }: TumblrPreviewPro
                The reference shows a title-like look. We'll just render it normally for now 
                but maybe handle hashtags specially if we want to mimic the reference exactly.
             */}
-            <p className="whitespace-pre-wrap text-black font-serif italic mb-2">
+            <div className="whitespace-pre-wrap text-black font-serif italic mb-2">
               {/* Mimicking the reference style somewhat - specifically specific font or style */}
               {/* Actually reference uses a standard sans-serif for username but content looks like it could be anything.
                    Let's stick to standard san-serif for now, maybe specific sizing.
@@ -61,7 +61,7 @@ export const TumblrPreview = ({ user, postText, filePreviews }: TumblrPreviewPro
               <div className="font-normal not-italic font-sans text-[20px] mb-2 block">
                 <ReadMoreText text={postText} />
               </div>
-            </p>
+            </div>
             {/* Hashtags are often blue or grey in Tumblr. Reference shows greyish/black tags */}
             <div className="flex flex-wrap gap-2 text-gray-500 text-[15px]">
               {/* Synthetically generating tags for preview visual if text doesn't have them? 

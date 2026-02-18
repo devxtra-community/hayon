@@ -15,8 +15,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import { DropdownMenuPortal } from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
 
 export const NotificationDropdown = () => {
+  const router = useRouter();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -191,9 +193,10 @@ export const NotificationDropdown = () => {
             <div className="px-2 py-3 space-y-2">
               {notifications.map((notification) => {
                 const postImage =
-                  notification.relatedResource?.type === "post"
+                  notification.image ||
+                  (notification.relatedResource?.type === "post"
                     ? notification.relatedResource.id?.content?.mediaItems?.[0]?.s3Url
-                    : null;
+                    : null);
                 const platform = extractPlatform(notification.message);
                 const isSuccess = notification.type === "success";
                 const isPosted = notification.message.toLowerCase().includes("successfully posted");
@@ -213,7 +216,16 @@ export const NotificationDropdown = () => {
                         : "opacity-90 hover:opacity-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:border-zinc-200 dark:hover:border-zinc-800",
                       "focus:bg-transparent focus:ring-2 focus:ring-blue-500/20",
                     )}
-                    onClick={() => !notification.read && markAsRead(notification._id)}
+                    onClick={() => {
+                      if (!notification.read) markAsRead(notification._id);
+                      if (notification.link) {
+                        if (notification.link.startsWith("http")) {
+                          window.open(notification.link, "_blank");
+                        } else {
+                          router.push(notification.link);
+                        }
+                      }
+                    }}
                   >
                     {useRichLayout && (
                       <div className="relative w-full aspect-video group/img overflow-hidden">

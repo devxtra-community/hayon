@@ -5,6 +5,8 @@ export interface INotification extends Document {
   type: "info" | "warning" | "success" | "error";
   message: string;
   read: boolean;
+  image?: string;
+  link?: string;
   relatedResource?: {
     type: "post" | "login";
     id: mongoose.Types.ObjectId;
@@ -23,6 +25,8 @@ const NotificationSchema: Schema = new Schema(
     },
     message: { type: String, required: true },
     read: { type: Boolean, default: false },
+    image: { type: String },
+    link: { type: String },
     relatedResource: {
       type: { type: String, enum: ["post", "login"] },
       id: {

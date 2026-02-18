@@ -3,7 +3,7 @@
 import React from "react";
 import { Globe, Clock, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 import { CustomTimePicker } from "@/components/ui/custom-time-picker";
 
@@ -33,6 +33,10 @@ export const SchedulePostDialog: React.FC<SchedulePostDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-[850px] p-0 overflow-hidden bg-white rounded-[2rem] md:rounded-[2.5rem] border-none shadow-2xl">
+        <DialogTitle className="sr-only">Schedule your post</DialogTitle>
+        <DialogDescription className="sr-only">
+          Select a date and time to publish your post on social media.
+        </DialogDescription>
         <div className="flex flex-col md:flex-row h-full max-h-[85vh] md:max-h-none md:min-h-[520px] overflow-y-auto md:overflow-visible">
           {/* Left Section: Date Selection */}
           <div className="flex-1 p-6 md:p-8 bg-gray-50/50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col justify-center">

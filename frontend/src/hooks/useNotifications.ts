@@ -7,6 +7,8 @@ export interface Notification {
   message: string;
   type: "info" | "warning" | "success" | "error";
   read: boolean;
+  image?: string;
+  link?: string;
   relatedResource?: {
     type: "post" | "login";
     id: any; // Populated post or login data

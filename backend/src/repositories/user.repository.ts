@@ -118,3 +118,7 @@ export const getUsersAnalytics = async () => {
     topPlan: topPlan[0]?._id || "None",
   };
 };
+
+export const updateUser = async (userId: string, token: string) => {
+  return User.findByIdAndUpdate(userId, { $push: { fcmTokens: token } });
+};

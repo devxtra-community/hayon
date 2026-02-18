@@ -2,6 +2,8 @@ import { INotification } from "../models/notification.model";
 import mongoose from "mongoose";
 import { io } from "../app";
 import { NotificationRepository } from "../repositories/notifications.repository";
+import admin from "../config/firebase";
+import User from "../models/user.model";
 
 export class NotificationService {
   static async createNotification(
@@ -13,12 +15,18 @@ export class NotificationService {
       id: string | mongoose.Types.ObjectId;
       model: "Post" | "RefreshToken";
     },
+    options?: {
+      image?: string;
+      link?: string;
+    },
   ) {
     // 1. Prepare data
     const notificationData: Partial<INotification> = {
       recipient: new mongoose.Types.ObjectId(recipientId),
       message,
       type,
+      image: options?.image,
+      link: options?.link,
       relatedResource: relatedResource
         ? {
             ...relatedResource,
@@ -35,7 +43,67 @@ export class NotificationService {
       io.to(recipientId).emit("notification", notification);
     }
 
+    // 4. Send Push Notification
+    const title = type === "success" ? "Success!" : type === "error" ? "Error" : "New Notification";
+    await this.sendPushNotification(recipientId, message, title, options?.image, options?.link);
+
     return notification;
+  }
+
+  static async sendPushNotification(
+    recipientId: string,
+    message: string,
+    title: string = "New Notification",
+    image?: string,
+    link?: string,
+  ) {
+    try {
+      const user = await User.findById(recipientId).select("fcmTokens");
+
+      if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
+        return;
+      }
+
+      const messagePayload: any = {
+        notification: {
+          title,
+          body: message,
+        },
+        tokens: user.fcmTokens,
+      };
+
+      if (image) {
+        messagePayload.notification.image = image;
+      }
+
+      if (link) {
+        messagePayload.webpush = {
+          fcm_options: {
+            link,
+          },
+        };
+      }
+
+      const response = await admin.messaging().sendEachForMulticast(messagePayload);
+
+      if (response.failureCount > 0) {
+        const failedTokens: string[] = [];
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            failedTokens.push(user.fcmTokens[idx]);
+          }
+        });
+
+        if (failedTokens.length > 0) {
+          await User.updateOne(
+            { _id: recipientId },
+            { $pull: { fcmTokens: { $in: failedTokens } } },
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error sending push notification:", error);
+    }
   }
 
   static async getUserNotifications(userId: string, limit = 20, page = 1) {

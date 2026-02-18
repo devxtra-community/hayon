@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { onMessage } from "firebase/messaging";
+import { messaging } from "@/lib/firebase";
+import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/axios";
 import { analyticsService } from "@/services/analytics.service";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar, Header } from "@/components/shared";
+
 import {
   DashboardMetrics,
   EngagementChart,
@@ -44,6 +48,20 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      onMessage(messaging, (payload) => {
+        console.log("Foreground Message received. ", payload);
+        showToast(
+          "success",
+          payload.notification?.title || "New Message",
+          payload.notification?.body || "Check your notifications.",
+        );
+      });
+    }
+  }, [showToast]);
 
   useEffect(() => {
     const fetchData = async () => {
