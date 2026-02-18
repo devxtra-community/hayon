@@ -1,16 +1,13 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { findUserByEmail, createUser, findUserByIdSafe } from "../repositories/user.repository";
+import { findUserByEmail, createUser } from "../repositories/user.repository";
 import { Types } from "mongoose";
 import {
   findPendingByEmail,
   deletePendingByEmail,
   createPendingSignup,
-  updateOtpSendCount,
   updateOtpNumber,
-  findSendCount,
 } from "../repositories/pendingSignup.repository";
-import { updateOtpAttempts } from "../repositories/pendingSignup.repository";
 import { sendOtpMail } from "../utils/nodemailer";
 import { v4 as uuidv4 } from "uuid";
 import * as RefreshTokenRepository from "../repositories/refreshToken.repository";
@@ -44,11 +41,6 @@ export const requestOtpService = async (email: string) => {
     throw new Error("Email already registered");
   }
 
-  const sendCount = await findSendCount(email);
-  if ((sendCount ?? 0) >= 2) {
-    throw new Error("Too many Requests");
-  }
-
   const otp = crypto.randomInt(100000, 999999).toString();
   const otpHash = await bcrypt.hash(otp, 10);
 
@@ -63,7 +55,6 @@ export const requestOtpService = async (email: string) => {
   }
 
   await sendOtpMail(email, otp);
-  await updateOtpSendCount(email);
 
   return true;
 };
@@ -74,14 +65,9 @@ export const verifyOtpService = async (email: string, otp: string) => {
     throw new Error("OTP not found or expired");
   }
 
-  if (pending.otpAttempts >= 5) {
-    throw new Error("Too many OTP attempts");
-  }
-
   const isValid = await bcrypt.compare(otp, pending.otpHash);
 
   if (!isValid) {
-    await updateOtpAttempts(email);
     throw new Error("Invalid OTP");
   }
 
@@ -322,16 +308,6 @@ export const refreshService = async (
   });
 
   return { accessToken, refreshToken };
-};
-
-export const getCurrentUserService = async (userId: string) => {
-  const user = await findUserByIdSafe(userId);
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  return user;
 };
 
 export const logoutService = async (refreshTokenJwt: string) => {

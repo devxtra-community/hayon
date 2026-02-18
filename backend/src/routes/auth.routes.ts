@@ -20,6 +20,7 @@ import {
   logoutDevice,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
+import { rateLimiter } from "../utils/ratelimit";
 
 import { validate } from "../middleware/validate.middleware";
 import {
@@ -34,11 +35,33 @@ import {
 
 const router = express.Router();
 
+const getEmailIdentifier = (req: any) => req.body?.email?.toLowerCase();
+
 router.post("/signup", validate(signupSchema), signup);
-router.post("/login", validate(loginSchema), login);
-router.post("/admin-login", validate(adminLoginSchema), adminLogin);
-router.post("/request-otp", validate(requestOtpSchema), requestOtp);
-router.post("/verify-otp", validate(verifyOtpSchema), verifyOtp);
+router.post(
+  "/login",
+  validate(loginSchema),
+  rateLimiter("login_attempt", 5, 900, getEmailIdentifier),
+  login,
+);
+router.post(
+  "/admin-login",
+  validate(adminLoginSchema),
+  rateLimiter("admin_login_attempt", 5, 900, getEmailIdentifier),
+  adminLogin,
+);
+router.post(
+  "/request-otp",
+  validate(requestOtpSchema),
+  rateLimiter("otp_request", 2, 3600, getEmailIdentifier),
+  requestOtp,
+);
+router.post(
+  "/verify-otp",
+  validate(verifyOtpSchema),
+  rateLimiter("otp_verify", 5, 900, getEmailIdentifier),
+  verifyOtp,
+);
 router.post("/refresh", refresh);
 
 router.get("/me", authenticate, getCurrentUser);

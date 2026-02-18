@@ -13,11 +13,6 @@ const PendingSignupSchema = new Schema<IPendingSignup>({
     type: String,
     required: true,
   },
-  otpAttempts: {
-    type: Number,
-    default: 0,
-  },
-  sendCount: { type: Number, default: 0 },
   createdAt: {
     type: Date,
     default: Date.now,
