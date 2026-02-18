@@ -35,11 +35,11 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   useEffect(() => {
     const handleRateLimit = (event: any) => {
       const { retryAfter, message } = event.detail;
-      showToast(
-        "error",
-        "Whoa, slow down!",
-        `${message} Please try again in ${formatDuration(retryAfter)}.`,
-      );
+      const fullMessage = message.includes("try again")
+        ? message
+        : `${message} Please try again in ${formatDuration(retryAfter)}.`;
+
+      showToast("error", "Whoa, slow down!", fullMessage);
     };
 
     window.addEventListener("app:error:ratelimit", handleRateLimit);

@@ -69,6 +69,7 @@ const bootstrap = async () => {
       }
     },
     credentials: true,
+    exposedHeaders: ["Retry-After"],
   };
 
   expressInstance.use(morgan("dev"));

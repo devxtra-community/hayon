@@ -41,7 +41,7 @@ export const rateLimiter = (
       if (current > limit) {
         logger.warn(`[RateLimit] Blocked ${prefix} for ${identifier}`);
         res.setHeader("Retry-After", resetTime - now);
-        new ErrorResponse(`Too many requests. Please try again in ${resetTime - now} seconds.`, {
+        new ErrorResponse("Too many requests.", {
           status: 429,
         }).send(res);
         return;
