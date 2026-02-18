@@ -16,10 +16,7 @@ export default [
     rules: {
       "no-console": "off",
       "consistent-return": "error",
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_" },
-      ],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
@@ -33,7 +30,7 @@ export default [
       ...next.configs.recommended.rules,
       ...next.configs["core-web-vitals"].rules,
       "@next/next/no-html-link-for-pages": ["error", "frontend/src/app"],
-       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
     },
     languageOptions: {
       parserOptions: {
@@ -50,6 +47,7 @@ export default [
       "**/build/**",
       "**/dist/**",
       "**/next-env.d.ts",
+      "frontend/public/firebase-messaging-sw.js",
     ],
   },
 ];
