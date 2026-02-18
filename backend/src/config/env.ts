@@ -118,4 +118,10 @@ export const ENV = {
   GEMINI: {
     API_KEY: required("GEMINI_API_KEY"),
   },
+
+  REDIS: {
+    HOST: required("REDIS_HOST"),
+    PORT: Number(process.env.REDIS_PORT),
+    PASSWORD: process.env.REDIS_PASSWORD,
+  },
 } as const;

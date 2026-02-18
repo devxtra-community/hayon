@@ -15,6 +15,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/database";
 import { connectRabbitMQ } from "./config/rabbitmq";
 import { initSocket } from "./config/socket";
+import { connectRedis } from "./config/redis";
 import { ENV } from "./config/env";
 
 // [==={ routes }===]
@@ -43,10 +44,12 @@ import { AnalyticsCronService } from "./services/cron/analytics.cron";
 // =====================================================================================
 
 export let io: any;
+
 const expressInstance: Application = express();
 
 const bootstrap = async () => {
   await connectDB();
+  await connectRedis();
   await connectRabbitMQ();
 
   AnalyticsCronService.init();
