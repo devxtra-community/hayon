@@ -6,6 +6,7 @@ import * as SocialAccountRepository from "../repositories/socialAccount.reposito
 import * as AnalyticsRepository from "../repositories/analytics.repository";
 import { getAnalyticsService } from "../services/analytics";
 import { AnalyticsErrorType, SocialMediaAnalyticsError } from "../services/analytics/errors";
+import { invalidateCache } from "../utils/cache";
 
 export class AnalyticsWorker {
   /**
@@ -185,6 +186,16 @@ export class AnalyticsWorker {
       followerCountAtSnapshot: followerCount,
     });
 
+    // Invalidate caches related to post stats
+    await Promise.all([
+      invalidateCache(`analytics:overview:${post.userId}`),
+      invalidateCache(`analytics:timeline:${post.userId}`),
+      invalidateCache(`analytics:platforms:${post.userId}`),
+      invalidateCache(`analytics:top-posts:${post.userId}`),
+      invalidateCache(`analytics:growth:${post.userId}`),
+      invalidateCache(`analytics:heatmap:${post.userId}`),
+    ]);
+
     // 7. Update Post's lastAnalyticsFetch flag
     await PostRepository.updatePost(post._id.toString(), post.userId.toString(), {
       platformStatuses: post.platformStatuses.map((ps) => {
@@ -195,7 +206,7 @@ export class AnalyticsWorker {
       }) as any,
     });
 
-    logger.info(`[AnalyticsWorker] Saved snapshot for ${msg.platform}`, {
+    logger.info(`[AnalyticsWorker] Saved snapshot and invalidated cache for ${msg.platform}`, {
       postId: msg.postId,
       likes: metrics.likes,
       shares: metrics.shares,
@@ -217,6 +228,8 @@ export class AnalyticsWorker {
     if (!account) {
       throw new Error(`Social account not found for user: ${msg.userId}`);
     }
+
+    let hasUpdates = false;
 
     for (const platform of platforms) {
       const analyticsService = getAnalyticsService(platform);
@@ -244,6 +257,8 @@ export class AnalyticsWorker {
             totalPosts: metrics.totalPosts,
           },
         });
+
+        hasUpdates = true;
 
         logger.info(`[AnalyticsWorker] Saved account snapshot for ${platform}`, {
           userId: msg.userId,
@@ -273,6 +288,17 @@ export class AnalyticsWorker {
         }
         // Continue with other platforms
       }
+    }
+
+    if (hasUpdates) {
+      // Invalidate follower growth cache
+      await Promise.all([
+        invalidateCache(`analytics:followers:${msg.userId}`),
+        invalidateCache(`analytics:growth:${msg.userId}`),
+        invalidateCache(`analytics:heatmap:${msg.userId}`),
+        invalidateCache(`analytics:top-posts:${msg.userId}`),
+      ]);
+      logger.info(`[AnalyticsWorker] Invalidated account caches for User ${msg.userId}`);
     }
   }
 }
