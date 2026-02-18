@@ -30,8 +30,6 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
-  const [growthPeriod, setGrowthPeriod] = useState("7d");
-  const [engagementPeriod, setEngagementPeriod] = useState("7d");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,29 +37,32 @@ export default function AnalyticsPage() {
         setLoading(true);
         setError(null);
 
-        // Fetch user
-        const { data: userData } = await api.get("/auth/me");
-        setUser(userData.data.user);
-
-        // Fetch each endpoint separately to handle partial failures
-        const results = await Promise.allSettled([
-          analyticsService.getOverview("30d"),
-          analyticsService.getTimeline("30d"),
-          analyticsService.getHeatmap(),
-          analyticsService.getTopPosts(5, "totalEngagement"),
+        // Fetch user and analytics data
+        const [userDataResults, results] = await Promise.all([
+          api.get("/auth/me"),
+          Promise.allSettled([
+            analyticsService.getOverview("30d"),
+            analyticsService.getTimeline("30d"),
+            analyticsService.getHeatmap(),
+            analyticsService.getTopPosts(5, "totalEngagement"),
+            analyticsService.getGrowth("30d"),
+          ]),
         ]);
+
+        setUser(userDataResults.data.data.user);
 
         const overview = results[0].status === "fulfilled" ? results[0].value : null;
         const timeline = results[1].status === "fulfilled" ? results[1].value : [];
         const heatmap = results[2].status === "fulfilled" ? results[2].value : [];
         const topPosts = results[3].status === "fulfilled" ? results[3].value : [];
+        const growth = results[4].status === "fulfilled" ? results[4].value : [];
 
         // Check if we got at least overview data
         if (!overview) {
           setError("Failed to load analytics data. Please try again later.");
           setData(null);
         } else {
-          setData({ overview, timeline, heatmap, topPosts });
+          setData({ overview, timeline, heatmap, topPosts, growth });
         }
       } catch (err) {
         console.error("Failed to fetch analytics", err);
@@ -176,24 +177,11 @@ export default function AnalyticsPage() {
 
             {/* Growth & Engagement Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div
-                className={cn(
-                  "h-[450px] transition-all duration-700 ease-in-out",
-                  growthPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
-                )}
-              >
-                <GrowthChart period={growthPeriod} setPeriod={setGrowthPeriod} />
+              <div className="h-[450px] transition-all duration-700 ease-in-out lg:col-span-1">
+                <GrowthChart initialData={data.growth} />
               </div>
-              <div
-                className={cn(
-                  "h-[450px] transition-all duration-700 ease-in-out",
-                  engagementPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
-                )}
-              >
-                <AnalyticsEngagementChart
-                  period={engagementPeriod}
-                  setPeriod={setEngagementPeriod}
-                />
+              <div className="h-[450px] transition-all duration-700 ease-in-out lg:col-span-1">
+                <AnalyticsEngagementChart initialData={data.timeline} />
               </div>
             </div>
 

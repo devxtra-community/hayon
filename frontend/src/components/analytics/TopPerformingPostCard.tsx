@@ -22,8 +22,14 @@ export default function TopPerformingPostCard({ initialData }: TopPerformingPost
   const [metric] = useState<string>("totalEngagement");
   const [post, setPost] = useState<any>(initialData);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
+    // Skip initial fetch if we have initialData and filters are at defaults
+    if (initialData && metric === "totalEngagement" && platform === "all") {
+      setPost(initialData);
+      setLoading(false);
+      return;
+    }
+
     const fetchTopPost = async () => {
       try {
         setLoading(true);
@@ -41,7 +47,7 @@ export default function TopPerformingPostCard({ initialData }: TopPerformingPost
       }
     };
     fetchTopPost();
-  }, [platform, metric]);
+  }, [platform, metric, initialData]);
 
   const metricValue = post ? post.derived?.totalEngagement || 0 : 0;
 

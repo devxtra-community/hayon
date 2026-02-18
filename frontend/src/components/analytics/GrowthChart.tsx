@@ -24,17 +24,19 @@ const PLATFORMS = [
   { id: "tumblr", label: "Tumblr" },
 ];
 
-interface GrowthChartProps {
-  period: string;
-  setPeriod: (period: string) => void;
-}
-
-export default function GrowthChart({ period, setPeriod }: GrowthChartProps) {
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function GrowthChart({ initialData }: { initialData?: any[] }) {
+  const [data, setData] = useState<any[]>(initialData || []);
+  const [loading, setLoading] = useState(!initialData);
+  const [period, setPeriod] = useState("30d");
   const [platform, setPlatform] = useState("all");
-
   useEffect(() => {
+    // Skip initial fetch if we have initialData and filters are at defaults
+    if (initialData && period === "30d" && platform === "all") {
+      setData(initialData);
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -48,7 +50,7 @@ export default function GrowthChart({ period, setPeriod }: GrowthChartProps) {
     };
 
     fetchData();
-  }, [period, platform]);
+  }, [period, platform, initialData]);
 
   return (
     <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 h-full flex flex-col">
@@ -78,11 +80,10 @@ export default function GrowthChart({ period, setPeriod }: GrowthChartProps) {
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                  period === p
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${period === p
                     ? "bg-white shadow-sm text-gray-900"
                     : "text-gray-500 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 {p}
               </button>
