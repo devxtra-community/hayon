@@ -44,7 +44,12 @@ export class NotificationService {
     }
 
     // 4. Send Push Notification
-    const title = type === "success" ? "Success!" : type === "error" ? "Error" : "New Notification";
+    const title =
+      type === "success"
+        ? "Hayon - Your post has been approved "
+        : type === "error"
+          ? "Hayon - Your post has been rejected"
+          : "Hayon - New Notification";
     await this.sendPushNotification(recipientId, message, title, options?.image, options?.link);
 
     return notification;
