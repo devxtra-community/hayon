@@ -11,7 +11,7 @@ interface MetricCardProps {
 function MetricCard({ title, value, isPrimary }: MetricCardProps) {
   return (
     <div
-      className={`relative rounded-2xl p-6 transition-all duration-200 border ${
+      className={`relative rounded-3xl p-6 transition-all duration-200 border ${
         isPrimary
           ? "bg-[#2D885D] text-white border-transparent shadow-lg shadow-green-900/10"
           : "bg-white border-slate-100 text-[#1A1C1E] shadow-sm"

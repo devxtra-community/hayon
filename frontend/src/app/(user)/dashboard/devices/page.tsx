@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/axios";
-import { Sidebar, Header } from "@/components/shared";
+import { Sidebar } from "@/components/shared";
 import DeviceList from "@/components/DeviceList";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -43,12 +43,7 @@ export default function DevicesPage() {
   }
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-full">
-        <Sidebar />
-      </div>
-
+    <div className="flex h-screen bg-white overflow-hidden p-2 gap-4 relative">
       {/* Mobile Sidebar Overlay */}
       <div
         className={cn(
@@ -69,15 +64,6 @@ export default function DevicesPage() {
       </div>
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="pb-2 lg:pb-4">
-          <Header
-            userName={user.name}
-            userEmail={user.email}
-            userAvatar={user.avatar}
-            onMenuClick={() => setIsMobileMenuOpen(true)}
-          />
-        </div>
-
         <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-8 lg:py-8 scrollbar-hide">
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex items-center gap-4">

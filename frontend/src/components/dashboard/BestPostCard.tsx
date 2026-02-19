@@ -87,7 +87,7 @@ export default function BestPostCard({ post }: BestPostCardProps) {
   const imageUrl = media ? media.s3Url : null;
 
   return (
-    <div className="relative bg-white rounded-2xl overflow-hidden group h-full min-h-[300px] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+    <div className="relative bg-white rounded-3xl overflow-hidden group h-full min-h-[300px] border border-slate-100 shadow-sm transition-all hover:shadow-md">
       {/* Background Image or Fallback Gradient */}
       <div className="absolute inset-0 bg-gray-200">
         {imageUrl ? (

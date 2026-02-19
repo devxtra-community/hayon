@@ -90,7 +90,7 @@ export default function UpcomingPostsCarousel({ posts }: UpcomingPostsCarouselPr
   const media = currentPost.content.mediaItems?.[0];
 
   return (
-    <div className="bg-white rounded-2xl p-6 h-full flex flex-col border border-slate-100 shadow-sm relative group overflow-hidden">
+    <div className="bg-white rounded-3xl p-6 h-full flex flex-col border border-slate-100 shadow-sm relative group overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-slate-800">Upcoming Posts</h3>
         {displayPosts.length > 1 && (

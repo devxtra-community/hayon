@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sidebar, Header } from "@/components/shared";
+import { Sidebar } from "@/components/shared";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
+import Image from "next/image";
 import {
   PlatformMetricsCard,
   FollowersPieChart,
@@ -11,7 +13,7 @@ import {
   AnalyticsInsightsCard,
 } from "@/components/analytics";
 import { analyticsService } from "@/services/analytics.service";
-import { AlertCircle, Calendar } from "lucide-react";
+import { AlertCircle, Menu } from "lucide-react";
 import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { LoadingH } from "@/components/ui/loading-h";
@@ -96,7 +98,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <main className="flex-1 bg-[#F1F5F9]/50 rounded-[2.5rem] overflow-y-auto px-4 py-4 lg:px-8 lg:py-6 scrollbar-hide flex flex-col gap-6">
+      <main className="flex-1 bg-[#F7F7F7] rounded-[2.5rem] overflow-y-auto px-4 py-4 lg:px-8 lg:py-6 scrollbar-hide flex flex-col gap-6">
         {loading || !user ? (
           <div className="flex items-center justify-center h-full">
             <LoadingH />
@@ -114,43 +116,45 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <div className="max-w-[1600px] mx-auto w-full space-y-6 lg:space-y-10 pb-10">
-            {/* Header Integrated */}
-            <Header
-              userName={user?.name || ""}
-              userEmail={user?.email || ""}
-              userAvatar={user?.avatar || ""}
-              onMenuClick={() => setIsMobileMenuOpen(true)}
-              className="bg-transparent h-auto py-2 px-0 shadow-none border-none"
-            />
+            {/* Header with Title & User Profile */}
+            <div className="flex items-center justify-between w-full py-2">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="lg:hidden mr-4 p-2 text-gray-600 hover:bg-gray-200 rounded-full"
+              >
+                <Menu size={24} />
+              </button>
 
-            {/* Hero Section */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-              <div className="space-y-1.5 px-1">
-                <h1 className="text-3xl lg:text-5xl font-extrabold text-[#111827] tracking-tight">
+              {/* Title */}
+              <div className="space-y-1.5 flex-1 p-5">
+                <h1 className="text-3xl lg:text-4xl font-extrabold text-[#111827] tracking-tight">
                   Your Performance <span className="text-[#10B981] italic">Snapshot</span>
                 </h1>
-                <p className="text-gray-500 text-sm lg:text-lg font-medium">
+                <p className="text-gray-500 text-sm lg:text-md font-medium">
                   Track, analyze and optimize your cross-platform strategy.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">
-                  <Calendar size={18} className="text-primary" />
-                  Last 30 Days
-                </button>
-                <button className="p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <path d="M12 3l1.912 5.885h6.188l-5.007 3.638 1.912 5.885-5.005-3.638-5.005 3.638 1.912-5.885-5.007-3.638h6.188L12 3z" />
-                  </svg>
-                </button>
+              {/* Right Section */}
+              <div className="flex items-center gap-4 ml-auto">
+                <NotificationDropdown />
+                <div className="flex items-center gap-3">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-200">
+                    <Image
+                      src={user?.avatar || "/default-avatar.png"}
+                      alt={user?.name || ""}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="text-left hidden sm:block">
+                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                </div>
               </div>
             </div>
 

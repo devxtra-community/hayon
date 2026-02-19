@@ -45,7 +45,7 @@ export default function PostDistributionChart({ data }: PostDistributionChartPro
   const totalPosts = chartData.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
-    <div className="bg-white rounded-2xl p-6 h-full flex flex-col border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-3xl p-6 h-full flex flex-col border border-slate-100 shadow-sm">
       <div className="mb-2">
         <h3 className="text-lg font-bold text-slate-800">Post Distribution</h3>
         <p className="text-sm text-slate-500">Total posts by platform</p>

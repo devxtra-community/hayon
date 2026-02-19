@@ -50,7 +50,7 @@ export default function EngagementChart({ data }: EngagementChartProps) {
   }, [data]);
 
   return (
-    <div className="bg-white rounded-2xl p-8 h-full flex flex-col border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-3xl p-8 h-full flex flex-col border border-slate-100 shadow-sm">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h3 className="text-xl font-bold text-slate-800">Engagement vs Posts</h3>

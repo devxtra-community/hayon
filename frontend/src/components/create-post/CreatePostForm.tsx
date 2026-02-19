@@ -77,9 +77,10 @@ export function CreatePostForm({
     <div className="flex-1 flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Create Post</h1>
-        <div className="text-sm text-gray-500">
-          Click Generate Preview To See How it willbe Look real platforms
-        </div>
+        <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-primary/40 hover:text-primary hover:shadow-sm transition-all duration-200 active:scale-95">
+          <Save size={16} />
+          Save Draft
+        </button>
       </div>
 
       {/* Validation Errors */}
@@ -160,10 +161,10 @@ export function CreatePostForm({
       )}
 
       {/* Text Input */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex-1 flex flex-col min-h-[300px]">
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex-1 flex flex-col min-h-[250px]">
         <Textarea
           placeholder="What's on your mind? Type your caption here..."
-          className="flex-1 border-none focus-visible:ring-0 resize-none text-lg p-0 placeholder:text-gray-300 shadow-none min-h-[200px]"
+          className="flex-1 border-none focus-visible:ring-0 resize-none text-lg p-0 placeholder:text-gray-300 shadow-none min-h-[150px]"
           value={postText}
           onChange={(e) => setPostText(e.target.value)}
         />
@@ -313,21 +314,6 @@ export function CreatePostForm({
               })}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Bottom Action Bar (Create Mode) */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" className="text-gray-500 hover:text-gray-900 gap-2">
-            {/* 
-                BACKEND: Save Draft functionality.
-                Call /api/posts/drafts endpoint.
-                Store the current state (text, media paths, selected platforms) in the DB.
-            */}
-            <Save size={18} /> Save Draft
-          </Button>
-          <div className="text-sm text-gray-500 hidden sm:block">Fill in details to continue</div>
         </div>
       </div>
     </div>

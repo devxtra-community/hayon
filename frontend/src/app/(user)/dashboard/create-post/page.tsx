@@ -68,7 +68,7 @@ export default function CreatePostPage() {
   }
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
+    <div className="flex h-screen bg-white overflow-hidden gap-4 relative">
       {/* Right Column */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Success Overlay */}
