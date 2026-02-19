@@ -107,10 +107,8 @@ export default function LoginForm({
         }
 
         const token = await getToken(messaging, {
-          vapidKey:
-            "BFWmxXmX5HUj7i94GOKS5d4NaxyccHylma807U3j3Qm4Bic44JlqgjducKO69GqcN2557nREAB-NFgZol2VO42k",
+          vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY,
         });
-
         console.log("FCM Token:", token);
 
         await api.post("/firebase/save-token", { userId, token });
