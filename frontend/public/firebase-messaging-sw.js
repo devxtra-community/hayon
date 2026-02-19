@@ -2,13 +2,13 @@ importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"
 importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js");
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBFxGmN3aW38F6KA0rF7dbV3kSc0TRokig",
-  authDomain: "hayon-app.firebaseapp.com",
-  projectId: "hayon-app",
-  storageBucket: "hayon-app.firebasestorage.app",
-  messagingSenderId: "1094405093952",
-  appId: "1:1094405093952:web:b105162e509a0875cffda5",
-  measurementId: "G-XNDZBYH6PQ",
+  apiKey: "NEXT_PUBLIC_FIREBASE_API_KEY_PLACEHOLDER",
+  authDomain: "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PLACEHOLDER",
+  projectId: "NEXT_PUBLIC_FIREBASE_PROJECT_ID_PLACEHOLDER",
+  storageBucket: "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PLACEHOLDER",
+  messagingSenderId: "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PLACEHOLDER",
+  appId: "NEXT_PUBLIC_FIREBASE_APP_ID_PLACEHOLDER",
+  measurementId: "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID_PLACEHOLDER",
 };
 
 firebase.initializeApp(firebaseConfig);

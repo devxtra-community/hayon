@@ -44,10 +44,27 @@ jobs:
       # ---------- FRONTEND BUILD ----------
       - name: Build frontend
         working-directory: frontend
+        run: |
+          # Replace placeholders in service worker
+          sed -i "s|NEXT_PUBLIC_FIREBASE_API_KEY_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_PROJECT_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_APP_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}|g" public/firebase-messaging-sw.js
+
+          pnpm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_URL }}
           NEXT_PUBLIC_VAPID_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
-        run: pnpm run build
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
 
       # ---------- SSH ----------
       - name: Setup SSH
