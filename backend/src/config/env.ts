@@ -51,7 +51,8 @@ export const ENV = {
   STRIPE: {
     SECRET_KEY: required("STRIPE_SECRET_KEY"),
     PUBLISHABLE_KEY: required("STRIPE_PUBLISHABLE_KEY"),
-    WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
+    WEBHOOK_SECRET: required("STRIPE_WEBHOOK_SECRET"),
+    PRO_PRICE_ID: required("STRIPE_PRO_PRICE_ID"),
   },
 
   /** ======================

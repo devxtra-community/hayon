@@ -76,6 +76,9 @@ const bootstrap = async () => {
   expressInstance.use(cors(corsOptions));
   expressInstance.use(helmet());
   expressInstance.use(cookieParser());
+
+  expressInstance.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
   expressInstance.use(express.json());
   expressInstance.use(express.urlencoded({ extended: true }));
   expressInstance.use(passport.initialize());
