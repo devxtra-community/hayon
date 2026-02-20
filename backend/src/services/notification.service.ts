@@ -93,7 +93,7 @@ export class NotificationService {
 
       if (response.failureCount > 0) {
         const failedTokens: string[] = [];
-        response.responses.forEach((resp, idx) => {
+        response.responses.forEach((resp: any, idx: number) => {
           if (!resp.success) {
             failedTokens.push(user.fcmTokens[idx]);
           }

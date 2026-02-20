@@ -4,6 +4,7 @@ import { ErrorResponse } from "../utils/responses";
 import bcrypt from "bcrypt";
 import logger from "../utils/logger";
 import { cacheAside, invalidateCache } from "../utils/cache";
+import { PLAN_LIMITS } from "../config/plans";
 
 export const findUserByEmail = async (email: string) => {
   return User.findOne({ email });
@@ -116,6 +117,112 @@ export const updateUserSubscription = async (userId: string, plan: "free" | "pro
   );
   await invalidateCache(`user:profile:${userId}`);
   return updated;
+};
+
+// ─── Stripe-aware subscription functions ─────────────────────────────────────
+
+export const upgradeUserToPro = async (
+  userId: string,
+  data: {
+    stripeCustomerId: string;
+    stripeSubscriptionId: string;
+    currentPeriodStart: Date;
+    currentPeriodEnd: Date;
+  },
+) => {
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        "subscription.plan": "pro",
+        "subscription.status": "active",
+        "subscription.stripeCustomerId": data.stripeCustomerId,
+        "subscription.stripeSubscriptionId": data.stripeSubscriptionId,
+        "subscription.currentPeriodStart": data.currentPeriodStart,
+        "subscription.currentPeriodEnd": data.currentPeriodEnd,
+        "subscription.cancelAtPeriodEnd": false,
+        "limits.maxPosts": PLAN_LIMITS.pro.maxPosts,
+        "limits.maxCaptionGenerations": PLAN_LIMITS.pro.maxCaptionGenerations,
+        "usage.postsCreated": 0,
+        "usage.captionGenerations": 0,
+      },
+    },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
+};
+
+export const downgradeUserToFree = async (userId: string) => {
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        "subscription.plan": "free",
+        "subscription.status": "active",
+        "subscription.stripeCustomerId": null,
+        "subscription.stripeSubscriptionId": null,
+        "subscription.currentPeriodStart": null,
+        "subscription.currentPeriodEnd": null,
+        "subscription.cancelAtPeriodEnd": false,
+        "limits.maxPosts": PLAN_LIMITS.free.maxPosts,
+        "limits.maxCaptionGenerations": PLAN_LIMITS.free.maxCaptionGenerations,
+        "usage.postsCreated": 0,
+        "usage.captionGenerations": 0,
+      },
+    },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
+};
+
+export const renewSubscription = async (
+  userId: string,
+  data: {
+    currentPeriodStart: Date;
+    currentPeriodEnd: Date;
+  },
+) => {
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        "subscription.status": "active",
+        "subscription.currentPeriodStart": data.currentPeriodStart,
+        "subscription.currentPeriodEnd": data.currentPeriodEnd,
+        "usage.postsCreated": 0,
+        "usage.captionGenerations": 0,
+      },
+    },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
+};
+
+export const markSubscriptionPastDue = async (userId: string) => {
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    { $set: { "subscription.status": "pastDue" } },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
+};
+
+export const setCancelAtPeriodEnd = async (userId: string, value: boolean) => {
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    { $set: { "subscription.cancelAtPeriodEnd": value } },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
+};
+
+export const findUserByStripeCustomerId = async (stripeCustomerId: string) => {
+  return User.findOne({ "subscription.stripeCustomerId": stripeCustomerId });
 };
 
 export const updateUserActivityById = async (userId: string, activity: boolean) => {
