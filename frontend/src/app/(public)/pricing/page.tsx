@@ -3,12 +3,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Zap, Crown, Sparkles } from "lucide-react";
 import { BackButton } from "@/components/BackButton";
+import { UpgradeToPro } from "@/components/shared/UpgradeToPro";
+import Link from "next/link";
 
 export default function PricingPage() {
   const features = {
     free: [
-      { name: "10 posts for each platform per month", included: true },
-      { name: "30 Ai Caption requests Per month", included: true },
+      { name: "30 posts per month", included: true },
+      { name: "50 AI Caption requests per month", included: true },
       { name: "Basic analytics", included: true },
       { name: "Community support", included: true },
       { name: "Advanced AI customization", included: false },
@@ -18,7 +20,8 @@ export default function PricingPage() {
       { name: "Custom branding", included: false },
     ],
     pro: [
-      { name: "Unlimited AI-generated posts", included: true },
+      { name: "100 posts per month", included: true },
+      { name: "100 AI Caption requests per month", included: true },
       { name: "Up to 10 social media accounts", included: true },
       { name: "Advanced analytics & insights", included: true },
       { name: "Priority 24/7 support", included: true },
@@ -26,7 +29,6 @@ export default function PricingPage() {
       { name: "Custom post scheduling", included: true },
       { name: "Brand voice training", included: true },
       { name: "Remove Hayon branding", included: true },
-      { name: "API access", included: true },
     ],
   };
 
@@ -46,7 +48,7 @@ export default function PricingPage() {
             </h1>
 
             <p className="text-sm md:text-base text-[#0a0a0a] opacity-90">
-              Start free and upgrade when you&aposre ready. No hidden fees, cancel anytime.
+              Start free and upgrade when you&apos;re ready. No hidden fees, cancel anytime.
             </p>
           </div>
 
@@ -79,7 +81,7 @@ export default function PricingPage() {
 
               <CardContent className="grow">
                 <h3 className="font-semibold text-xs text-muted-foreground uppercase tracking-wide mb-3">
-                  What&aposs included
+                  What&apos;s included
                 </h3>
 
                 <ul className="space-y-2">
@@ -107,14 +109,16 @@ export default function PricingPage() {
               </CardContent>
 
               <CardFooter>
-                <Button variant="outline" className="w-full h-10 text-sm font-medium">
-                  Current Plan
-                </Button>
+                <Link href="/dashboard" className="w-full">
+                  <Button variant="outline" className="w-full h-10 text-sm font-medium">
+                    Go to Dashboard
+                  </Button>
+                </Link>
               </CardFooter>
             </Card>
 
             {/* --- Pro Plan --- */}
-            <Card className="relative hover:shadow-lg transition-all bg-card flex flex-col p-4 py-6">
+            <Card className="relative hover:shadow-lg transition-all bg-card flex flex-col p-4 py-6 border-2 border-[#318D62]/20 shadow-green-50">
               <CardHeader className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-black text-white px-4 py-1 text-lg font-semibold">
@@ -131,7 +135,7 @@ export default function PricingPage() {
 
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">$5</span>
+                    <span className="text-4xl font-bold">$4.99</span>
                     <span className="text-sm text-muted-foreground">/month</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
@@ -158,12 +162,7 @@ export default function PricingPage() {
               </CardContent>
 
               <CardFooter>
-                <Button
-                  className="w-full h-10 text-sm font-medium hover:opacity-90"
-                  variant="black"
-                >
-                  Upgrade to Pro
-                </Button>
+                <UpgradeToPro />
               </CardFooter>
             </Card>
           </div>
