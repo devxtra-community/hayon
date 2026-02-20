@@ -12,18 +12,18 @@ export const checkUserGenerationLimit = async (req: Request, res: Response, next
     return res.status(404).json({ message: "User not found" });
   }
 
-  // Use values from DB if present, otherwise use defaults
-  const limit =
-    user.limits?.maxCaptionGenerations || (user.subscription?.plan === "pro" ? 100 : 50);
-  const usage = user.usage?.captionGenerations || 0;
+  const maxGenerations = user.limits.maxCaptionGenerations;
+  const usage = user.usage.captionGenerations;
 
-  console.log(`[LimitCheck] User: ${userId}, Usage: ${usage}, Limit: ${limit}`);
-
-  if (usage >= limit) {
+  if (usage >= maxGenerations) {
     return res.status(403).json({
-      message: "Generation limit reached",
+      message: `AI generation limit reached (${usage}/${maxGenerations}). ${
+        user.subscription.plan === "free"
+          ? "Upgrade to Pro for more."
+          : "Limit resets on your next billing cycle."
+      }`,
       usage,
-      limit,
+      limit: maxGenerations,
     });
   }
 
@@ -41,16 +41,18 @@ export const checkUserPostLimit = async (req: Request, res: Response, next: Next
     return res.status(404).json({ message: "User not found" });
   }
 
-  const limit = user.limits?.maxPosts || (user.subscription?.plan === "pro" ? 200 : 100);
-  const usage = user.usage?.postsCreated || 0;
+  const maxPosts = user.limits.maxPosts;
+  const usage = user.usage.postsCreated;
 
-  console.log(`[LimitCheck] User: ${userId}, PostUsage: ${usage}, PostLimit: ${limit}`);
-
-  if (usage >= limit) {
+  if (usage >= maxPosts) {
     return res.status(403).json({
-      message: "Post creation limit reached",
+      message: `Post creation limit reached (${usage}/${maxPosts}). ${
+        user.subscription.plan === "free"
+          ? "Upgrade to Pro for more."
+          : "Limit resets on your next billing cycle."
+      }`,
       usage,
-      limit,
+      limit: maxPosts,
     });
   }
 
