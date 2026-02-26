@@ -52,7 +52,7 @@ export default function Header({
   return (
     <div className={cn("w-full mb-6 lg:mb-8", className)}>
       {/* Mobile Header - Pill Style */}
-      <header className="flex lg:hidden items-center justify-between w-full h-[64px] px-3">
+      <header className="flex lg:hidden items-center justify-between rounded-full bg-white w-full h-[64px] px-3">
         <div className="flex items-center gap-1">
           <button
             onClick={onMenuClick}

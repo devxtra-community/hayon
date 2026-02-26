@@ -71,7 +71,7 @@ export default function TopPerformingPostCard({ initialData }: TopPerformingPost
     <div className="bg-[#E9FBF3] rounded-[2rem] p-6 shadow-sm flex flex-col h-full gap-4">
       <div className="flex justify-between items-start pt-2">
         <div className="flex gap-3">
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm">
+          <div className="lg:flex hidden w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm">
             <svg
               width="20"
               height="20"

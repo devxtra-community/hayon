@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-none lg:rounded-[2.5rem] overflow-hidden">
         {user && (
-          <div className="px-4 pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7]">
+          <div className="sticky top-0 z-40 px-4 pt-6 pb-2 lg:px-8 lg:pt-8 bg-[#F7F7F7]">
             <Header
               userName={user.name}
               userEmail={user.email}
@@ -109,7 +109,10 @@ export default function AnalyticsPage() {
               onMenuClick={() => setIsMobileMenuOpen(true)}
               title={
                 <>
-                  Your Performance <span className="text-primary italic">Snapshot</span>
+                  <span className="hidden lg:inline">
+                    Your Performance <span className="text-primary italic">Snapshot</span>
+                  </span>
+                  <span className="lg:hidden">Analytics</span>
                 </>
               }
               subtitle="Track and optimize your cross-platform strategy"
@@ -135,10 +138,10 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <div className="max-w-[1600px] mx-auto w-full space-y-6 lg:space-y-10 pb-10">
-              {/* Main Statsrounded-[1rem] Grid */}
+              {/* Main Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
                 {/* Analytics Card */}
-                <div className="xl:col-span-1 hover:scale-[1.02] transition-transform duration-500">
+                <div className="xl:col-span-1 h-[480px] sm:h-[520px] xl:h-auto hover:scale-[1.02] transition-transform duration-500">
                   <PlatformMetricsCard
                     platformStats={data.overview?.platformPerformance || []}
                     followerCounts={data.overview?.followers?.breakdown || {}}
@@ -146,18 +149,18 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Follower Breakdown Chart */}
-                <div className="xl:col-span-1 hover:scale-[1.02] transition-transform duration-500">
+                <div className="xl:col-span-1 h-[550px] sm:h-[600px] xl:h-auto hover:scale-[1.02] transition-transform duration-500">
                   <FollowersPieChart data={data.overview?.followers?.breakdown || {}} />
                 </div>
 
                 {/* Best Content Card */}
-                <div className="xl:col-span-1 hover:scale-[1.02] transition-transform duration-500">
+                <div className="xl:col-span-1 h-[450px] sm:h-[500px] xl:h-auto hover:scale-[1.02] transition-transform duration-500">
                   <TopPerformingPostCard initialData={data.topPosts?.[0]} />
                 </div>
               </div>
 
               {/* Growth & Engagement Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
                 <div
                   className={cn(
                     "h-[350px] sm:h-[400px] lg:h-[450px] transition-all duration-700 ease-in-out",
