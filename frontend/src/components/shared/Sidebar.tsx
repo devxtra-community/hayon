@@ -62,7 +62,7 @@ export default function Sidebar() {
     isActive(item.href) || item.subItems?.some((sub) => isActive(sub.href));
 
   return (
-    <aside className="w-64 h-full bg-[#F7F7F7] rounded-[2rem] flex flex-col">
+    <aside className="w-64 h-full bg-[#F7F7F7] lg:rounded-[2rem] rounded-r-2xl flex flex-col">
       {/* Logo */}
       <div className="flex items-center justify-center py-5 px-6">
         <Link href="/dashboard" className="flex items-center gap-2">

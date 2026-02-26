@@ -52,7 +52,7 @@ export default function Header({
   return (
     <div className={cn("w-full mb-6 lg:mb-8", className)}>
       {/* Mobile Header - Pill Style */}
-      <header className="flex lg:hidden items-center justify-between w-full h-[64px] bg-white rounded-full px-3 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-gray-100/50">
+      <header className="flex lg:hidden items-center justify-between w-full h-[64px] px-3">
         <div className="flex items-center gap-1">
           <button
             onClick={onMenuClick}
@@ -94,7 +94,7 @@ export default function Header({
       </header>
 
       {/* Desktop Header Layout */}
-      <header className="hidden lg:flex items-center justify-between w-full h-[13vh] bg-[#F7F7F7] rounded-[1rem] px-8 py-4">
+      <header className="hidden lg:flex items-center justify-between w-full h-[13vh] bg-[#F7F7F7] px-8 py-4">
         {/* Left Content, Title or Search Bar */}
         <div className="flex-1">
           {leftContent ? (

@@ -86,7 +86,7 @@ export const PlanInfoCard = ({ user }: PlanInfoCardProps) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 lg:p-8 h-3/4">
+    <div className="bg-white rounded-2xl p-6 lg:p-8">
       {/* Past Due Warning Banner */}
       {isPastDue && (
         <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">

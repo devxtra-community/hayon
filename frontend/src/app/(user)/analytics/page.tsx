@@ -30,6 +30,8 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
+  const [growthPeriod, setGrowthPeriod] = useState<string>("7d");
+  const [engagementPeriod, setEngagementPeriod] = useState<string>("7d");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,7 +99,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-[2.5rem] overflow-hidden">
+      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-none lg:rounded-[2.5rem] overflow-hidden">
         {user && (
           <div className="px-4 pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7]">
             <Header
@@ -115,7 +117,7 @@ export default function AnalyticsPage() {
           </div>
         )}
 
-        <main className="flex-1 px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+        <main className="flex-1 px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 lg:gap-8">
           {loading || !user ? (
             <div className="flex items-center justify-center h-full">
               <LoadingH />
@@ -133,7 +135,7 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <div className="max-w-[1600px] mx-auto w-full space-y-6 lg:space-y-10 pb-10">
-              {/* Main Stats Grid */}
+              {/* Main Statsrounded-[1rem] Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
                 {/* Analytics Card */}
                 <div className="xl:col-span-1 hover:scale-[1.02] transition-transform duration-500">
@@ -155,24 +157,29 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Growth & Engagement Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                 <div
                   className={cn(
-                    "h-[450px] transition-all duration-700 ease-in-out",
+                    "h-[350px] sm:h-[400px] lg:h-[450px] transition-all duration-700 ease-in-out",
                     growthPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
                   )}
                 >
-                  <GrowthChart period={growthPeriod} setPeriod={setGrowthPeriod} />
+                  <GrowthChart
+                    period={growthPeriod}
+                    setPeriod={setGrowthPeriod}
+                    initialData={growthPeriod === "30d" ? data.growth : undefined}
+                  />
                 </div>
                 <div
                   className={cn(
-                    "h-[450px] transition-all duration-700 ease-in-out",
+                    "h-[350px] sm:h-[400px] lg:h-[450px] transition-all duration-700 ease-in-out",
                     engagementPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
                   )}
                 >
                   <AnalyticsEngagementChart
                     period={engagementPeriod}
                     setPeriod={setEngagementPeriod}
+                    initialData={engagementPeriod === "30d" ? data.timeline : undefined}
                   />
                 </div>
               </div>

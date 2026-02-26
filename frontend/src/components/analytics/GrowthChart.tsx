@@ -24,11 +24,24 @@ const PLATFORMS = [
   { id: "tumblr", label: "Tumblr" },
 ];
 
-export default function GrowthChart({ initialData }: { initialData?: any[] }) {
+interface GrowthChartProps {
+  initialData?: any[];
+  period?: string;
+  setPeriod?: (period: string) => void;
+}
+
+export default function GrowthChart({
+  initialData,
+  period: propPeriod,
+  setPeriod: propSetPeriod,
+}: GrowthChartProps) {
   const [data, setData] = useState<any[]>(initialData || []);
   const [loading, setLoading] = useState(!initialData);
-  const [period, setPeriod] = useState("30d");
+  const [internalPeriod, setInternalPeriod] = useState("30d");
   const [platform, setPlatform] = useState("all");
+
+  const period = propPeriod || internalPeriod;
+  const setPeriod = propSetPeriod || setInternalPeriod;
   useEffect(() => {
     // Skip initial fetch if we have initialData and filters are at defaults
     if (initialData && period === "30d" && platform === "all") {
@@ -80,10 +93,11 @@ export default function GrowthChart({ initialData }: { initialData?: any[] }) {
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${period === p
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                  period === p
                     ? "bg-white shadow-sm text-gray-900"
                     : "text-gray-500 hover:text-gray-900"
-                  }`}
+                }`}
               >
                 {p}
               </button>

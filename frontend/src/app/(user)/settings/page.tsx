@@ -62,45 +62,46 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings Content */}
-      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-[2.5rem] overflow-hidden">
-        {user && (
-          <div className="px-4 pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7]">
-            <Header
-              userName={user.name}
-              userEmail={user.email}
-              userAvatar={user.avatar}
-              onMenuClick={() => setIsMobileMenuOpen(true)}
-              title="Settings"
-              subtitle="Manage your account and preferences"
-            />
-          </div>
-        )}
-        <main className="flex-1 px-6 py-6 lg:px-8 lg:py-8 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-none lg:rounded-[2.5rem] overflow-hidden">
+        <main className="flex-1 px-4 lg:px-6 overflow-y-auto custom-scrollbar">
           {!user ? (
             <div className="flex items-center justify-center h-full">
               <LoadingH />
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-6">
-                {/* Profile Card */}
-                <ProfileCard user={user} onUpdate={() => setUpdate(!update)} />
+            <div className="py-6 lg:py-8">
+              <Header
+                userName={user.name}
+                userEmail={user.email}
+                userAvatar={user.avatar}
+                onMenuClick={() => setIsMobileMenuOpen(true)}
+                title="Settings"
+                subtitle="Manage your account and preferences"
+              />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-6">
+                  {/* Profile Card */}
+                  <ProfileCard user={user} onUpdate={() => setUpdate(!update)} />
 
-                {/* Plan Info Section */}
-                <PlanInfoCard user={user} />
-              </div>
+                  {/* Plan Info Section */}
+                  <PlanInfoCard user={user} />
+                </div>
 
-              {/* Right Column */}
-              <div className="space-y-6">
-                {/* Time Zone */}
-                <TimezoneCard initialTimezone={user.timezone} onUpdate={() => setUpdate(!update)} />
+                {/* Right Column */}
+                <div className="space-y-6">
+                  {/* Time Zone */}
+                  <TimezoneCard
+                    initialTimezone={user.timezone}
+                    onUpdate={() => setUpdate(!update)}
+                  />
 
-                {/* Connect Platforms */}
-                <ConnectedPlatformsCard
-                  connectedPlatforms={connectedPlatforms}
-                  onUpdate={() => setUpdate(!update)}
-                />
+                  {/* Connect Platforms */}
+                  <ConnectedPlatformsCard
+                    connectedPlatforms={connectedPlatforms}
+                    onUpdate={() => setUpdate(!update)}
+                  />
+                </div>
               </div>
             </div>
           )}
