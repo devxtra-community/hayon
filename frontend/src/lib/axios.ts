@@ -60,8 +60,29 @@ api.interceptors.response.use(
       | (InternalAxiosRequestConfig & { _retry?: boolean })
       | undefined;
 
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // Handle Rate Limiting (429) globally
+    if (error.response?.status === 429) {
+      const retryAfterHeader = error.response.headers["retry-after"];
+      const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60;
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("app:error:ratelimit", {
+            detail: {
+              retryAfter,
+              message: (error.response.data as any)?.message || "Too many requests.",
+            },
+          }),
+        );
+      }
+      return Promise.reject(error);
+    }
+
     if (
-      !originalRequest ||
       error.response?.status !== 401 ||
       originalRequest.url?.includes("/auth/refresh") ||
       originalRequest._retry

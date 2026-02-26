@@ -5,6 +5,7 @@ import {
   deleteProfileController,
   getProfileUploadUrlController,
   updateProfileController,
+  changePasswordController,
 } from "../controllers/profile.controller";
 import { authenticate } from "../middleware/auth.middleware";
 
@@ -15,5 +16,6 @@ router.put("/update-avatar", authenticate, updateProfileController);
 router.delete("/delete-avatar", authenticate, deleteProfileController);
 router.put("/change-timezone", authenticate, changeTimezoneController);
 router.patch("/change-name", authenticate, changeNameController);
+router.patch("/change-password", authenticate, changePasswordController);
 
 export default router;

@@ -17,6 +17,12 @@ const RefreshTokenSchema = new Schema<IRefreshToken>(
       index: true,
     },
 
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      required: true,
+    },
+
     expiresAt: {
       type: Date,
       required: true,

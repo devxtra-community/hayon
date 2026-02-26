@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -33,6 +33,10 @@ jobs:
         run: pnpm run build
 
       # ---------- BACKEND BUILD ----------
+      - name: Create Service Account Key
+        working-directory: backend
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > src/serviceAccountKey.json
+
       - name: Build backend
         working-directory: backend
         run: pnpm run build
@@ -40,9 +44,27 @@ jobs:
       # ---------- FRONTEND BUILD ----------
       - name: Build frontend
         working-directory: frontend
+        run: |
+          # Replace placeholders in service worker
+          sed -i "s|NEXT_PUBLIC_FIREBASE_API_KEY_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_PROJECT_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_APP_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}|g" public/firebase-messaging-sw.js
+          sed -i "s|NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID_PLACEHOLDER|${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}|g" public/firebase-messaging-sw.js
+
+          pnpm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_URL }}
-        run: pnpm run build
+          NEXT_PUBLIC_VAPID_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
 
       # ---------- SSH ----------
       - name: Setup SSH
@@ -60,7 +82,7 @@ jobs:
             -e "ssh -i ~/.ssh/ec2.pem" \
             backend/dist backend/package.json \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/backend/
-          
+
           # Deploy schemas (needed for workspace)
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/ec2.pem" \
@@ -93,7 +115,7 @@ jobs:
             pm2 save
           EOF
 
-# ---------- DEPLOY FRONTEND ----------
+      # ---------- DEPLOY FRONTEND ----------
       - name: Deploy Frontend Artifacts
         run: |
           # 1. Create the NESTED directory structure manually

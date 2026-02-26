@@ -24,7 +24,8 @@ export type PlatformStatus =
   | "pending" // Waiting in queue
   | "processing" // Currently being posted
   | "completed" // Successfully posted
-  | "failed"; // Failed to post
+  | "failed" // Failed to post
+  | "deleted"; // NEW: Post was deleted on the original platform
 
 export interface MediaItem {
   s3Key: string; // "posts/user123/post456/abc.jpg"

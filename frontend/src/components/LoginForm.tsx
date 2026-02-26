@@ -13,6 +13,9 @@ import { loginSchema } from "@hayon/schemas";
 import type { ZodError } from "zod";
 import { useToast } from "@/context/ToastContext";
 
+import { getToken } from "firebase/messaging";
+import { messaging } from "@/lib/firebase";
+
 interface LoginFormProps {
   isAdmin?: boolean;
   loginEndpoint?: string;
@@ -88,19 +91,40 @@ export default function LoginForm({
     setIsLoading(true);
 
     try {
+      console.log("Login request");
       const { data } = await api.post(loginEndpoint, { email, password });
 
       // Store access token in memory
-      setAccessToken(data.accessToken);
+      setAccessToken(data.data.accessToken);
 
-      router.push(redirectPath);
+      async function setupPush(userId: string) {
+        console.log("Setting up push");
+        const permission = await Notification.requestPermission();
+
+        if (permission !== "granted") {
+          console.log("Permission denied");
+          return;
+        }
+
+        const token = await getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY,
+        });
+        console.log("FCM Token:", token);
+
+        await api.post("/firebase/save-token", { userId, token });
+      }
+
+      await setupPush(data.data.user.id);
+      return router.push(redirectPath);
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
-      showToast(
-        "error",
-        "Login failed",
-        axiosError.response?.data?.message || "Login failed. Please try again.",
-      );
+      if (axiosError.response?.status !== 429) {
+        showToast(
+          "error",
+          "Login failed",
+          axiosError.response?.data?.message || "Login failed. Please try again.",
+        );
+      }
       console.error("Login error", error);
     } finally {
       setIsLoading(false);

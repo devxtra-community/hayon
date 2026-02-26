@@ -13,6 +13,7 @@ export {
   adminLoginSchema,
   sendResetEmailSchema,
   resetPasswordSchema,
+  changePasswordSchema,
   // Types
   type RequestOtpInput,
   type VerifyOtpInput,
@@ -21,6 +22,7 @@ export {
   type AdminLoginInput,
   type SendResetEmailInput,
   type ResetPasswordInput,
+  type ChangePasswordInput,
 } from "./auth.schema";
 
 export {

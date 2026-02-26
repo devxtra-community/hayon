@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { ToastContainer } from "@/components/Toast";
 import { ToastMessage, ToastType } from "@/types/toast";
 
@@ -19,12 +19,32 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
   const showToast = (type: ToastType, title: string, message: string) => {
     const id = Date.now();
-    setToasts((prev) => [...prev, { id, type, title, message }]);
+    setToasts((prev) => [{ id, type, title, message }, ...prev]);
   };
 
   const closeToast = (id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
+
+  const formatDuration = (seconds: number) => {
+    if (seconds < 60) return `${seconds} seconds`;
+    const minutes = Math.ceil(seconds / 60);
+    return `${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
+  };
+
+  useEffect(() => {
+    const handleRateLimit = (event: any) => {
+      const { retryAfter, message } = event.detail;
+      const fullMessage = message.includes("try again")
+        ? message
+        : `${message} Please try again in ${formatDuration(retryAfter)}.`;
+
+      showToast("error", "Whoa, slow down!", fullMessage);
+    };
+
+    window.addEventListener("app:error:ratelimit", handleRateLimit);
+    return () => window.removeEventListener("app:error:ratelimit", handleRateLimit);
+  }, []);
 
   return (
     <ToastContext.Provider value={{ showToast }}>

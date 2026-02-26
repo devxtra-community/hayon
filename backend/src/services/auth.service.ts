@@ -1,19 +1,16 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { findUserByEmail, createUser, findUserByIdSafe } from "../repositories/user.repository";
+import { findUserByEmail, createUser } from "../repositories/user.repository";
 import { Types } from "mongoose";
 import {
   findPendingByEmail,
   deletePendingByEmail,
   createPendingSignup,
-  updateOtpSendCount,
   updateOtpNumber,
-  findSendCount,
 } from "../repositories/pendingSignup.repository";
-import { updateOtpAttempts } from "../repositories/pendingSignup.repository";
 import { sendOtpMail } from "../utils/nodemailer";
 import { v4 as uuidv4 } from "uuid";
-import { RefreshToken } from "../models/refreshToken.model";
+import * as RefreshTokenRepository from "../repositories/refreshToken.repository";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
 import { createRefreshToken } from "../repositories/refreshToken.repository";
 import s3Service from "./s3/s3.service";
@@ -21,7 +18,7 @@ import { parseBase64Image } from "../utils/bufferConvertion";
 import {
   findResetPasswordToken,
   setPasswordResetToken,
-  updateUserPassword,
+  updateUserPasswordByEmail,
 } from "../repositories/user.repository";
 import { sendResetPasswordEmail } from "../utils/nodemailer";
 import logger from "../utils/logger";
@@ -44,11 +41,6 @@ export const requestOtpService = async (email: string) => {
     throw new Error("Email already registered");
   }
 
-  const sendCount = await findSendCount(email);
-  if ((sendCount ?? 0) >= 2) {
-    throw new Error("Too many Requests");
-  }
-
   const otp = crypto.randomInt(100000, 999999).toString();
   const otpHash = await bcrypt.hash(otp, 10);
 
@@ -63,7 +55,6 @@ export const requestOtpService = async (email: string) => {
   }
 
   await sendOtpMail(email, otp);
-  await updateOtpSendCount(email);
 
   return true;
 };
@@ -74,14 +65,9 @@ export const verifyOtpService = async (email: string, otp: string) => {
     throw new Error("OTP not found or expired");
   }
 
-  if (pending.otpAttempts >= 5) {
-    throw new Error("Too many OTP attempts");
-  }
-
   const isValid = await bcrypt.compare(otp, pending.otpHash);
 
   if (!isValid) {
-    await updateOtpAttempts(email);
     throw new Error("Invalid OTP");
   }
 
@@ -131,6 +117,7 @@ export const signupService = async (data: SignupData, ipAddress?: string, userAg
   await createRefreshToken({
     tokenId,
     userId: user._id,
+    role: user.role,
     expiresAt: refreshExpiresAt,
     ipAddress,
     userAgent,
@@ -144,6 +131,7 @@ export const signupService = async (data: SignupData, ipAddress?: string, userAg
   const refreshToken = generateRefreshToken({
     sub: user._id.toString(),
     tokenId,
+    role: user.role,
   });
 
   return {
@@ -157,7 +145,6 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
   const { email, password } = data;
 
   const user = await findUserByEmail(email);
-
   if (!user) {
     throw new Error("User not found");
   }
@@ -166,12 +153,14 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
     throw new Error("You are not authorized to login here");
   }
 
+  console.log("checking provider and password hash", user.auth.provider, user.auth.passwordHash);
   if (user.auth.provider !== "email" || !user.auth.passwordHash) {
     throw new Error("Please login with Google");
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.auth.passwordHash);
 
+  console.log("Login service", isPasswordValid);
   if (!isPasswordValid) {
     throw new Error("Invalid password");
   }
@@ -184,6 +173,7 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
 
   await createRefreshToken({
     tokenId,
+    role: user.role,
     userId: user._id,
     expiresAt: refreshExpiresAt,
     ipAddress,
@@ -197,6 +187,7 @@ export const loginService = async (data: LoginData, ipAddress?: string, userAgen
 
   const refreshToken = generateRefreshToken({
     sub: user._id.toString(),
+    role: user.role,
     tokenId,
   });
 
@@ -243,10 +234,13 @@ export const adminLoginService = async (
   await createRefreshToken({
     tokenId,
     userId: user._id,
+    role: user.role,
     expiresAt: refreshExpiresAt,
     ipAddress,
     userAgent,
   });
+
+  console.log("refresh token created"); // Debugging line
 
   const accessToken = generateAccessToken({
     sub: user._id.toString(),
@@ -256,6 +250,7 @@ export const adminLoginService = async (
   const refreshToken = generateRefreshToken({
     sub: user._id.toString(),
     tokenId,
+    role: user.role,
   });
 
   return {
@@ -272,9 +267,7 @@ export const refreshService = async (
 ) => {
   const payload = verifyRefreshToken(refreshTokenJwt);
 
-  const existingToken = await RefreshToken.findOne({
-    tokenId: payload.tokenId,
-  });
+  const existingToken = await RefreshTokenRepository.findByTokenId(payload.tokenId);
 
   if (!existingToken) {
     throw new Error("Invalid refresh token");
@@ -289,51 +282,42 @@ export const refreshService = async (
     throw new Error("Invalid refresh token");
   }
 
-  existingToken.revoked = true;
-  await existingToken.save();
+  await RefreshTokenRepository.revokeToken(existingToken.tokenId);
 
   const newTokenId = uuidv4();
   const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  await RefreshToken.create({
+  await RefreshTokenRepository.createRefreshToken({
     tokenId: newTokenId,
     userId: existingToken.userId,
+    role: existingToken.role,
     expiresAt: newExpiresAt,
-    ipAddress: ipAddress || existingToken.ipAddress, // Update if new, else keep old
-    userAgent: userAgent || existingToken.userAgent,
+    ipAddress: ipAddress || (existingToken as any).ipAddress, // Update if new, else keep old
+    userAgent: userAgent || (existingToken as any).userAgent,
   });
 
   const accessToken = generateAccessToken({
     sub: existingToken.userId.toString(),
-    role: "user", // or fetch role if needed
+    role: existingToken.role,
   });
 
   const refreshToken = generateRefreshToken({
     sub: existingToken.userId.toString(),
     tokenId: newTokenId,
+    role: existingToken.role,
   });
 
   return { accessToken, refreshToken };
 };
 
-export const getCurrentUserService = async (userId: string) => {
-  const user = await findUserByIdSafe(userId);
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  return user;
-};
-
 export const logoutService = async (refreshTokenJwt: string) => {
   const payload = verifyRefreshToken(refreshTokenJwt);
 
-  await RefreshToken.updateOne({ tokenId: payload.tokenId }, { revoked: true });
+  await RefreshTokenRepository.revokeToken(payload.tokenId);
 };
 
 export const logoutAllService = async (userId: string) => {
-  await RefreshToken.updateMany({ userId, revoked: false }, { revoked: true });
+  await RefreshTokenRepository.revokeAllForUser(userId);
 };
 
 export const sendResetPasswordEmailService = async (email: string) => {
@@ -358,7 +342,7 @@ export const resetPasswordService = async (email: string, newPassword: string, t
 
   logger.info(`Reset token is valid for ${email}, updating password ${newPassword}.`);
   const passwordHash = bcrypt.hashSync(newPassword, 12);
-  await updateUserPassword(email, passwordHash);
+  await updateUserPasswordByEmail(email, passwordHash);
 };
 
 export const getDevicesService = async (userId: string, currentRefreshTokenJwt?: string) => {
@@ -372,13 +356,7 @@ export const getDevicesService = async (userId: string, currentRefreshTokenJwt?:
     }
   }
 
-  const devices = await RefreshToken.find({
-    userId,
-    revoked: false,
-    expiresAt: { $gt: new Date() },
-  })
-    .select("tokenId ipAddress userAgent lastActive createdAt")
-    .lean();
+  const devices = await RefreshTokenRepository.findActiveByUserId(userId);
 
   return devices.map((device) => ({
     ...device,
@@ -387,10 +365,9 @@ export const getDevicesService = async (userId: string, currentRefreshTokenJwt?:
 };
 
 export const logoutDeviceService = async (userId: string, tokenId: string) => {
-  const token = await RefreshToken.findOne({ tokenId, userId });
-  if (!token) {
+  const token = await RefreshTokenRepository.findByTokenId(tokenId);
+  if (!token || token.userId.toString() !== userId) {
     throw new Error("Device not found or unauthorized");
   }
-  token.revoked = true;
-  await token.save();
+  await RefreshTokenRepository.revokeToken(tokenId);
 };

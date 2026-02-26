@@ -46,3 +46,7 @@ next-env.d.ts
 
 logs/
 *.log
+
+.env
+src/serviceAccountKey.json
+.env.local

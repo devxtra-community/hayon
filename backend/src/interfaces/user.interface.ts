@@ -48,6 +48,7 @@ export interface IUser extends Document {
 
   role: UserRole;
   isDisabled: boolean;
+  fcmTokens: string[];
 
   auth: IUserAuth;
   subscription: IUserSubscription;

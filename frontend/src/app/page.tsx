@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 const logo_IMG = "/images/logos/logo.png";
+import carlyFiorina from "@/assets/carly-fiorina.webp";
 import {
   Sparkles,
   Menu,
@@ -245,7 +246,7 @@ export default function Home() {
   }
 
   return (
-    <div className="overflow-x-hidden relative">
+    <div className="overflow-x-hidden relative overflow-y-auto custom-scrollbar">
       {/* Global Dot Pattern Background */}
       <div
         className="fixed inset-0 z-0 opacity-[0.8] pointer-events-none"
@@ -372,7 +373,7 @@ export default function Home() {
       )}
 
       {/* Hero Section */}
-      <section className="min-h-screen flex flex-col relative z-10">
+      <section className="min-h-screen flex flex-col relative z-10 custom-scrollbar overflow-y-auto">
         {/* Main Card Container */}
         <div className="flex-1 flex flex-col relative overflow-hidden">
           {/* Navigation BAR */}
@@ -430,7 +431,7 @@ export default function Home() {
           </nav>
 
           {/* Hero Content */}
-          <main className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-0 pb-32 md:pb-0 md:py-0 -mt-20 md:mt-0">
+          <main className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-0 pb-32 md:pb-0 md:py-0 -mt-20 md:mt-0 custom-scrollbar">
             {/* Central Icon */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -505,12 +506,29 @@ export default function Home() {
               >
                 <div className="w-3 h-3 rounded-full bg-[#EAB308] mx-auto -mt-8 mb-4 shadow-sm border border-white/50"></div>
                 <p className="font-handwriting text-gray-800 text-lg leading-snug">
-                  Launch the new product campaign on Tuesday! <br />
-                  <span className="text-sm opacity-70 mt-2 block">- Don't forget formatting</span>
+                  "The goal is to turn data into information, and information into insight."
+                  <br />
+                  <span className="text-sm opacity-70 mt-2 block">- Carly Fiorina</span>
                 </p>
-                <div className="mt-4 flex gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white/60 border border-black/5"></div>
-                  <div className="w-8 h-8 rounded-full bg-white/60 border border-black/5"></div>
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="relative">
+                    <Image
+                      src={carlyFiorina}
+                      alt="Carly Fiorina"
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full border-2 border-white shadow-[0_2px_10px_rgba(0,0,0,0.1)] ring-1 ring-black/5 object-cover"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-[#FEF9C3] flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-900 uppercase tracking-widest opacity-40">
+                      Analytics Wisdom
+                    </p>
+                    <p className="text-xs font-bold text-gray-800">Carly Fiorina</p>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
@@ -609,19 +627,81 @@ export default function Home() {
                 transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut", delay: 0.2 }}
                 className="bg-white p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-gray-100"
               >
-                <p className="text-gray-500 text-sm font-medium mb-4">Seamless Integration</p>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 shadow-md flex items-center justify-center text-white">
-                    <span className="font-bold text-xl">Ig</span>
+                <p className="text-gray-500 text-sm font-medium mb-4 text-center">
+                  Multi-Platform Support
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div
+                    className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-gray-100 p-2"
+                    title="Instagram"
+                  >
+                    <Image
+                      src="/images/platform-logos/instagram.png"
+                      alt="Instagram"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
                   </div>
-                  <div className="w-14 h-14 rounded-2xl bg-blue-500 shadow-md flex items-center justify-center text-white">
-                    <span className="font-bold text-xl">In</span>
+                  <div
+                    className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-gray-100 p-2"
+                    title="Threads"
+                  >
+                    <Image
+                      src="/images/platform-logos/threads.png"
+                      alt="Threads"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
                   </div>
-                  <div className="w-14 h-14 rounded-2xl bg-black shadow-md flex items-center justify-center text-white">
-                    <span className="font-bold text-xl">X</span>
+                  <div
+                    className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-gray-100 p-2"
+                    title="Facebook"
+                  >
+                    <Image
+                      src="/images/platform-logos/facebook.png"
+                      alt="Facebook"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
                   </div>
-                  <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
-                    <span className="text-xl">+</span>
+                  <div
+                    className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-gray-100 p-2"
+                    title="Mastodon"
+                  >
+                    <Image
+                      src="/images/platform-logos/mastodon.png"
+                      alt="Mastodon"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
+                  </div>
+                  <div
+                    className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-gray-100 p-2"
+                    title="Bluesky"
+                  >
+                    <Image
+                      src="/images/platform-logos/bluesky.png"
+                      alt="Bluesky"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
+                  </div>
+                  <div
+                    className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-gray-100 p-2"
+                    title="Tumblr"
+                  >
+                    <Image
+                      src="/images/platform-logos/tumblr.png"
+                      alt="Tumblr"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
                   </div>
                 </div>
               </motion.div>

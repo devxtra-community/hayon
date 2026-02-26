@@ -3,11 +3,23 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Camera, Pencil, Check, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Camera, Pencil, Check, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { api } from "@/lib/axios";
+import { api, clearAccessToken } from "@/lib/axios";
 import { useToast } from "@/context/ToastContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ProfileCardProps {
   user: {
@@ -26,6 +38,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const router = useRouter();
 
   const previewImgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -140,6 +153,17 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
       });
   };
 
+  const handleLogout = async () => {
+    try {
+      await api.delete("/auth/logout");
+      clearAccessToken();
+      router.push("/login");
+    } catch (error) {
+      console.error(error);
+      showToast("error", "Logout failed", "Please try again.");
+    }
+  };
+
   const handleNameUpdate = async () => {
     if (!editedName.trim() || editedName === user?.name) {
       setIsEditingName(false);
@@ -169,9 +193,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
 
   return (
     <>
-      <div className="bg-white rounded-2xl p-6 lg:p-8 flex flex-col md:flex-row gap-6">
-        <div className="relative group mx-auto md:mx-0">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 flex-shrink-0">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 lg:p-8 flex flex-col md:flex-row items-center md:items-start gap-6">
+        <div className="relative group shrink-0">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 shadow-sm">
             <Image
               width={96}
               height={96}
@@ -213,7 +237,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
           )}
         </div>
 
-        <div className="flex-1 flex flex-col gap-5 justify-between w-full min-h-[7rem]">
+        <div className="flex-1 flex flex-col gap-4 justify-between w-full">
           <div className="text-center md:text-left group flex flex-col">
             {isEditingName ? (
               <div className="flex items-center gap-2 mb-1">
@@ -245,14 +269,14 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 group">
+              <div className="flex items-center justify-center md:justify-start gap-2 group">
                 <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
                 <button
                   onClick={() => {
                     setEditedName(user.name);
                     setIsEditingName(true);
                   }}
-                  className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-[#318D62]"
+                  className="p-1.5 opacity-0 sm:opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-[#318D62] focus:opacity-100"
                   title="Change name"
                 >
                   <Pencil size={14} />
@@ -262,18 +286,45 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
             <p className="text-gray-500 mb-2">{user.email}</p>
           </div>
 
-          <div className="w-full flex flex-col sm:flex-row gap-3 pr-6 items-center justify-center md:justify-end mt-6 md:mt-0">
-            <Link href="/dashboard/devices">
-              <Button variant="secondary" className="h-9 px-4 text-xs font-medium border-none">
+          <div className="w-full flex flex-col sm:flex-row gap-3 md:pr-6 items-center justify-center md:justify-end mt-4 md:mt-0">
+            <Link href="/dashboard/devices" className="w-full sm:w-auto">
+              <Button
+                variant="secondary"
+                className="h-10 sm:h-9 w-full sm:px-4 text-[11px] sm:text-xs font-medium border-none border-gray-100"
+              >
                 Manage Devices
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              className="h-9 px-4 text-xs font-medium border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-            >
-              Change Password
-            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-10 sm:h-9 w-full sm:px-4 text-[11px] sm:text-xs font-medium border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <LogOut size={14} className="mr-2" />
+                  Logout
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Logout Confirmation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to logout? You will need to log in again to access your
+                    dashboard.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Logout
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>

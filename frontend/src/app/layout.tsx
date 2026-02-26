@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/context/ToastContext";
+import { SocketProvider } from "@/context/SocketContext";
 
 const poppins = Poppins({
   variable: "--font-poppins-sans",
@@ -30,8 +31,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${poppins.variable} antialiased`}>
-        <ToastProvider>{children}</ToastProvider>
+      <body className={`${poppins.variable} antialiased custom-scrollbar`}>
+        <ToastProvider>
+          <SocketProvider>{children}</SocketProvider>
+        </ToastProvider>
       </body>
     </html>
   );

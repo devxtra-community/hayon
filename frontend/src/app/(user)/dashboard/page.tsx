@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { onMessage } from "firebase/messaging";
+import { messaging } from "@/lib/firebase";
+import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/axios";
 import { analyticsService } from "@/services/analytics.service";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar, Header } from "@/components/shared";
+
 import {
   DashboardMetrics,
   EngagementChart,
@@ -44,6 +47,20 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      onMessage(messaging, (payload) => {
+        console.log("Foreground Message received. ", payload);
+        showToast(
+          "success",
+          payload.notification?.title || "New Message",
+          payload.notification?.body || "Check your notifications.",
+        );
+      });
+    }
+  }, [showToast]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,92 +127,68 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="pb-2 lg:pb-4">
-        <Header
-          userName={user?.name || ""}
-          userEmail={user?.email || ""}
-          userAvatar={user?.avatar || ""}
-          onMenuClick={() => setIsMobileMenuOpen(true)}
-        />
-      </div>
-
       {/* Dashboard Content */}
-      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
+      <main className="flex-1 bg-[#F7F7F7] rounded-[2.5rem] overflow-y-auto overflow-x-hidden px-4 py-6 lg:px-8 lg:py-8 custom-scrollbar">
         {!user || !dashboardData ? (
           <div className="flex items-center justify-center h-full">
             <LoadingH />
           </div>
         ) : (
           <>
-            {/* Welcome Section */}
-            <div className="flex items-center justify-between mb-6 lg:mb-8">
-              <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                  Hi, {user.name.split(" ")[0]}
-                </h1>
-                <p className="text-gray-500 text-xs lg:text-sm">Here's your performance summary</p>
-              </div>
+            {/* Header with Welcome Text & User Profile */}
+            <Header
+              userName={user.name}
+              userEmail={user.email}
+              userAvatar={user.avatar}
+              onMenuClick={() => setIsMobileMenuOpen(true)}
+              title={`Hi, ${user.name.split(" ")[0]} 👋`}
+              subtitle="Here's what's happening today"
+            />
 
-              <div className="flex gap-2">
-                <Link href="/dashboard/devices">
-                  <Button variant="outline" className="mr-2">
-                    Manage Devices
-                  </Button>
-                </Link>
-                <Link href="/dashboard/create-post" className="hidden lg:block">
-                  <Button variant="default" className="gap-2">
-                    Create a post
-                    <Plus size={18} />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            <div className="space-y-6">
+            <div className="space-y-8 mt-12">
               {/* 1. Top Metrics */}
               <section>
                 <DashboardMetrics data={dashboardData?.metrics} />
               </section>
 
               {/* 2. Charts & Widgets Grid */}
-              <section className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-                {/* Engagement Chart - Spans 2 cols */}
-                <div className="lg:col-span-2 min-h-[350px]">
-                  <EngagementChart data={dashboardData?.timeline} />
-                </div>
-
-                {/* Best Post Card - 1 col */}
-                <div className="lg:col-span-1 min-h-[350px]">
+              <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+                {/* Best Post Card - 1 col - First on Mobile */}
+                <div className="lg:col-span-1 min-h-[350px] hover:scale-[1.02] transition-transform duration-500">
                   <BestPostCard post={dashboardData?.topPost} />
                 </div>
 
+                {/* Engagement Chart - Spans 2 cols */}
+                <div className="lg:col-span-2 min-h-[350px] hover:scale-[1.01] transition-transform duration-500">
+                  <EngagementChart data={dashboardData?.timeline} />
+                </div>
+
                 {/* Upcoming Posts Carousel - 1 col */}
-                <div className="lg:col-span-1 min-h-[350px]">
+                <div className="lg:col-span-1 min-h-[350px] hover:scale-[1.02] transition-transform duration-500">
                   <UpcomingPostsCarousel posts={dashboardData?.upcomingPosts} />
                 </div>
               </section>
 
               {/* 3. Bottom Grid */}
-              <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 pb-8">
+              <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pb-8">
                 {/* Connected Accounts */}
-                <div className="lg:col-span-1 min-h-[300px]">
+                <div className="lg:col-span-1 min-h-[300px] hover:scale-[1.02] transition-transform duration-500">
                   <ConnectedPlatformsCard />
                 </div>
 
                 {/* Post Distribution */}
-                <div className="lg:col-span-1 min-h-[300px]">
+                <div className="lg:col-span-1 min-h-[300px] hover:scale-[1.02] transition-transform duration-500">
                   <PostDistributionChart data={dashboardData?.platformPerformance} />
                 </div>
 
                 {/* Upgrade / Plan Info */}
-                <div className="lg:col-span-1 min-h-[300px]">
+                <div className="lg:col-span-1 min-h-[300px] hover:scale-[1.02] transition-transform duration-500">
                   <UpgradeCard />
                 </div>
               </section>
 
               {/* Analytics CTA */}
-              <div className="bg-white rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+              <div className="bg-white rounded-3xl p-8 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4 border border-slate-100 shadow-sm">
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">Need deeper insights?</h3>
                   <p className="text-slate-500">
@@ -212,16 +205,6 @@ export default function DashboardPage() {
           </>
         )}
       </main>
-
-      {/* Floating Action Button (Mobile Only) */}
-      <Link href="/dashboard/create-post" className="fixed bottom-6 right-6 lg:hidden z-40">
-        <Button
-          size="icon"
-          className="h-14 w-14 rounded-full bg-[#318D62] hover:bg-[#287350] text-white shadow-lg shadow-green-900/20"
-        >
-          <Plus size={32} />
-        </Button>
-      </Link>
     </>
   );
 }

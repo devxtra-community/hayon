@@ -49,7 +49,6 @@ export function HistoryCard({
   onActionClick,
 }: HistoryCardProps) {
   const isRetryable = status === "FAILED" || status === "PARTIAL_SUCCESS";
-  // const hasFailures = platformStatuses.some((p) => p.status === "failed");
 
   const formattedDate = createdAt
     ? new Date(createdAt).toLocaleDateString("en-US", {
@@ -63,17 +62,15 @@ export function HistoryCard({
   return (
     <Card
       className={cn(
-        "rounded-[30px] border-none shadow-none overflow-hidden h-full flex flex-col group transition-all hover:shadow-lg hover:shadow-black/5 cursor-pointer",
-        // hasFailures ? "bg-red-50" : "bg-white"
+        "rounded-[24px] lg:rounded-[30px] border-none shadow-none overflow-hidden h-full flex flex-row lg:flex-col group transition-all hover:shadow-lg hover:shadow-black/5 cursor-pointer bg-white lg:bg-transparent lg:hover:bg-white",
       )}
       onClick={() => onActionClick?.(id, "detail")}
     >
-      <div className="p-2 relative">
-        <div className="relative w-full aspect-[4/3] rounded-[24px] overflow-hidden bg-gray-50 flex items-center justify-center">
+      <div className="p-2 relative w-[130px] sm:w-[150px] lg:w-full flex-shrink-0">
+        <div className="relative w-full aspect-square lg:aspect-[4/3] rounded-[18px] lg:rounded-[24px] overflow-hidden bg-gray-50 flex items-center justify-center">
           {imageUrl ? (
             <>
               <Image src={imageUrl} alt="History Item" fill className="object-cover" />
-              {/* Multi-Media Badge */}
               {mediaCount > 1 && (
                 <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
                   <span className="text-[10px] font-bold text-white">+{mediaCount - 1}</span>
@@ -108,18 +105,23 @@ export function HistoryCard({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-between gap-1.5 p-3 pt-0.5">
-        <p className="text-[#1A1A1A] text-[14px] leading-snug font-medium line-clamp-2">
-          {description}
-        </p>
+      <div className="flex-1 flex flex-col justify-between p-3 lg:pt-0.5">
+        <div className="space-y-1">
+          <p className="text-[#1A1A1A] text-[13px] lg:text-[14px] leading-snug font-medium line-clamp-3 lg:line-clamp-2">
+            {description}
+          </p>
+          {formattedDate && (
+            <span className="text-[10px] text-gray-400 font-medium lg:hidden">{formattedDate}</span>
+          )}
+        </div>
 
-        <div className="flex items-center justify-between mt-1">
+        <div className="flex items-end justify-between mt-2">
           {/* Platform Status Icons */}
-          <div className="flex gap-2.5">
+          <div className="flex -space-x-2">
             {platformStatuses.map((p, idx) => (
               <div
                 key={p.platform + idx}
-                className="relative w-8 h-8"
+                className="relative w-7 h-7 lg:w-8 lg:h-8 ring-2 ring-white rounded-full bg-white"
                 title={`${p.platform}: ${p.status}`}
               >
                 <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center shadow-sm">
@@ -131,20 +133,20 @@ export function HistoryCard({
                   />
                 </div>
 
-                {/* Micro Status Indicator - Positioned outside with white ring */}
+                {/* Micro Status Indicator */}
                 {p.status === "completed" && (
-                  <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-0.5 ring-2 ring-white">
-                    <Check size={8} strokeWidth={4} />
+                  <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-0.5 ring-1 ring-white">
+                    <Check size={6} strokeWidth={4} />
                   </div>
                 )}
                 {p.status === "failed" && (
-                  <div className="absolute -bottom-1 -right-1 bg-red-500 text-white rounded-full p-0.5 ring-2 ring-white">
-                    <AlertCircle size={8} strokeWidth={4} />
+                  <div className="absolute -bottom-1 -right-1 bg-red-500 text-white rounded-full p-0.5 ring-1 ring-white">
+                    <AlertCircle size={6} strokeWidth={4} />
                   </div>
                 )}
                 {(p.status === "processing" || p.status === "pending") && (
-                  <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-0.5 ring-2 ring-white">
-                    <Loader2 size={8} strokeWidth={4} className="animate-spin" />
+                  <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-0.5 ring-1 ring-white">
+                    <Loader2 size={6} strokeWidth={4} className="animate-spin" />
                   </div>
                 )}
               </div>
@@ -158,7 +160,8 @@ export function HistoryCard({
                 className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-primary hover:bg-primary/5 transition-all outline-none"
                 onClick={(e) => e.stopPropagation()}
               >
-                <MoreVertical size={20} />
+                <MoreVertical size={18} className="lg:hidden" />
+                <MoreVertical size={20} className="hidden lg:block" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -192,9 +195,11 @@ export function HistoryCard({
           </DropdownMenu>
         </div>
 
-        {/* Date Display */}
+        {/* Date Display (Desktop only here) */}
         {formattedDate && (
-          <span className="text-[10px] text-gray-400 font-medium ml-1">{formattedDate}</span>
+          <span className="text-[10px] text-gray-400 font-medium ml-1 hidden lg:block">
+            {formattedDate}
+          </span>
         )}
       </div>
     </Card>

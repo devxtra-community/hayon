@@ -8,10 +8,63 @@ import {
   updateAvatar,
   updateUserAvatar,
   changeUserName,
-  findUserByIdSafe,
+  findUserByIdWithAuth,
+  updateUserPasswordById,
 } from "../repositories/user.repository";
 import logger from "../utils/logger";
-import { timezoneSchema } from "@hayon/schemas";
+import { timezoneSchema, changePasswordSchema } from "@hayon/schemas";
+import bcrypt from "bcrypt";
+
+export async function changePasswordController(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req?.auth?.id as string;
+    const body = req.body;
+
+    // Validation
+    const validationResult = changePasswordSchema.safeParse(body);
+    if (!validationResult.success) {
+      new ErrorResponse("Invalid password data", {
+        status: 400,
+        data: validationResult.error.format(),
+      }).send(res);
+      return;
+    }
+
+    const { currentPassword, newPassword } = validationResult.data;
+
+    // Fetch user with password hash
+    const user = await findUserByIdWithAuth(userId);
+    if (!user || user.auth.provider !== "email" || !user.auth.passwordHash) {
+      new ErrorResponse("Password change not supported for this account", { status: 400 }).send(
+        res,
+      );
+      return;
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.auth.passwordHash);
+    if (!isMatch) {
+      new ErrorResponse("Incorrect current password", { status: 400 }).send(res);
+      return;
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(12);
+    const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    await updateUserPasswordById(userId, newPasswordHash);
+
+    new SuccessResponse("Password changed successfully").send(res);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      logger.info("Error changing password:", err.message);
+      new ErrorResponse(err.message || "Failed to change password", { status: 400 }).send(res);
+    } else {
+      new ErrorResponse("Failed to change password", { status: 400 }).send(res);
+    }
+  }
+}
 
 export async function getProfileUploadUrlController(req: Request, res: Response): Promise<void> {
   try {
@@ -33,15 +86,7 @@ export async function getProfileUploadUrlController(req: Request, res: Response)
 
     if (usage === "post") {
       folder = "temp";
-      // for temp/post uploads, s3.upload.ts handles UUID generation if we pass a simple name
-      // or we can just pass the name and it will be used?
-      // checking s3.upload.ts:
-      // const s3Key = folder === "profiles" ? `${folder}/${filename}` : `${folder}/${userId}/${uuid}.${ext}`;
-      // So if folder is NOT profiles, it generates UUID. Filename arg is ignored for the key generation in that case?
-      // Wait, let's re-read s3.upload.ts logic in next step if needed, but assuming standard behavior:
-      // const ext = filename.split('.').pop() || 'bin';
-      // so it uses the extension from the filename.
-      filename = `image.${ext}`; // just to provide extension
+      filename = `image.${ext}`;
     }
 
     // Generate presigned URL
@@ -74,10 +119,14 @@ export async function updateProfileController(req: Request, res: Response): Prom
       throw new Error("Invalid image URL");
     }
 
-    // Fetch user to get current avatar URL for cleanup
-    const user = await findUserByIdSafe(userId);
-    if (user?.avatar && user.avatar !== imageUrl && user.avatar.includes(ENV.AWS.S3_BUCKET_NAME)) {
-      const s3Key = user.avatar.split(".amazonaws.com/")[1];
+    // Use req.auth to get current avatar URL for cleanup
+    const currentAvatar = req.auth?.avatar;
+    if (
+      currentAvatar &&
+      currentAvatar !== imageUrl &&
+      currentAvatar.includes(ENV.AWS.S3_BUCKET_NAME)
+    ) {
+      const s3Key = currentAvatar.split(".amazonaws.com/")[1];
       if (s3Key) {
         await s3Service
           .deleteFile(s3Key)
@@ -107,12 +156,11 @@ export async function deleteProfileController(req: Request, res: Response): Prom
   try {
     const userId = req?.auth?.id as string;
 
-    // Fetch user to get current avatar URL
-    const user = await findUserByIdSafe(userId);
-    if (user?.avatar && user.avatar.includes(ENV.AWS.S3_BUCKET_NAME)) {
+    // Use req.auth to get current avatar URL
+    const currentAvatar = req.auth?.avatar;
+    if (currentAvatar && currentAvatar.includes(ENV.AWS.S3_BUCKET_NAME)) {
       // Extract key from URL
-      // Example: https://bucket.s3.region.amazonaws.com/profiles/userId.png
-      const s3Key = user.avatar.split(".amazonaws.com/")[1];
+      const s3Key = currentAvatar.split(".amazonaws.com/")[1];
       if (s3Key) {
         await s3Service.deleteFile(s3Key);
       }

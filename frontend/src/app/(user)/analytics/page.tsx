@@ -30,7 +30,8 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
-  const [selectedPeriod] = useState("30d");
+  const [growthPeriod, setGrowthPeriod] = useState<string>("7d");
+  const [engagementPeriod, setEngagementPeriod] = useState<string>("7d");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,29 +39,32 @@ export default function AnalyticsPage() {
         setLoading(true);
         setError(null);
 
-        // Fetch user
-        const { data: userData } = await api.get("/auth/me");
-        setUser(userData.data.user);
-
-        // Fetch each endpoint separately to handle partial failures
-        const results = await Promise.allSettled([
-          analyticsService.getOverview(selectedPeriod),
-          analyticsService.getTimeline(selectedPeriod),
-          analyticsService.getHeatmap(),
-          analyticsService.getTopPosts(5, "totalEngagement"),
+        // Fetch user and analytics data
+        const [userDataResults, results] = await Promise.all([
+          api.get("/auth/me"),
+          Promise.allSettled([
+            analyticsService.getOverview("30d"),
+            analyticsService.getTimeline("30d"),
+            analyticsService.getHeatmap(),
+            analyticsService.getTopPosts(5, "totalEngagement"),
+            analyticsService.getGrowth("30d"),
+          ]),
         ]);
+
+        setUser(userDataResults.data.data.user);
 
         const overview = results[0].status === "fulfilled" ? results[0].value : null;
         const timeline = results[1].status === "fulfilled" ? results[1].value : [];
         const heatmap = results[2].status === "fulfilled" ? results[2].value : [];
         const topPosts = results[3].status === "fulfilled" ? results[3].value : [];
+        const growth = results[4].status === "fulfilled" ? results[4].value : [];
 
         // Check if we got at least overview data
         if (!overview) {
           setError("Failed to load analytics data. Please try again later.");
           setData(null);
         } else {
-          setData({ overview, timeline, heatmap, topPosts });
+          setData({ overview, timeline, heatmap, topPosts, growth });
         }
       } catch (err) {
         console.error("Failed to fetch analytics", err);
@@ -71,7 +75,7 @@ export default function AnalyticsPage() {
     };
 
     fetchData();
-  }, [selectedPeriod]);
+  }, []);
 
   return (
     <>
@@ -94,64 +98,103 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="pb-2 lg:pb-4">
-        <Header
-          userName={user?.name || ""}
-          userEmail={user?.email || ""}
-          userAvatar={user?.avatar || ""}
-          onMenuClick={() => setIsMobileMenuOpen(true)}
-        />
-      </div>
-
-      {/* Main Content */}
-      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
-        {loading || !user ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingH />
-          </div>
-        ) : error || !data ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-            <AlertCircle className="text-red-400" size={48} />
-            <p className="text-gray-600">{error || "No data available"}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-sm text-primary underline"
-            >
-              Try again
-            </button>
-          </div>
-        ) : (
-          <div className="max-w-[1600px] mx-auto space-y-8 pb-10">
-            {/* Top Cards Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="h-[340px]">
-                <PlatformMetricsCard
-                  platformStats={data.overview?.platformPerformance || []}
-                  followerCounts={data.overview?.followers?.breakdown || {}}
-                />
-              </div>
-              <div className="h-[340px]">
-                <FollowersPieChart data={data.overview?.followers?.breakdown || {}} />
-              </div>
-              <div className="h-[340px]">
-                <TopPerformingPostCard initialData={data.topPosts?.[0]} />
-              </div>
-            </div>
-
-            {/* Growth & Engagement Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[450px]">
-              <GrowthChart />
-              <AnalyticsEngagementChart />
-            </div>
-
-            {/* Bottom Row - Unified Insights Card */}
-            <div className="pb-6">
-              <AnalyticsInsightsCard heatmapData={data.heatmap || []} />
-            </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-none lg:rounded-[2.5rem] overflow-hidden">
+        {user && (
+          <div className="sticky top-0 z-40 px-4 pt-6 pb-2 lg:px-8 lg:pt-8 bg-[#F7F7F7]">
+            <Header
+              userName={user.name}
+              userEmail={user.email}
+              userAvatar={user.avatar}
+              onMenuClick={() => setIsMobileMenuOpen(true)}
+              title={
+                <>
+                  <span className="hidden lg:inline">
+                    Your Performance <span className="text-primary italic">Snapshot</span>
+                  </span>
+                  <span className="lg:hidden">Analytics</span>
+                </>
+              }
+              subtitle="Track and optimize your cross-platform strategy"
+            />
           </div>
         )}
-      </main>
+
+        <main className="flex-1 px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 lg:gap-8">
+          {loading || !user ? (
+            <div className="flex items-center justify-center h-full">
+              <LoadingH />
+            </div>
+          ) : error || !data ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+              <AlertCircle className="text-red-400" size={48} />
+              <p className="text-gray-600">{error || "No data available"}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="text-sm text-primary underline"
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <div className="max-w-[1600px] mx-auto w-full space-y-6 lg:space-y-10 pb-10">
+              {/* Main Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+                {/* Analytics Card */}
+                <div className="xl:col-span-1 h-[480px] sm:h-[520px] xl:h-auto hover:scale-[1.02] transition-transform duration-500">
+                  <PlatformMetricsCard
+                    platformStats={data.overview?.platformPerformance || []}
+                    followerCounts={data.overview?.followers?.breakdown || {}}
+                  />
+                </div>
+
+                {/* Follower Breakdown Chart */}
+                <div className="xl:col-span-1 h-[550px] sm:h-[600px] xl:h-auto hover:scale-[1.02] transition-transform duration-500">
+                  <FollowersPieChart data={data.overview?.followers?.breakdown || {}} />
+                </div>
+
+                {/* Best Content Card */}
+                <div className="xl:col-span-1 h-[450px] sm:h-[500px] xl:h-auto hover:scale-[1.02] transition-transform duration-500">
+                  <TopPerformingPostCard initialData={data.topPosts?.[0]} />
+                </div>
+              </div>
+
+              {/* Growth & Engagement Charts Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
+                <div
+                  className={cn(
+                    "h-[350px] sm:h-[400px] lg:h-[450px] transition-all duration-700 ease-in-out",
+                    growthPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
+                  )}
+                >
+                  <GrowthChart
+                    period={growthPeriod}
+                    setPeriod={setGrowthPeriod}
+                    initialData={growthPeriod === "30d" ? data.growth : undefined}
+                  />
+                </div>
+                <div
+                  className={cn(
+                    "h-[350px] sm:h-[400px] lg:h-[450px] transition-all duration-700 ease-in-out",
+                    engagementPeriod === "30d" && "lg:col-span-2 lg:h-[600px]",
+                  )}
+                >
+                  <AnalyticsEngagementChart
+                    period={engagementPeriod}
+                    setPeriod={setEngagementPeriod}
+                    initialData={engagementPeriod === "30d" ? data.timeline : undefined}
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Row - Unified Insights Card */}
+              <div className="pb-6">
+                <AnalyticsInsightsCard heatmapData={data.heatmap || []} />
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </>
   );
 }

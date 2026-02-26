@@ -1,5 +1,6 @@
 import axios from "axios";
 import logger from "../../utils/logger";
+import { AnalyticsErrorType, SocialMediaAnalyticsError } from "./errors";
 
 export interface PostMetrics {
   likes: number;
@@ -51,11 +52,29 @@ export class MastodonAnalyticsService {
         comments: data.replies_count || 0,
       };
     } catch (error: any) {
+      const statusCode = error.response?.status;
+
+      if (statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Mastodon session expired or revoked",
+          error,
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.DELETED,
+          "Post not found on Mastodon",
+          error,
+        );
+      }
+
       logger.error(`[MastodonAnalytics] Failed to fetch post metrics`, {
         platformPostId,
         error: error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(AnalyticsErrorType.UNKNOWN, error.message, error);
     }
   }
 
@@ -80,10 +99,20 @@ export class MastodonAnalyticsService {
         totalPosts: data.statuses_count || 0,
       };
     } catch (error: any) {
+      const statusCode = error.response?.status;
+
+      if (statusCode === 401) {
+        throw new SocialMediaAnalyticsError(
+          AnalyticsErrorType.UNAUTHORIZED,
+          "Mastodon session expired or revoked",
+          error,
+        );
+      }
+
       logger.error(`[MastodonAnalytics] Failed to fetch account metrics`, {
         error: error.message,
       });
-      throw error;
+      throw new SocialMediaAnalyticsError(AnalyticsErrorType.UNKNOWN, error.message, error);
     }
   }
 }

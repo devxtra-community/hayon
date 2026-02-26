@@ -1,34 +1,55 @@
 import express, { Application } from "express";
-import cookieParser from "cookie-parser";
+import fs from "fs";
 import cors from "cors";
-import connectDB from "./config/database";
+import path from "path";
+import https from "https";
+import { createServer } from "http";
 
-// routeres
+// [==={ dependencies }===]
+import passport from "./config/passport";
+import helmet from "helmet";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+
+// [==={ config }===]
+import connectDB from "./config/database";
+import { connectRabbitMQ } from "./config/rabbitmq";
+import { initSocket } from "./config/socket";
+import { connectRedis } from "./config/redis";
+import { ENV } from "./config/env";
+
+// [==={ routes }===]
 import authRoutes from "./routes/auth.routes";
 import paymentRoutes from "./routes/payment.routes";
 import profileRoutes from "./routes/profile.routes";
 import generativeRoutes from "./routes/generative.routes";
-// =========
-import passport from "./config/passport";
-import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
-import { ENV } from "./config/env";
-import helmet from "helmet";
-import { SuccessResponse } from "./utils/responses";
-import morgan from "morgan";
-import logger from "./utils/logger";
-import https from "https";
-import fs from "fs";
-import path from "path";
+import analyticsRoutes from "./routes/analytics.routes";
 import platformRoutes from "./routes/platform.routes";
 import postRoutes from "./routes/post.routes";
-import { connectRabbitMQ } from "./config/rabbitmq";
-import analyticsRoutes from "./routes/analytics.routes"; // Import analytics routes
+import adminRoutes from "./routes/admin.routes";
+import notificationRoutes from "./routes/notification.routes";
+import firebaseRoutes from "./routes/firebase.routes";
+
+// [==={ middleware / handlers }===]
+import { notFoundHandler, serverErrorHandler } from "./middleware/error.middleware";
+
+// [==={ utils }===]
+import { SuccessResponse } from "./utils/responses";
+import logger from "./utils/logger";
+
+// [==={ cron job }===]
 import { AnalyticsCronService } from "./services/cron/analytics.cron";
+
+// =====================================================================================
+// =====================================================================================
+
+export let io: any;
 
 const expressInstance: Application = express();
 
 const bootstrap = async () => {
   await connectDB();
+  await connectRedis();
   await connectRabbitMQ();
 
   AnalyticsCronService.init();
@@ -40,7 +61,7 @@ const bootstrap = async () => {
     ) => {
       if (!origin) return callback(null, true);
 
-      if (origin === ENV.APP.FRONTEND_URL || origin === "http://localhost:3000") {
+      if (origin === ENV.APP.FRONTEND_URL || origin === "http://localhost:3001") {
         return callback(null, true);
       } else {
         logger.warn(`Blocked CORS request from origin: ${origin}`);
@@ -48,12 +69,16 @@ const bootstrap = async () => {
       }
     },
     credentials: true,
+    exposedHeaders: ["Retry-After"],
   };
 
   expressInstance.use(morgan("dev"));
   expressInstance.use(cors(corsOptions));
   expressInstance.use(helmet());
   expressInstance.use(cookieParser());
+
+  expressInstance.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
   expressInstance.use(express.json());
   expressInstance.use(express.urlencoded({ extended: true }));
   expressInstance.use(passport.initialize());
@@ -73,16 +98,20 @@ const bootstrap = async () => {
   appRouter.use("/platform", platformRoutes);
   appRouter.use("/posts", postRoutes);
   appRouter.use("/generate", generativeRoutes);
-  appRouter.use("/analytics", analyticsRoutes); 
-
+  appRouter.use("/analytics", analyticsRoutes);
+  appRouter.use("/admin", adminRoutes);
+  appRouter.use("/notifications", notificationRoutes);
+  appRouter.use("/firebase", firebaseRoutes);
 
   expressInstance.use(notFoundHandler);
   expressInstance.use(serverErrorHandler);
 
   if (ENV.APP.NODE_ENV === "production") {
     expressInstance.enable("trust proxy");
+    const httpServer = createServer(expressInstance);
 
-    expressInstance.listen(ENV.APP.PORT, () => {
+    httpServer.listen(ENV.APP.PORT, () => {
+      io = initSocket(httpServer);
       logger.info(`🚀 Production Server running on port ${ENV.APP.PORT}`);
       console.log(`Backend running at ${ENV.APP.FRONTEND_URL}`);
     });
@@ -92,11 +121,15 @@ const bootstrap = async () => {
       cert: fs.readFileSync(path.join(process.cwd(), "../dev.hayon.site+2.pem")),
     };
 
-    https.createServer(options, expressInstance).listen(ENV.APP.PORT, () => {
+    const httpsServer = https.createServer(options, expressInstance);
+    httpsServer.listen(ENV.APP.PORT, () => {
+      io = initSocket(httpsServer);
       console.log(`Backend running at https://dev.hayon.site:5000`);
       logger.info(`Development Server running on port ${ENV.APP.PORT}`);
     });
   }
 };
 
-bootstrap();
+if (require.main === module) {
+  bootstrap();
+}

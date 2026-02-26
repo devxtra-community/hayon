@@ -47,6 +47,7 @@ export const googleOAuthCallback = async (req: Request, res: Response): Promise<
     await createRefreshToken({
       tokenId,
       userId: new Types.ObjectId(oauthUser.userId),
+      role: oauthUser.role,
       expiresAt,
     });
 
@@ -58,6 +59,7 @@ export const googleOAuthCallback = async (req: Request, res: Response): Promise<
     const refreshToken = generateRefreshToken({
       sub: oauthUser.userId,
       tokenId,
+      role: oauthUser.role,
     });
 
     setRefreshTokenCookie(res, refreshToken);

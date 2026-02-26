@@ -19,6 +19,7 @@ export interface AccessTokenPayload {
 export interface RefreshTokenPayload {
   sub: string;
   tokenId: string;
+  role: "user" | "admin";
 }
 
 export const generateAccessToken = (payload: AccessTokenPayload): string => {

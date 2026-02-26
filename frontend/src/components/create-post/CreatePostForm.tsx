@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Upload, X, Hash, AtSign, Save, Sparkles, ChevronDown, Loader2 } from "lucide-react";
+import { Upload, X, Save, Sparkles, ChevronDown, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,8 +22,6 @@ interface CreatePostFormProps {
 
 const LLM_MODELS = [{ id: "gemini-1.5-flash", name: "gemini-2.5 flash", provider: "Gemini" }];
 
-const SUGGESTED_HASHTAGS = [""];
-
 export function CreatePostForm({
   postText,
   setPostText,
@@ -38,7 +36,7 @@ export function CreatePostForm({
 }: CreatePostFormProps) {
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [isHashtagPopoverOpen, setIsHashtagPopoverOpen] = useState(false);
+
   const [isGenerating, setIsGenerating] = useState(false);
 
   function fileToDataUrl(file: File): Promise<string> {
@@ -67,19 +65,14 @@ export function CreatePostForm({
     }
   };
 
-  const addHashtag = (tag: string) => {
-    const newText = postText + (postText.endsWith(" ") || postText === "" ? "" : " ") + tag + " ";
-    setPostText(newText);
-    setIsHashtagPopoverOpen(false);
-  };
-
   return (
     <div className="flex-1 flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Create Post</h1>
-        <div className="text-sm text-gray-500">
-          Click Generate Preview To See How it willbe Look real platforms
-        </div>
+        <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-primary/40 hover:text-primary hover:shadow-sm transition-all duration-200 active:scale-95">
+          <Save size={16} />
+          Save Draft
+        </button>
       </div>
 
       {/* Validation Errors */}
@@ -160,59 +153,15 @@ export function CreatePostForm({
       )}
 
       {/* Text Input */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex-1 flex flex-col min-h-[300px]">
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex-1 flex flex-col min-h-[240px]">
         <Textarea
           placeholder="What's on your mind? Type your caption here..."
-          className="flex-1 border-none focus-visible:ring-0 resize-none text-lg p-0 placeholder:text-gray-300 shadow-none min-h-[200px]"
+          className="flex-1 border-none focus-visible:ring-0 resize-none text-lg p-0 placeholder:text-gray-300 shadow-none min-h-[120px]"
           value={postText}
           onChange={(e) => setPostText(e.target.value)}
         />
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-4">
           <div className="flex gap-2 items-center">
-            {/* Hashtag Button with Popover */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-gray-400 hover:text-primary"
-                onClick={() => setIsHashtagPopoverOpen(!isHashtagPopoverOpen)}
-              >
-                <Hash size={20} />
-              </Button>
-
-              {isHashtagPopoverOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-20 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-gray-800 text-sm">Suggested Hashtags</h4>
-                    <button
-                      onClick={() => setIsHashtagPopoverOpen(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGGESTED_HASHTAGS.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => addHashtag(tag)}
-                        className="px-3 py-1.5 bg-gray-100 hover:bg-primary/10 hover:text-primary text-gray-600 rounded-full text-sm transition-colors"
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-primary">
-              <AtSign size={20} />
-            </Button>
-
-            {/* Divider */}
-            <div className="w-px h-6 bg-gray-200 mx-2" />
-
             {/* LLM Model Selector */}
             <div className="relative">
               <button
@@ -263,19 +212,25 @@ export function CreatePostForm({
             <Button
               onClick={handleGenerateCaption}
               disabled={isGenerating}
-              className="ml-2 rounded-full bg-[#318D62] hover:bg-[#287350] text-white shadow-md shadow-green-900/20 px-4 h-9 text-sm gap-2"
+              className="ml-2 rounded-full bg-gradient-to-r from-[#318D62] to-[#45b682] hover:from-[#287350] hover:to-[#318D62] text-white shadow-[0_4px_14px_0_rgba(49,141,98,0.3)] hover:shadow-[0_6px_20px_rgba(49,141,98,0.23)] px-6 h-10 text-sm font-semibold gap-2 border-none transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 relative overflow-hidden group"
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={14} />
-                  Generate Caption
-                </>
-              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              <span className="relative flex items-center gap-2">
+                {isGenerating ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles
+                      size={16}
+                      className="text-white/90 group-hover:scale-110 transition-transform"
+                    />
+                    Generate Caption
+                  </>
+                )}
+              </span>
             </Button>
           </div>
         </div>
@@ -313,21 +268,6 @@ export function CreatePostForm({
               })}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Bottom Action Bar (Create Mode) */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" className="text-gray-500 hover:text-gray-900 gap-2">
-            {/* 
-                BACKEND: Save Draft functionality.
-                Call /api/posts/drafts endpoint.
-                Store the current state (text, media paths, selected platforms) in the DB.
-            */}
-            <Save size={18} /> Save Draft
-          </Button>
-          <div className="text-sm text-gray-500 hidden sm:block">Fill in details to continue</div>
         </div>
       </div>
     </div>

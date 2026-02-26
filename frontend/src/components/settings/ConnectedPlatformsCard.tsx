@@ -201,7 +201,7 @@ export const ConnectedPlatformsCard = ({
 
     if (platform.status === "connected") {
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {expiry && (
             <span className={`text-[10px] font-medium mr-1 ${expiry.color}`}>{expiry.label}</span>
           )}
@@ -243,7 +243,7 @@ export const ConnectedPlatformsCard = ({
                   console.error(e);
                 }
               }}
-              className="rounded-full px-4 h-8 text-[11px] font-medium border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+              className="rounded-full px-3 sm:px-4 h-7 sm:h-8 text-[10px] sm:text-[11px] font-medium border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 whitespace-nowrap"
             >
               Reconnect
             </Button>
@@ -270,7 +270,7 @@ export const ConnectedPlatformsCard = ({
                 setIsDisconnectAlertOpen(true);
               }
             }}
-            className="rounded-full px-4 h-8 text-[11px] font-medium border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
+            className="rounded-full px-3 sm:px-4 h-7 sm:h-8 text-[10px] sm:text-[11px] font-medium border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300 whitespace-nowrap"
           >
             Disconnect
           </Button>
@@ -299,7 +299,7 @@ export const ConnectedPlatformsCard = ({
             else if (platform.name === "Mastodon") setIsMastodonConnectAlertOpen(true);
           }
         }}
-        className="rounded-full px-5 h-9 text-xs font-medium border transition-colors bg-[#318D62] text-white hover:bg-[#287350] border-transparent"
+        className="rounded-full px-4 sm:px-5 h-8 sm:h-9 text-[11px] sm:text-xs font-medium border transition-colors bg-[#318D62] text-white hover:bg-[#287350] border-transparent"
       >
         Connect
       </Button>
@@ -381,7 +381,7 @@ export const ConnectedPlatformsCard = ({
   ];
 
   return (
-    <div className="bg-white rounded-2xl p-6 lg:p-8 h-3/4">
+    <div className="bg-white rounded-2xl p-6 lg:p-8">
       <div className="flex items-center gap-2 mb-8">
         <h3 className="text-lg font-bold text-gray-900">Connect to platforms</h3>
         <button
@@ -395,7 +395,10 @@ export const ConnectedPlatformsCard = ({
 
       <div className="space-y-6">
         {platforms.map((platform) => (
-          <div key={platform.name} className="flex items-center justify-between">
+          <div
+            key={platform.name}
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 sm:py-0 border-b border-gray-50 last:border-0 sm:border-0"
+          >
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-sm shrink-0">
                 {platform.icon}
@@ -428,7 +431,9 @@ export const ConnectedPlatformsCard = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">{renderPlatformActions(platform)}</div>
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-start sm:justify-end">
+              {renderPlatformActions(platform)}
+            </div>
           </div>
         ))}
       </div>

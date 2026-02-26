@@ -5,6 +5,7 @@ export interface IRefreshToken {
 
   tokenId: string; // UUID referenced in JWT
   userId: Types.ObjectId; // Owner
+  role: "user" | "admin"; // User role for quick access
   expiresAt: Date; // Absolute expiry
   revoked: boolean; // Manual invalidation
 

@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingH } from "@/components/ui/loading-h";
+import { cn } from "@/lib/utils";
+import { Sidebar, Header } from "@/components/shared";
 
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { PlatformSelection } from "@/components/create-post/PlatformSelection";
 import { CreatePostForm } from "@/components/create-post/CreatePostForm";
 import { PostPreview } from "@/components/create-post/PostPreview";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { SubmittingOverlay } from "@/components/create-post/SubmittingOverlay";
 
 export default function CreatePostPage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchParams = useSearchParams();
-
+  const router = useRouter();
   const {
     user,
     viewMode,
@@ -61,17 +66,46 @@ export default function CreatePostPage() {
   }, [searchParams, draftId, loadDraft]);
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingH />;
   }
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden p-2 lg:p-4 gap-4 relative">
+    <div className="flex h-screen bg-white overflow-hidden gap-4 relative">
       {/* Right Column */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-[2.5rem] overflow-hidden">
+        {/* Mobile Sidebar Overlay */}
+        <div
+          className={cn(
+            "fixed inset-0 z-50 bg-black/50 lg:hidden transition-opacity duration-300",
+            isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+          )}
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div
+            className={cn(
+              "absolute left-0 top-0 bottom-0 w-72 bg-none transition-transform duration-300 transform",
+              isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Sidebar />
+          </div>
+        </div>
+
+        {user && (
+          <div className="px-4 pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7] lg:hidden">
+            <Header
+              userName={user.name}
+              userEmail={user.email}
+              userAvatar={user.avatar}
+              onMenuClick={() => setIsMobileMenuOpen(true)}
+              title={viewMode === "preview" ? "Preview Post" : "Create Post"}
+              showBackButton={viewMode === "preview"}
+              onBack={() => setViewMode("create")}
+            />
+          </div>
+        )}
+
         {/* Success Overlay */}
         {isSuccess && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-3xl animate-in fade-in duration-300">
@@ -84,7 +118,10 @@ export default function CreatePostPage() {
                 {successMessage || "Your post has been successfully processed."}
               </p>
               <Button
-                onClick={() => setIsSuccess(false)}
+                onClick={() => {
+                  router.push("/dashboard/create-post");
+                  setIsSuccess(false);
+                }}
                 className="w-full h-12 rounded-xl text-base"
               >
                 Create Another
@@ -94,17 +131,14 @@ export default function CreatePostPage() {
         )}
 
         {/* Loading/Submitting Overlay */}
-        {isSubmitting && !isSuccess && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-3xl">
-            <div className="flex flex-col items-center">
-              <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">Processing your post...</p>
-            </div>
-          </div>
-        )}
+        <SubmittingOverlay
+          isSubmitting={isSubmitting && !isSuccess}
+          selectedPlatformIds={selectedPlatforms}
+          availablePlatforms={availablePlatforms}
+        />
 
         {/* Main Content Area */}
-        <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-8 lg:py-8 scrollbar-hide relative flex flex-col">
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 overflow-y-auto custom-scrollbar relative flex flex-col">
           {viewMode === "create" ? (
             <div className="flex-1 flex flex-col lg:flex-row gap-8">
               {/* Left Column: Form */}

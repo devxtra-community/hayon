@@ -9,6 +9,9 @@ interface AdminHeaderProps {
   userEmail: string;
   userAvatar: string;
   onMenuClick?: () => void;
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+  filterSlot?: React.ReactNode;
 }
 
 export default function AdminHeader({
@@ -16,6 +19,9 @@ export default function AdminHeader({
   userEmail,
   userAvatar,
   onMenuClick,
+  searchQuery,
+  onSearchChange,
+  filterSlot,
 }: AdminHeaderProps) {
   return (
     <header className="flex items-center justify-between w-full px-6 py-3 bg-[#F7F7F7] rounded-[1rem] h-[13vh]">
@@ -27,15 +33,19 @@ export default function AdminHeader({
         <Menu size={24} />
       </button>
 
-      {/* Search Bar */}
-      <div className="relative flex-1 max-w-sm hidden md:block">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-900" size={20} />
-        <Input
-          type="text"
-          placeholder="Search users, plans..."
-          className="pl-12 pr-4 py-3 w-full bg-white border-none rounded-full text-base placeholder:text-gray-400 focus-visible:ring-0 shadow-none"
-          style={{ height: "44px" }}
-        />
+      {/* Search Bar & Filters */}
+      <div className="flex-1 flex items-center gap-4 max-w-xl hidden md:flex">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-900" size={20} />
+          <Input
+            type="text"
+            placeholder="Search users, plans..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange?.(e.target.value)}
+            className="pl-12 pr-4 py-3 w-full bg-white border-none rounded-full text-base placeholder:text-gray-400 focus-visible:ring-0 shadow-none h-11"
+          />
+        </div>
+        {filterSlot}
       </div>
 
       {/* Right Section */}

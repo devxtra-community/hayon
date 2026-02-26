@@ -136,7 +136,7 @@ export default function ConnectedPlatformsCard() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 flex flex-col h-full">
+    <div className="bg-white rounded-3xl p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-medium text-gray-900">Connected Accounts</h3>

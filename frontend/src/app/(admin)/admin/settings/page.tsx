@@ -22,6 +22,7 @@ import { useToast } from "@/context/ToastContext";
 import { useRouter } from "next/navigation";
 import DeviceList from "@/components/DeviceList";
 import Image from "next/image";
+import { LoadingH } from "@/components/ui/loading-h";
 
 interface AdminUser {
   id: string;
@@ -182,10 +183,7 @@ export default function AdminSettingsPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-          <p className="text-gray-500 font-medium">Loading...</p>
-        </div>
+        <LoadingH theme="admin" />
       </div>
     );
   }
@@ -238,6 +236,8 @@ export default function AdminSettingsPage() {
                 <div className="relative group mx-auto md:mx-0">
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 flex-shrink-0">
                     <Image
+                      width={200}
+                      height={200}
                       src={user.avatar || "https://github.com/shadcn.png"}
                       alt={user.name}
                       className="w-full h-full object-cover"

@@ -34,37 +34,41 @@ export default function AnalyticsInsightsCard({ heatmapData }: AnalyticsInsights
   }, [heatmapData]);
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-8">
+    <div className="bg-white rounded-[2rem] p-6 sm:p-8 lg:px-10 lg:py-8 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
       {/* Best Time Section */}
-      <div className="flex-1 w-full">
-        <h3 className="text-gray-500 text-sm font-medium mb-1 uppercase tracking-wide">
+      <div className="flex-1 w-full text-center md:text-left">
+        <h3 className="text-slate-400 text-[8px] lg:text-[10px] font-bold mb-1 uppercase tracking-widest">
           Best Time to Post
         </h3>
         {bestTime ? (
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">
+          <div className="flex items-baseline justify-center md:justify-start gap-2">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 whitespace-nowrap">
               {bestTime.day}, {bestTime.displayHour} {bestTime.ampm}
             </span>
           </div>
         ) : (
           <div className="text-gray-400 font-medium">Not enough data yet</div>
         )}
-        <p className="text-gray-400 text-sm mt-1">Based on your highest engagement periods</p>
+        <p className="text-gray-400 text-[10px] lg:text-sm mt-1">
+          Based on your highest engagement periods
+        </p>
       </div>
 
       {/* Divider */}
       <div className="hidden md:block w-px h-16 bg-gray-100"></div>
 
       {/* History Link Section */}
-      <div className="flex-1 w-full flex flex-col md:items-end">
+      <div className="flex-1 w-full flex flex-col items-center md:items-end">
         <Link
           href="/history"
-          className="group bg-black text-white px-5 py-3 rounded-xl font-medium text-sm flex items-center gap-2 hover:bg-gray-800 transition-colors w-full md:w-auto justify-center"
+          className="group bg-black text-white px-5 py-3 rounded-xl font-medium text-xs lg:text-sm flex items-center gap-2 hover:bg-gray-800 transition-colors w-full sm:w-auto justify-center"
         >
           <span>View Post History</span>
           <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
         </Link>
-        <p className="text-gray-400 text-sm mt-2 text-right">Analyze individual post performance</p>
+        <p className="text-gray-400 text-[10px] lg:text-sm mt-2 text-center md:text-right">
+          Analyze individual post performance
+        </p>
       </div>
     </div>
   );

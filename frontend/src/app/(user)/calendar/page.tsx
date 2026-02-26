@@ -45,26 +45,32 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="pb-2 lg:pb-4">
-        <Header
-          userName={user?.name || ""}
-          userEmail={user?.email || ""}
-          userAvatar={user?.avatar || ""}
-          onMenuClick={() => setIsMobileMenuOpen(true)}
-        />
-      </div>
-
-      {/* Calendar Content */}
-      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
-        {!user ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingH />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-[2.5rem] overflow-hidden">
+        {user && (
+          <div className="px-4 pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7] lg:hidden">
+            <Header
+              userName={user.name}
+              userEmail={user.email}
+              userAvatar={user.avatar}
+              onMenuClick={() => setIsMobileMenuOpen(true)}
+              title="Calendar"
+              subtitle="Plan and schedule your social content"
+            />
           </div>
-        ) : (
-          <CalendarComponent />
         )}
-      </main>
+
+        {/* Calendar Content */}
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 overflow-y-auto custom-scrollbar">
+          {!user ? (
+            <div className="flex items-center justify-center h-full">
+              <LoadingH />
+            </div>
+          ) : (
+            <CalendarComponent />
+          )}
+        </main>
+      </div>
     </>
   );
 }

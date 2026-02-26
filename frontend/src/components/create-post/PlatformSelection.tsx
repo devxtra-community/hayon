@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Platform } from "@/types/create-post";
 import { Button } from "@/components/ui/button";
@@ -88,9 +88,22 @@ export function PlatformSelection({
       <Button
         onClick={onGenerate}
         disabled={isGenerating || availablePlatforms.length === 0 || !canGenerate}
-        className="w-full h-14 rounded-full text-lg font-medium bg-gradient-to-r from-gray-900 to-gray-800 hover:from-black hover:to-gray-900 text-white shadow-lg disabled:opacity-50 transition-all"
+        className="w-full h-14 rounded-full text-lg font-semibold bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white shadow-[0_10px_20px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.6)] disabled:opacity-50 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 relative overflow-hidden group"
       >
-        {isGenerating ? "Generating..." : "Generate & Preview"}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#318D62]/0 via-[#318D62]/10 to-[#318D62]/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+        <span className="relative flex items-center justify-center gap-2">
+          {isGenerating ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              Generating...
+            </>
+          ) : (
+            <>
+              Generate & Preview
+              <Sparkles className="text-emerald-400 group-hover:animate-pulse" size={20} />
+            </>
+          )}
+        </span>
       </Button>
     </div>
   );

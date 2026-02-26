@@ -50,7 +50,7 @@ export default function EngagementChart({ data }: EngagementChartProps) {
   }, [data]);
 
   return (
-    <div className="bg-white rounded-2xl p-8 h-full flex flex-col border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-3xl p-8 h-full flex flex-col border border-slate-100 shadow-sm">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h3 className="text-xl font-bold text-slate-800">Engagement vs Posts</h3>
@@ -60,7 +60,7 @@ export default function EngagementChart({ data }: EngagementChartProps) {
 
       <div className="flex-1 w-full min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
             <XAxis
               dataKey="day"

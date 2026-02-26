@@ -41,6 +41,7 @@ export default function DraftsPage() {
         avatar: userRes.data.data.user.avatar || "/mock-avatar.png",
       });
 
+      // TODO:: have to do pagination if we fetch like this
       // Fetch drafts
       const draftsRes = await api.get("/posts", {
         params: {
@@ -104,52 +105,56 @@ export default function DraftsPage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="pb-2 lg:pb-4">
-        <Header
-          userName={user.name}
-          userEmail={user.email}
-          userAvatar={user.avatar}
-          onMenuClick={() => setIsMobileMenuOpen(true)}
-          onSearchChange={setSearchQuery}
-        />
-      </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-[2.5rem] overflow-hidden">
+        <div className="px-4 pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7]">
+          <Header
+            userName={user.name}
+            userEmail={user.email}
+            userAvatar={user.avatar}
+            onMenuClick={() => setIsMobileMenuOpen(true)}
+            onSearchChange={setSearchQuery}
+            title="Drafts"
+            subtitle="Refine your unsaved posts before publishing"
+          />
+        </div>
 
-      {/* Main Content */}
-      <main className="flex-1 bg-[#F7F7F7] rounded-3xl overflow-y-auto px-4 py-6 lg:px-6 lg:py-8 scrollbar-hide">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingH />
-          </div>
-        ) : filteredDrafts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <p className="text-lg">No drafts found.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-            {filteredDrafts.map((draft) => {
-              const uniqueImages = new Set<string>();
-              draft.content.mediaItems.forEach((item) => uniqueImages.add(item.s3Url));
-              if (draft.platformSpecificContent) {
-                Object.values(draft.platformSpecificContent).forEach((content) => {
-                  content.mediaItems?.forEach((item) => uniqueImages.add(item.s3Url));
-                });
-              }
-              return (
-                <DraftCard
-                  key={draft._id}
-                  draftId={draft._id}
-                  title={draft.content.text}
-                  images={Array.from(uniqueImages)}
-                  selectedPlatforms={draft.selectedPlatforms}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              );
-            })}
-          </div>
-        )}
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 overflow-y-auto custom-scrollbar">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <LoadingH />
+            </div>
+          ) : filteredDrafts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <p className="text-lg">No drafts found.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+              {filteredDrafts.map((draft) => {
+                const uniqueImages = new Set<string>();
+                draft.content.mediaItems.forEach((item) => uniqueImages.add(item.s3Url));
+                if (draft.platformSpecificContent) {
+                  Object.values(draft.platformSpecificContent).forEach((content) => {
+                    content.mediaItems?.forEach((item) => uniqueImages.add(item.s3Url));
+                  });
+                }
+                return (
+                  <DraftCard
+                    key={draft._id}
+                    draftId={draft._id}
+                    title={draft.content.text}
+                    images={Array.from(uniqueImages)}
+                    selectedPlatforms={draft.selectedPlatforms}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </div>
     </>
   );
 }

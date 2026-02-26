@@ -25,10 +25,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Create serviceAccountKey.json
+        run: echo '${{ secrets.SERVICE_ACCOUNT_KEY }}' > backend/src/serviceAccountKey.json
 
       - name: Build workspaces
         run: pnpm -r run build
@@ -49,10 +52,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Create serviceAccountKey.json
+        run: echo '${{ secrets.SERVICE_ACCOUNT_KEY }}' > backend/src/serviceAccountKey.json
 
       - name: Build workspaces
         run: pnpm -r run build

@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { IUser, IUserAuth, IUserSubscription } from "../interfaces/user.interface";
+import { PLAN_LIMITS } from "../config/plans";
 
 const authSchema = new Schema<IUserAuth>(
   {
@@ -132,6 +133,11 @@ const userSchema = new Schema<IUser>(
       default: false,
     },
 
+    fcmTokens: {
+      type: [String],
+      default: [],
+    },
+
     auth: {
       type: authSchema,
       required: true,
@@ -150,19 +156,8 @@ const userSchema = new Schema<IUser>(
     limits: {
       type: limitsSchema,
       default: function () {
-        const plan = this.subscription?.plan || "free";
-
-        if (plan === "pro") {
-          return {
-            maxCaptionGenerations: 25,
-            maxPosts: 90,
-          };
-        }
-
-        return {
-          maxCaptionGenerations: 10,
-          maxPosts: 30,
-        };
+        const plan = (this.subscription?.plan as "free" | "pro") || "free";
+        return PLAN_LIMITS[plan];
       },
     },
 

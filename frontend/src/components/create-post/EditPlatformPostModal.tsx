@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Platform, PlatformPost } from "@/types/create-post";
@@ -95,7 +96,9 @@ export function EditPlatformPostModal({
               <DialogTitle className="text-xl font-bold text-gray-900">
                 Edit {platform.name} Post
               </DialogTitle>
-              <p className="text-sm text-gray-500">Customize content for this platform</p>
+              <DialogDescription className="text-sm text-gray-500">
+                Customize content for this platform
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>

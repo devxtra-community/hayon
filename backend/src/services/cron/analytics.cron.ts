@@ -1,6 +1,6 @@
 // import cron from "node-cron";
 import logger from "../../utils/logger";
-import SocialAccountModel from "../../models/socialAccount.model";
+import * as SocialAccountRepository from "../../repositories/socialAccount.repository";
 import * as postRepository from "../../repositories/post.repository";
 import { analyticsProducer } from "../../lib/queues/analytics.producer";
 
@@ -94,7 +94,7 @@ export class AnalyticsCronService {
     logger.info("🔄 Checking for accounts needing follower updates...");
 
     try {
-      const accounts = await SocialAccountModel.find({});
+      const accounts = await SocialAccountRepository.findAll();
 
       for (const account of accounts) {
         // Collect platforms where at least one sub-platform is connected

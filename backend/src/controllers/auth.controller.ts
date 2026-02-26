@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import {
-  getCurrentUserService,
   loginService,
   logoutService,
   refreshService,
@@ -124,6 +123,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
       });
     }
 
+    // console.log("Admin login attempt with body:", req.body); // Debugging line to check email
     const { user, accessToken, refreshToken } = await adminLoginService(
       req.body,
       req.ip,
@@ -187,7 +187,7 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
       new ErrorResponse("Unauthorized", { status: 401 }).send(res);
       return;
     }
-    const user = await getCurrentUserService(req.auth.id);
+    const user = req.auth;
 
     new SuccessResponse("User fetched successfully", {
       data: { user },
