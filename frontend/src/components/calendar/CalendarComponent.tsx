@@ -65,6 +65,7 @@ export default function CalendarComponent() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // TODO:: change a limit and fetch with the date
       const response = await api.get("/posts", { params: { limit: 200 } });
       const fetchedPosts = response.data.data.posts;
       setAllPosts(fetchedPosts);

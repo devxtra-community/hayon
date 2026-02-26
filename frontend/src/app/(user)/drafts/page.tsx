@@ -41,6 +41,7 @@ export default function DraftsPage() {
         avatar: userRes.data.data.user.avatar || "/mock-avatar.png",
       });
 
+      // TODO:: have to do pagination if we fetch like this
       // Fetch drafts
       const draftsRes = await api.get("/posts", {
         params: {

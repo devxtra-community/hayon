@@ -56,6 +56,7 @@ export default function HistoryPage() {
         avatar: userRes.data.data.user.avatar || "/mock-avatar.png",
       });
 
+      // TODO::  have to do pagination if we fetch like this
       // Fetch history
       const postsRes = await api.get("/posts", {
         params: {
