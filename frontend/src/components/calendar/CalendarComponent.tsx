@@ -13,10 +13,11 @@ import {
   addMonths,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Clock, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/axios";
 import { HistoryCard } from "@/components/history/HistoryCard";
+import { CalendarPostCard } from "./CalendarPostCard";
 
 export default function CalendarComponent() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -25,11 +26,24 @@ export default function CalendarComponent() {
   const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
   const [allPosts, setAllPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check for mobile to adjust week start and layout
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+  // Mobile starts Sunday (as per mobile mockup), Desktop starts Monday (as per desktop mockup)
+  const weekStartsOn = isMobile ? 0 : 1;
+
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn });
 
   const calendarDays = eachDayOfInterval({
     start: calendarStart,
@@ -38,11 +52,11 @@ export default function CalendarComponent() {
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const setToday = () => {
-    const today = new Date();
-    setCurrentDate(today);
-    setSelectedDate(today);
-  };
+  // const setToday = () => {
+  //   const today = new Date();
+  //   setCurrentDate(today);
+  //   setSelectedDate(today);
+  // };
 
   useEffect(() => {
     fetchData();
@@ -73,95 +87,101 @@ export default function CalendarComponent() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Calendar Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-          {format(currentDate, "MMMM yyyy")}
+    <div className="flex flex-col gap-6 md:gap-8 max-w-7xl mx-auto">
+      {/* Calendar Header matching mockup */}
+      <div className="flex items-center justify-between px-2 pt-2">
+        {/* Year Label */}
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+          {format(currentDate, "yyyy")}
         </h2>
-        <div className="flex items-center gap-3">
+
+        {/* Month Navigation Pill */}
+        <div className="flex items-center bg-white rounded-full px-1 py-1 shadow-sm border border-gray-100">
           <button
             onClick={prevMonth}
-            className="p-2.5 hover:bg-white rounded-full transition-all hover:shadow-md bg-white/50 border border-transparent hover:border-gray-100"
+            className="p-2 hover:bg-gray-50 rounded-full transition-all group"
           >
-            <ChevronLeft size={22} className="text-gray-700" />
+            <ChevronLeft size={20} className="text-gray-400 group-hover:text-gray-900" />
           </button>
+
+          <span className="px-4 text-lg md:text-xl font-bold text-gray-900 lowercase min-w-[120px] text-center">
+            {format(currentDate, "MMMM")}
+          </span>
+
           <button
             onClick={nextMonth}
-            className="p-2.5 hover:bg-white rounded-full transition-all hover:shadow-md bg-white/50 border border-transparent hover:border-gray-100"
+            className="p-2 hover:bg-gray-50 rounded-full transition-all group"
           >
-            <ChevronRight size={22} className="text-gray-700" />
-          </button>
-          <button
-            onClick={setToday}
-            className="ml-4 px-6 py-2.5 bg-white border border-gray-100 rounded-full text-sm font-bold text-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
-          >
-            Today
+            <ChevronRight size={20} className="text-gray-400 group-hover:text-gray-900" />
           </button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-[#F7F7F7] rounded-[2rem] p-8">
-        <div className="grid grid-cols-7 mb-6">
-          {["Mon", "Tue", "Wen", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-            <div key={day} className="text-center text-[13px] font-bold text-gray-900 py-2">
+      {/* Calendar Grid Container */}
+      <div className="bg-[#F8F9FA] md:bg-[#F9FAFB] rounded-[2.5rem] p-4 md:p-8">
+        {/* Days Header */}
+        <div className="grid grid-cols-7 mb-4">
+          {(isMobile
+            ? ["sun", "mon", "tue", "wen", "thu", "fri", "sat"]
+            : ["Mon", "Tue", "Wen", "Thu", "Fri", "Sat", "Sun"]
+          ).map((day) => (
+            <div
+              key={day}
+              className="text-center text-[11px] md:text-[14px] font-semibold text-gray-900 md:text-gray-700 py-2"
+            >
               {day}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-4">
+        {/* Days Grid */}
+        <div className="grid grid-cols-7 gap-1 md:gap-3">
           {calendarDays.map((day, idx) => {
             const isSelected = isSameDay(day, selectedDate);
             const isCurrentMonth = isSameMonth(day, monthStart);
             const isToday = isSameDay(day, new Date());
+            const hasScheduled = allPosts.some(
+              (p) => p.status === "SCHEDULED" && isSameDay(new Date(p.scheduledAt), day),
+            );
 
             return (
               <button
                 key={idx}
                 onClick={() => setSelectedDate(day)}
                 className={cn(
-                  "aspect-[4/3] rounded-[16px] p-4 flex flex-col items-start justify-start transition-all duration-300 relative group",
-                  isCurrentMonth ? "bg-white" : "bg-white/40 opacity-40",
+                  "relative flex flex-col transition-all duration-300",
+                  "aspect-square md:aspect-[1.3/1]",
+                  "rounded-full p-2 md:rounded-[18px] md:p-4",
+                  !isCurrentMonth ? "opacity-30 md:bg-white/40" : "opacity-100",
                   isSelected
-                    ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]"
-                    : "hover:bg-white/80 hover:shadow-sm",
-                  !isSelected && isToday && "ring-2 ring-primary/20 ring-offset-2",
+                    ? "bg-[#318D62] text-white shadow-lg md:shadow-none"
+                    : isToday && !isSelected
+                      ? "ring-1 ring-[#318D62]/30 ring-offset-1 text-[#318D62] font-bold md:bg-white"
+                      : "md:bg-white md:hover:shadow-md md:hover:scale-[1.01] text-gray-900 border border-transparent md:border-gray-50",
                 )}
               >
+                {/* Date Number - Top Left on Desktop, Center on Mobile */}
                 <span
                   className={cn(
-                    "text-[14px] font-bold",
+                    "text-[14px] md:text-[15px] font-semibold",
+                    "md:absolute md:top-3 md:left-4",
                     isSelected ? "text-white" : "text-gray-900",
                   )}
                 >
                   {format(day, "dd")}
                 </span>
 
-                {/* Content indicators */}
-                <div className="mt-auto flex gap-1">
-                  {allPosts.some(
-                    (p) => p.status === "SCHEDULED" && isSameDay(new Date(p.scheduledAt), day),
-                  ) && (
-                    <div
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full",
-                        isSelected ? "bg-white" : "bg-primary",
-                      )}
-                    />
-                  )}
-                  {allPosts.some(
-                    (p) => p.status !== "SCHEDULED" && isSameDay(new Date(p.createdAt), day),
-                  ) && (
-                    <div
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full",
-                        isSelected ? "bg-white/60" : "bg-gray-300",
-                      )}
-                    />
-                  )}
-                </div>
+                {/* Desktop Activity Indicators */}
+                {!isMobile && !isSelected && hasScheduled && (
+                  <div className="mt-auto flex justify-center w-full pb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#318D62]" />
+                  </div>
+                )}
+
+                {/* Mobile indicators */}
+                {isMobile && !isSelected && hasScheduled && isCurrentMonth && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#318D62] rounded-full" />
+                )}
               </button>
             );
           })}
@@ -169,63 +189,41 @@ export default function CalendarComponent() {
       </div>
 
       {/* Posts Section */}
-      <div className="bg-white rounded-[2rem] p-10 shadow-sm min-h-[400px]">
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h3 className="text-2xl font-bold text-gray-900">
-              Posts for {format(selectedDate, "MMMM do, yyyy")}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">Review your content activity for this day</p>
-          </div>
-          <span className="text-sm font-bold text-primary bg-primary/5 px-6 py-2 rounded-full border border-primary/10">
-            {posts.length} {posts.length === 1 ? "Post" : "Posts"}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-2 mb-2">
+          <h3 className="text-xl font-bold text-gray-900">
+            {isSameDay(selectedDate, new Date())
+              ? "Today's Content"
+              : format(selectedDate, "MMMM do")}
+          </h3>
+          <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider">
+            {posts.length + scheduledPosts.length} items
           </span>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="flex items-center justify-center py-10">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
           </div>
-        ) : posts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post) => (
-              <HistoryCard
-                key={post._id}
-                id={post._id}
-                imageUrl={post.content?.mediaItems?.[0]?.s3Url}
-                description={post.content?.text || "No content"}
-                status={post.status}
-                platformStatuses={post.platformStatuses?.map((p: any) => ({
-                  platform: p.platform,
-                  status: p.status,
-                  platformPostUrl: p.platformPostUrl,
-                }))}
-                mediaCount={post.media?.length}
-                createdAt={post.createdAt}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <div className="p-4 bg-gray-50 rounded-full mb-4">
-              <FileText size={40} className="text-gray-200" />
+        ) : posts.length > 0 || scheduledPosts.length > 0 ? (
+          <div className="space-y-4">
+            {/* Mobile View: CalendarPostCard List */}
+            <div className="md:hidden flex flex-col">
+              {[...scheduledPosts, ...posts].map((post) => (
+                <CalendarPostCard
+                  key={post._id}
+                  id={post._id}
+                  imageUrl={post.content?.mediaItems?.[0]?.s3Url}
+                  description={post.content?.text || "No description provided"}
+                  status={post.status}
+                  platformStatuses={post.platformStatuses}
+                />
+              ))}
             </div>
-            <p className="text-lg font-medium">No posts found for this day</p>
-            <p className="text-sm">Try selecting a different date or schedule a new post.</p>
-          </div>
-        )}
 
-        {/* Scheduled Posts Bottom Section */}
-        {scheduledPosts.length > 0 && (
-          <div className="mt-12 pt-12 border-t border-gray-100">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Clock className="text-primary" size={24} />
-                Scheduled for this day
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {scheduledPosts.map((post) => (
+            {/* Desktop View: Grid of HistoryCards */}
+            <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...scheduledPosts, ...posts].map((post) => (
                 <HistoryCard
                   key={post._id}
                   id={post._id}
@@ -237,11 +235,21 @@ export default function CalendarComponent() {
                     status: p.status,
                     platformPostUrl: p.platformPostUrl,
                   }))}
-                  mediaCount={post.content?.mediaItems?.length}
+                  mediaCount={post.content?.mediaItems?.length || 1}
                   createdAt={post.scheduledAt || post.createdAt}
                 />
               ))}
             </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center border border-gray-50 shadow-sm">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <FileText size={32} className="text-gray-200" />
+            </div>
+            <p className="text-gray-500 font-medium">No activity for this day</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Select another date to view scheduled posts
+            </p>
           </div>
         )}
       </div>

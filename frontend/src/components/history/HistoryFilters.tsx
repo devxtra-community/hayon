@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Filter } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type FilterState = {
   statuses: string[];
@@ -24,12 +25,19 @@ interface HistoryFiltersProps {
   setFilters: (filters: FilterState) => void;
   sort: string;
   setSort: (sort: string) => void;
+  isMobile?: boolean;
 }
 
 const ALL_PLATFORMS = ["Bluesky", "Mastodon", "Instagram", "Facebook", "Threads", "Tumblr"];
 const ALL_STATUSES = ["COMPLETED", "PARTIAL_SUCCESS", "FAILED", "PROCESSING"];
 
-export function HistoryFilters({ filters, setFilters, sort, setSort }: HistoryFiltersProps) {
+export function HistoryFilters({
+  filters,
+  setFilters,
+  sort,
+  setSort,
+  isMobile,
+}: HistoryFiltersProps) {
   const handleStatusChange = (status: string, checked: boolean) => {
     const newStatuses = checked
       ? [...filters.statuses, status]
@@ -52,8 +60,13 @@ export function HistoryFilters({ filters, setFilters, sort, setSort }: HistoryFi
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="ml-4 w-[44px] h-[44px] bg-white rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors">
-          <Filter size={20} className="text-black" />
+        <button
+          className={cn(
+            "w-[44px] h-[44px] bg-white rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm lg:shadow-none",
+            !isMobile && "ml-4",
+          )}
+        >
+          <Filter size={20} className="text-black/70" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-4" align="end">

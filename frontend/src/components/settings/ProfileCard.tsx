@@ -3,12 +3,23 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Camera, Pencil, Check, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Camera, Pencil, Check, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { api } from "@/lib/axios";
+import { api, clearAccessToken } from "@/lib/axios";
 import { useToast } from "@/context/ToastContext";
-import ChangePasswordModal from "./ChangePasswordModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ProfileCardProps {
   user: {
@@ -27,7 +38,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isUpdatingName, setIsUpdatingName] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const router = useRouter();
 
   const previewImgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -140,6 +151,17 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
         showToast("error", "Avatar Updated", "Failed to delete avatar");
         console.error("Failed to delete avatar", error);
       });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.delete("/auth/logout");
+      clearAccessToken();
+      router.push("/login");
+    } catch (error) {
+      console.error(error);
+      showToast("error", "Logout failed", "Please try again.");
+    }
   };
 
   const handleNameUpdate = async () => {
@@ -266,17 +288,50 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
 
           <div className="w-full flex flex-col sm:flex-row gap-3 pr-6 items-center justify-center md:justify-end mt-6 md:mt-0">
             <Link href="/dashboard/devices">
-              <Button variant="secondary" className="h-9 px-4 text-xs font-medium border-none">
+              <Button
+                variant="secondary"
+                className="h-9 px-4 text-xs font-medium border-none border-gray-100"
+              >
                 Manage Devices
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              className="h-9 px-4 text-xs font-medium border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-              onClick={() => setIsChangePasswordModalOpen(true)}
+
+            <button
+              onClick={() => handleDeleteAvatar()}
+              className="h-9 px-4 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors border border-red-100"
             >
-              Change Password
-            </Button>
+              Delete Avatar
+            </button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 px-4 text-xs font-medium border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <LogOut size={14} className="mr-2" />
+                  Logout
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Logout Confirmation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to logout? You will need to log in again to access your
+                    dashboard.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Logout
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
@@ -330,10 +385,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user, onUpdate }) => {
           </div>
         </div>
       )}
-      <ChangePasswordModal
-        isOpen={isChangePasswordModalOpen}
-        onClose={() => setIsChangePasswordModalOpen(false)}
-      />
     </>
   );
 };

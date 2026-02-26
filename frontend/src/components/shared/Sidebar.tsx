@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { api, clearAccessToken } from "@/lib/axios";
+import { usePathname } from "next/navigation";
 import logo_IMG from "@/assets/logo.png";
 import {
   LayoutDashboard,
@@ -13,23 +12,11 @@ import {
   Clock,
   FileEdit,
   Settings,
-  LogOut,
   Plus,
   Smartphone,
   ChevronDown,
+  Bell,
 } from "lucide-react";
-import { useToast } from "@/context/ToastContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 interface NavItem {
   name: string;
@@ -55,13 +42,13 @@ const menuItems: NavItem[] = [
 ];
 
 const generalItems: NavItem[] = [
+  { name: "Notifications", href: "/settings/notifications", icon: <Bell size={20} /> },
   { name: "Settings", href: "/settings", icon: <Settings size={20} /> },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { showToast } = useToast();
+
   const [expandedItem, setExpandedItem] = useState<string | null>(
     pathname?.startsWith("/dashboard") ? "Dashboard" : null,
   );
@@ -69,17 +56,6 @@ export default function Sidebar() {
   useEffect(() => {
     setExpandedItem(pathname?.startsWith("/dashboard") ? "Dashboard" : null);
   }, [pathname]);
-
-  const handleLogout = async () => {
-    try {
-      await api.delete("/auth/logout");
-      clearAccessToken();
-      router.push("/login");
-    } catch (error) {
-      console.error(error);
-      showToast("error", "Logout failed", "Please try again.");
-    }
-  };
 
   const isActive = (href: string) => pathname === href;
   const isParentActive = (item: NavItem) =>
@@ -205,38 +181,6 @@ export default function Sidebar() {
               </div>
             );
           })}
-
-          {/* Logout Button */}
-          <div className="relative flex items-center">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button className="flex items-center gap-4 px-4 py-2 w-full text-gray-500 hover:text-gray-900 transition-all duration-200">
-                  <span className="text-gray-400">
-                    <LogOut size={20} />
-                  </span>
-                  <span className="text-base">Logout</span>
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Logout Confirmation</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to logout? You will need to log in again to access your
-                    dashboard.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleLogout}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Logout
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
         </nav>
       </div>
 

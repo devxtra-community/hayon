@@ -6,11 +6,8 @@ import { messaging } from "@/lib/firebase";
 import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/axios";
 import { analyticsService } from "@/services/analytics.service";
-import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/shared";
-import { NotificationDropdown } from "@/components/NotificationDropdown";
-import Image from "next/image";
+import { Sidebar, Header } from "@/components/shared";
 
 import {
   DashboardMetrics,
@@ -131,7 +128,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Dashboard Content */}
-      <main className="flex-1 bg-[#F7F7F7] rounded-[2.5rem] overflow-y-auto px-4 py-6 lg:px-8 lg:py-8 scrollbar-hide">
+      <main className="flex-1 bg-[#F7F7F7] rounded-[2.5rem] overflow-y-auto overflow-x-hidden px-4 py-6 lg:px-8 lg:py-8 custom-scrollbar">
         {!user || !dashboardData ? (
           <div className="flex items-center justify-center h-full">
             <LoadingH />
@@ -139,45 +136,16 @@ export default function DashboardPage() {
         ) : (
           <>
             {/* Header with Welcome Text & User Profile */}
-            <div className="flex items-center justify-between mb-6 lg:mb-8">
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden mr-4 p-2 text-gray-600 hover:bg-gray-200 rounded-full"
-              >
-                <Menu size={24} />
-              </button>
+            <Header
+              userName={user.name}
+              userEmail={user.email}
+              userAvatar={user.avatar}
+              onMenuClick={() => setIsMobileMenuOpen(true)}
+              title={`Hi, ${user.name.split(" ")[0]} 👋`}
+              subtitle="Here's what's happening today"
+            />
 
-              <div className="flex-1">
-                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                  Hi, {user.name.split(" ")[0]}
-                </h1>
-                <p className="text-gray-500 text-xs lg:text-sm">Here's your performance summary</p>
-              </div>
-
-              {/* Right Section */}
-              <div className="flex items-center gap-4 ml-auto">
-                <NotificationDropdown />
-                <div className="flex items-center gap-3">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-200">
-                    <Image
-                      src={user?.avatar || "/default-avatar.png"}
-                      alt={user?.name || ""}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="text-left hidden sm:block">
-                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">
-                      {user?.name}
-                    </p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-8">
+            <div className="space-y-8 mt-12">
               {/* 1. Top Metrics */}
               <section>
                 <DashboardMetrics data={dashboardData?.metrics} />
@@ -185,14 +153,14 @@ export default function DashboardPage() {
 
               {/* 2. Charts & Widgets Grid */}
               <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+                {/* Best Post Card - 1 col - First on Mobile */}
+                <div className="lg:col-span-1 min-h-[350px] hover:scale-[1.02] transition-transform duration-500">
+                  <BestPostCard post={dashboardData?.topPost} />
+                </div>
+
                 {/* Engagement Chart - Spans 2 cols */}
                 <div className="lg:col-span-2 min-h-[350px] hover:scale-[1.01] transition-transform duration-500">
                   <EngagementChart data={dashboardData?.timeline} />
-                </div>
-
-                {/* Best Post Card - 1 col */}
-                <div className="lg:col-span-1 min-h-[350px] hover:scale-[1.02] transition-transform duration-500">
-                  <BestPostCard post={dashboardData?.topPost} />
                 </div>
 
                 {/* Upcoming Posts Carousel - 1 col */}

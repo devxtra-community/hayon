@@ -45,6 +45,7 @@
 
 * {
   font-family: "Poppins", sans-serif;
+  scroll-behavior: smooth;
 }
 
 :root {
@@ -277,9 +278,8 @@
   }
 }
 
-
 .font-handwriting {
-  font-family: 'Kalam', 'Patrick Hand', 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+  font-family: "Kalam", "Patrick Hand", "Comic Sans MS", "Chalkboard SE", "Comic Neue", sans-serif;
 }
 
 /* Hide scrollbar for scroll wheel pickers */
@@ -289,4 +289,87 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ===== Custom Green Scrollbar ===== */
+/* Usage: add className="custom-scrollbar" to any scrollable container */
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #318d62 #e8f5ee;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #e8f5ee;
+  border-radius: 100px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #5fc294 0%, #318d62 100%);
+  border-radius: 100px;
+  border: 2px solid #e8f5ee;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #48b882 0%, #267a52 100%);
+  border: 1px solid #e8f5ee;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: #23754e;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  appearance: none !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button:single-button {
+  display: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button:start:decrement,
+.custom-scrollbar::-webkit-scrollbar-button:end:increment {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+html .custom-scrollbar::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Dark mode variant */
+.dark .custom-scrollbar {
+  scrollbar-color: #318d62 #1a2e24;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a2e24;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #318d62 0%, #23754e 100%);
+  border: 2px solid #1a2e24;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5fc294 0%, #318d62 100%);
+  border: 1px solid #1a2e24;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: #5fc294;
 }

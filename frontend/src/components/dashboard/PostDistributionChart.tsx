@@ -51,13 +51,13 @@ export default function PostDistributionChart({ data }: PostDistributionChartPro
         <p className="text-sm text-slate-500">Total posts by platform</p>
       </div>
 
-      <div className="flex-1 min-h-[200px] relative mt-2">
+      <div className="flex-1 min-h-[220px] relative mt-2">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
-              cx="40%"
-              cy="50%"
+              cx="50%"
+              cy="45%"
               innerRadius="60%"
               outerRadius="80%"
               paddingAngle={5}
@@ -76,21 +76,24 @@ export default function PostDistributionChart({ data }: PostDistributionChartPro
               itemStyle={{ color: "#1e293b", fontWeight: 600 }}
             />
             <Legend
-              layout="vertical"
-              verticalAlign="middle"
-              align="right"
+              layout="horizontal"
+              verticalAlign="bottom"
+              align="center"
               iconType="circle"
-              wrapperStyle={{ paddingLeft: "20px" }}
+              iconSize={8}
+              wrapperStyle={{ paddingTop: "20px" }}
               formatter={(value) => (
-                <span className="text-slate-600 font-medium ml-1 text-sm">{value}</span>
+                <span className="text-slate-600 font-medium ml-1 text-[11px] sm:text-sm">
+                  {value}
+                </span>
               )}
             />
           </PieChart>
         </ResponsiveContainer>
 
-        {/* Total Count in Center - Nudged slightly bottom-left per user request */}
+        {/* Total Count in Center */}
         <div
-          className="absolute top-[50%] left-[30%] flex flex-col items-center justify-center pointer-events-none"
+          className="absolute top-[45%] left-[50%] flex flex-col items-center justify-center pointer-events-none"
           style={{ transform: "translate(-50%, -50%)" }}
         >
           <span className="text-2xl font-bold text-slate-800 leading-none">{totalPosts}</span>

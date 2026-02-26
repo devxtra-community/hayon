@@ -246,7 +246,7 @@ export default function Home() {
   }
 
   return (
-    <div className="overflow-x-hidden relative">
+    <div className="overflow-x-hidden relative overflow-y-auto custom-scrollbar">
       {/* Global Dot Pattern Background */}
       <div
         className="fixed inset-0 z-0 opacity-[0.8] pointer-events-none"
@@ -373,7 +373,7 @@ export default function Home() {
       )}
 
       {/* Hero Section */}
-      <section className="min-h-screen flex flex-col relative z-10">
+      <section className="min-h-screen flex flex-col relative z-10 custom-scrollbar overflow-y-auto">
         {/* Main Card Container */}
         <div className="flex-1 flex flex-col relative overflow-hidden">
           {/* Navigation BAR */}
@@ -431,7 +431,7 @@ export default function Home() {
           </nav>
 
           {/* Hero Content */}
-          <main className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-0 pb-32 md:pb-0 md:py-0 -mt-20 md:mt-0">
+          <main className="relative z-0 flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-0 pb-32 md:pb-0 md:py-0 -mt-20 md:mt-0 custom-scrollbar">
             {/* Central Icon */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
