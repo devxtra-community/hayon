@@ -5,7 +5,6 @@ import { api } from "@/lib/axios";
 import { Sidebar, Header } from "@/components/shared";
 import DeviceList from "@/components/DeviceList";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
 
 interface User {
   id: string;
@@ -16,7 +15,6 @@ interface User {
 }
 
 export default function DevicesPage() {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -70,10 +68,8 @@ export default function DevicesPage() {
               userEmail={user.email}
               userAvatar={user.avatar}
               onMenuClick={() => setIsMobileMenuOpen(true)}
-              title="Device Management"
+              title="Manage Devices"
               subtitle="Manage your active sessions"
-              showBackButton
-              onBack={() => router.push("/dashboard")}
             />
           </div>
         )}

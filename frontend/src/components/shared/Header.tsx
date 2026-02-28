@@ -92,10 +92,13 @@ export default function Header({
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllAsRead()}
-                  className="p-2.5 text-primary hover:bg-primary/5 rounded-full transition-all duration-200"
+                  className="relative p-2.5 text-primary hover:bg-primary/5 rounded-full transition-all duration-200"
                   title="Mark all as read"
                 >
                   <CheckCheck size={20} strokeWidth={2.5} />
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-white animate-in zoom-in duration-300">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 </button>
               )}
               <button
