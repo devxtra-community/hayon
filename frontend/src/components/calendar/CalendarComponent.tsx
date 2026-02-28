@@ -13,7 +13,8 @@ import {
   addMonths,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, CircleAlert } from "lucide-react";
+import NextImage from "next/image";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/axios";
 import { HistoryCard } from "@/components/history/HistoryCard";
@@ -145,6 +146,26 @@ export default function CalendarComponent() {
               (p) => p.status === "SCHEDULED" && isSameDay(new Date(p.scheduledAt), day),
             );
 
+            const dayPosts = allPosts.filter((p) => {
+              const d = p.status === "SCHEDULED" ? p.scheduledAt : p.createdAt;
+              return d && isSameDay(new Date(d), day);
+            });
+
+            const postedCount = dayPosts.filter((p) => p.status === "COMPLETED").length;
+            const scheduledCount = dayPosts.filter((p) => p.status === "SCHEDULED").length;
+            const failedCount = dayPosts.filter(
+              (p) => p.status === "FAILED" || p.status === "CANCELLED",
+            ).length;
+            const partialCount = dayPosts.filter((p) => p.status === "PARTIAL_SUCCESS").length;
+            const processingCount = dayPosts.filter(
+              (p) => p.status === "PROCESSING" || p.status === "PENDING",
+            ).length;
+
+            const thumbnails = dayPosts
+              .map((p) => p.content?.mediaItems?.[0]?.s3Url)
+              .filter(Boolean)
+              .slice(0, 2);
+
             return (
               <button
                 key={idx}
@@ -164,18 +185,134 @@ export default function CalendarComponent() {
                 {/* Date Number - Top Left on Desktop, Center on Mobile */}
                 <span
                   className={cn(
-                    "text-[14px] md:text-[15px] font-semibold",
+                    "text-[14px] md:text-[15px] font-bold z-20 transition-all duration-300",
                     "md:absolute md:top-3 md:left-4",
-                    isSelected ? "text-white" : "text-gray-900",
+                    isSelected
+                      ? "text-white drop-shadow-md"
+                      : "text-gray-900 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]",
                   )}
                 >
                   {format(day, "dd")}
                 </span>
 
                 {/* Desktop Activity Indicators */}
-                {!isMobile && !isSelected && hasScheduled && (
-                  <div className="mt-auto flex justify-center w-full pb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#318D62]" />
+                {!isMobile && (
+                  <div className="mt-auto pt-7 flex flex-col gap-1 w-full relative z-10">
+                    {dayPosts.length > 0 && (
+                      <>
+                        {/* Top Line: Thumbnails + Error Alert */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex -space-x-2.5">
+                            {thumbnails.map((url, i) => (
+                              <div
+                                key={i}
+                                className={cn(
+                                  "w-7 h-7 rounded-lg border-2 border-white overflow-hidden shadow-sm bg-gray-100 ring-1 ring-black/5",
+                                  isSelected && "border-white/20 ring-white/10",
+                                )}
+                              >
+                                <NextImage
+                                  src={url}
+                                  alt=""
+                                  width={28}
+                                  height={28}
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                            ))}
+                            {dayPosts.filter((p) => p.content?.mediaItems?.[0]?.s3Url).length >
+                              2 && (
+                              <div
+                                className={cn(
+                                  "w-7 h-7 rounded-lg border-2 border-white bg-gray-50 flex items-center justify-center shadow-sm ring-1 ring-black/5",
+                                  isSelected && "border-white/20 bg-white/20 ring-white/10",
+                                )}
+                              >
+                                <span
+                                  className={cn(
+                                    "text-[9px] font-bold text-gray-500",
+                                    isSelected && "text-white",
+                                  )}
+                                >
+                                  +
+                                  {dayPosts.filter((p) => p.content?.mediaItems?.[0]?.s3Url)
+                                    .length - 2}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Critical Error Alert with Count */}
+                          {failedCount > 0 && (
+                            <div
+                              className={cn(
+                                "flex items-center gap-1 px-1.5 h-6 rounded-lg bg-red-50 text-red-600 shadow-sm animate-pulse border border-red-100",
+                                isSelected && "bg-white/20 text-white border-white/30",
+                              )}
+                            >
+                              <CircleAlert size={12} strokeWidth={2.5} />
+                              <span className="text-[10px] font-black">{failedCount}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Uniform Status Grid */}
+                        <div className="grid grid-cols-2 gap-1">
+                          {postedCount > 0 && (
+                            <div
+                              className={cn(
+                                "flex items-center justify-center h-4.5 rounded px-1 text-[8px] font-bold uppercase tracking-tight",
+                                isSelected
+                                  ? "bg-white/20 text-white"
+                                  : "bg-emerald-50 text-emerald-600 border border-emerald-100",
+                              )}
+                              title="Posted"
+                            >
+                              {postedCount} P
+                            </div>
+                          )}
+                          {scheduledCount > 0 && (
+                            <div
+                              className={cn(
+                                "flex items-center justify-center h-4.5 rounded px-1 text-[8px] font-bold uppercase tracking-tight",
+                                isSelected
+                                  ? "bg-white/20 text-white"
+                                  : "bg-blue-50 text-blue-600 border border-blue-100",
+                              )}
+                              title="Scheduled"
+                            >
+                              {scheduledCount} S
+                            </div>
+                          )}
+                          {processingCount > 0 && (
+                            <div
+                              className={cn(
+                                "flex items-center justify-center h-4.5 rounded px-1 text-[8px] font-bold uppercase tracking-tight animate-pulse",
+                                isSelected
+                                  ? "bg-white/20 text-white"
+                                  : "bg-sky-50 text-sky-600 border border-sky-100",
+                              )}
+                              title="Processing"
+                            >
+                              {processingCount} ..
+                            </div>
+                          )}
+                          {partialCount > 0 && (
+                            <div
+                              className={cn(
+                                "flex items-center justify-center h-4.5 rounded px-1 text-[8px] font-bold uppercase tracking-tight",
+                                isSelected
+                                  ? "bg-white/20 text-white"
+                                  : "bg-orange-50 text-orange-600 border border-orange-100",
+                              )}
+                              title="Partial Success"
+                            >
+                              {partialCount} !
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 

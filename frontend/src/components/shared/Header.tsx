@@ -1,11 +1,12 @@
 "use client";
 
-import { Search, Menu, Filter, ArrowLeft } from "lucide-react";
+import { Search, Menu, Filter, ArrowLeft, Settings, CheckCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface HeaderProps {
   userName: string;
@@ -20,6 +21,7 @@ interface HeaderProps {
   onBack?: () => void;
   onSearchChange?: (query: string) => void;
   className?: string;
+  hideDesktop?: boolean;
 }
 
 export default function Header({
@@ -35,9 +37,11 @@ export default function Header({
   onBack,
   onSearchChange,
   className,
+  hideDesktop,
 }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { markAllAsRead, unreadCount } = useNotifications();
 
   const showDefaultFilter =
     !filterContent && ["/drafts", "/calendar"].some((path) => pathname?.includes(path));
@@ -49,8 +53,10 @@ export default function Header({
     return "Search";
   };
 
+  const isNotificationPage = pathname === "/settings/notifications";
+
   return (
-    <div className={cn("w-full mb-6 lg:mb-8", className)}>
+    <div className={cn("w-full mb-6 lg:mb-8", hideDesktop && "lg:mb-0", className)}>
       {/* Mobile Header - Pill Style */}
       <header className="flex lg:hidden items-center justify-between rounded-full bg-white w-full h-[64px] px-3">
         <div className="flex items-center gap-1">
@@ -81,7 +87,30 @@ export default function Header({
         )}
 
         <div className="flex items-center gap-2 pr-1">
-          <NotificationDropdown />
+          {isNotificationPage ? (
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 && (
+                <button
+                  onClick={() => markAllAsRead()}
+                  className="relative p-2.5 text-primary hover:bg-primary/5 rounded-full transition-all duration-200"
+                  title="Mark all as read"
+                >
+                  <CheckCheck size={20} strokeWidth={2.5} />
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-white animate-in zoom-in duration-300">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                </button>
+              )}
+              <button
+                onClick={() => router.push("/settings")}
+                className="p-2.5 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-200"
+              >
+                <Settings size={20} strokeWidth={2} />
+              </button>
+            </div>
+          ) : (
+            <NotificationDropdown />
+          )}
           <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100">
             <Image
               src={userAvatar || "/default-avatar.png"}
@@ -94,7 +123,12 @@ export default function Header({
       </header>
 
       {/* Desktop Header Layout */}
-      <header className="hidden lg:flex items-center justify-between w-full h-[13vh] bg-[#F7F7F7] px-8 py-4">
+      <header
+        className={cn(
+          "hidden lg:flex items-center justify-between w-full h-[13vh] px-8 py-4",
+          hideDesktop && "lg:hidden",
+        )}
+      >
         {/* Left Content, Title or Search Bar */}
         <div className="flex-1">
           {leftContent ? (

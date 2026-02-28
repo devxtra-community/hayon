@@ -79,8 +79,8 @@ export function CalendarPostCard({
             </div>
           </div>
 
-          <button className="w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center text-gray-900 bg-white hover:bg-gray-50 transition-colors shadow-sm">
-            <ArrowUpRight size={24} />
+          <button className="w-9 h-9 rounded-full border border-gray-100 flex items-center justify-center text-gray-900 bg-white hover:bg-gray-50 transition-colors shadow-sm">
+            <ArrowUpRight size={18} />
           </button>
         </div>
       </div>

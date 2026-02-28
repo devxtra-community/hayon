@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar, Header } from "@/components/shared";
 import { HistoryCard, PlatformPostStatus } from "@/components/history/HistoryCard";
 import { HistoryFilters, FilterState } from "@/components/history/HistoryFilters";
 import { PostReportModal } from "@/components/history/PostReportModal";
-import PostDetailModal from "@/components/history/PostDetailModal";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/axios";
 import { LoadingH } from "@/components/ui/loading-h";
@@ -29,13 +29,13 @@ interface Post {
 }
 
 export default function HistoryPage() {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [user, setUser] = useState({ name: "", email: "", avatar: "" });
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     statuses: [],
     platforms: [],
@@ -101,8 +101,7 @@ export default function HistoryPage() {
         setIsReportOpen(true);
         break;
       case "detail":
-        setSelectedPost(post);
-        setIsDetailOpen(true);
+        router.push(`/history/${id}`);
         break;
       case "retry":
         handleRetry(id);
@@ -296,12 +295,6 @@ export default function HistoryPage() {
           onClose={() => setIsReportOpen(false)}
           post={selectedPost}
           onRetry={handleRetry}
-        />
-
-        <PostDetailModal
-          isOpen={isDetailOpen}
-          onClose={() => setIsDetailOpen(false)}
-          post={selectedPost}
         />
       </div>
     </>
