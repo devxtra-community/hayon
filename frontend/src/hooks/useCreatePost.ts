@@ -47,6 +47,9 @@ export function useCreatePost() {
   const [timeZone, setTimeZone] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [platformWarnings, setPlatformWarnings] = useState<Record<string, string[]>>({});
+  const [platformGenerationErrors, setPlatformGenerationErrors] = useState<Record<string, string>>(
+    {},
+  );
 
   // --- Configurations ---
   const FRONTEND_PLATFORM_CONFIG: Record<
@@ -247,14 +250,16 @@ export function useCreatePost() {
       const oversizedFiles = newFiles.filter((f) => f.size > GLOBAL_CONSTRAINTS.maxGlobalFileSize);
       if (oversizedFiles.length > 0) {
         const limitMB = Math.floor(GLOBAL_CONSTRAINTS.maxGlobalFileSize / (1024 * 1024));
-        setErrors((prev) => [...prev, `Some files are too large (max ${limitMB}MB).`]);
-        return;
+        setErrors((prev) => [
+          ...prev,
+          `Some files are too large (max ${limitMB}MB). Please remove them before generating.`,
+        ]);
       }
 
       setMediaFiles((prev) => [...prev, ...newFiles]);
       const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
       setFilePreviews((prev) => [...prev, ...newPreviews]);
-      setErrors([]); // Clear errors on success
+      // setErrors([]); // Don't clear errors automatically if we just added some
     }
   };
 
@@ -394,9 +399,15 @@ export function useCreatePost() {
 
   const refinePlatformPostWithLLM = async (id: string, prompt: string) => {
     const currentPost = platformPosts[id];
-    if (!currentPost) return;
+    if (!currentPost) return false;
 
     setIsGenerating(true);
+    setPlatformGenerationErrors((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
     try {
       const base64List = await Promise.all(currentPost.mediaFiles.map(fileToDataUrl));
 
@@ -410,21 +421,34 @@ export function useCreatePost() {
         media: base64List,
       });
 
-      console.log(response);
-
       const refinedText: string | undefined =
-        response.data?.data?.candidates[0].content.parts[0].text;
+        response.data?.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      console.log(refinedText);
       if (!refinedText) {
         throw new Error("AI refinement returned no text");
       }
 
       updatePlatformPost(id, { text: refinedText });
+      return true;
     } catch (error: any) {
-      if (error.response?.status !== 429) {
-        console.error("LLM Refinement failed", error);
+      console.error("LLM Refinement failed", error);
+
+      let errorMessage = "Failed to refine caption. Please try again.";
+
+      if (error.response?.status === 413) {
+        errorMessage =
+          "The images are too large for the AI to process. Try using fewer or smaller images.";
+      } else if (error.response?.status === 429) {
+        errorMessage = error.response.data?.message || "AI limit reached. Please try again later.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       }
+
+      setPlatformGenerationErrors((prev) => ({
+        ...prev,
+        [id]: errorMessage,
+      }));
+      return false;
     } finally {
       setIsGenerating(false);
     }
@@ -810,6 +834,7 @@ export function useCreatePost() {
     platformPosts,
     updatePlatformPost,
     refinePlatformPostWithLLM,
+    platformGenerationErrors,
     loadDraft,
     draftId,
   };

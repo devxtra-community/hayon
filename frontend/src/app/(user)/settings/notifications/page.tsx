@@ -51,6 +51,11 @@ export default function NotificationsPage() {
   };
 
   const highlightMessage = (message: string) => {
+    // If the message contains HTML tags, render it as HTML
+    if (message.includes("<") && message.includes(">")) {
+      return <span className="inline-block" dangerouslySetInnerHTML={{ __html: message }} />;
+    }
+
     const platforms = ["bluesky", "threads", "tumblr", "mastodon", "facebook", "instagram"];
     const statusKeywords = ["pending", "scheduled", "posted"];
     const allKeywords = [...platforms, ...statusKeywords];

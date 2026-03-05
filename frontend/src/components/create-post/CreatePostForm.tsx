@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Platform } from "@/types/create-post";
 import { api } from "@/lib/axios";
+import { useToast } from "@/context/ToastContext";
+import { GLOBAL_CONSTRAINTS } from "@hayon/schemas";
+import { AlertTriangle } from "lucide-react";
 
 interface CreatePostFormProps {
   postText: string;
@@ -36,6 +39,7 @@ export function CreatePostForm({
 }: CreatePostFormProps) {
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const { showToast } = useToast();
 
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -49,6 +53,21 @@ export function CreatePostForm({
   }
 
   const handleGenerateCaption = async () => {
+    // 1. Check for oversized files
+    const oversizedFilesCount = mediaFiles.filter(
+      (f) => f.size > GLOBAL_CONSTRAINTS.maxGlobalFileSize,
+    ).length;
+
+    if (oversizedFilesCount > 0) {
+      const limitMB = Math.floor(GLOBAL_CONSTRAINTS.maxGlobalFileSize / (1024 * 1024));
+      showToast(
+        "error",
+        "Files too large",
+        `Some images are too large for AI processing (max ${limitMB}MB). Please remove them and try again.`,
+      );
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const base64List = await Promise.all(mediaFiles.map(fileToDataUrl));
@@ -135,20 +154,36 @@ export function CreatePostForm({
       {/* Media Previews (Horizontal Scroll) */}
       {filePreviews.length > 0 && (
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-          {filePreviews.map((src, idx) => (
-            <div
-              key={idx}
-              className="relative flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden shadow-sm group bg-white border border-gray-100"
-            >
-              <Image src={src} alt="Preview" fill className="object-cover" />
-              <button
-                onClick={() => removeFile(idx)}
-                className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
+          {filePreviews.map((src, idx) => {
+            // Check if this specific media file is oversized
+            const isOversized = mediaFiles[idx]?.size > GLOBAL_CONSTRAINTS.maxGlobalFileSize;
+
+            return (
+              <div
+                key={idx}
+                className={cn(
+                  "relative flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden shadow-sm group bg-white border",
+                  isOversized ? "border-red-400 ring-2 ring-red-100" : "border-gray-100",
+                )}
               >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
+                <Image src={src} alt="Preview" fill className="object-cover" />
+
+                {isOversized && (
+                  <div className="absolute inset-x-0 bottom-0 bg-red-500/90 text-white p-1 text-[10px] font-bold text-center flex items-center justify-center gap-1 z-10">
+                    <AlertTriangle size={10} className="stroke-[3]" />
+                    <span>TOO LARGE</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => removeFile(idx)}
+                  className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 

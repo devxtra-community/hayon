@@ -85,6 +85,9 @@ api.interceptors.response.use(
     if (
       error.response?.status !== 401 ||
       originalRequest.url?.includes("/auth/refresh") ||
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/register") ||
+      originalRequest.url?.includes("/auth/admin-login") ||
       originalRequest._retry
     ) {
       return Promise.reject(error);

@@ -98,11 +98,23 @@ export const changeUserName = async (userId: string, name: string) => {
 };
 
 export const IncreaseCaptionGenerations = async (userId: string) => {
-  return User.findByIdAndUpdate(userId, { $inc: { "usage.captionGenerations": 1 } }, { new: true });
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    { $inc: { "usage.captionGenerations": 1 } },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
 };
 
 export const IncreasePostsCreated = async (userId: string) => {
-  return User.findByIdAndUpdate(userId, { $inc: { "usage.postsCreated": 1 } }, { new: true });
+  const updated = await User.findByIdAndUpdate(
+    userId,
+    { $inc: { "usage.postsCreated": 1 } },
+    { new: true },
+  );
+  await invalidateCache(`user:profile:${userId}`);
+  return updated;
 };
 
 export const findAllUsers = async () => {

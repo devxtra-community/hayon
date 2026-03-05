@@ -63,6 +63,8 @@ export class NotificationService {
     link?: string,
   ) {
     try {
+      // Strip HTML tags for the system pop-up
+      const plainTextMessage = message.replace(/<[^>]*>?/gm, "");
       const user = await User.findById(recipientId).select("fcmTokens");
 
       if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
@@ -72,7 +74,7 @@ export class NotificationService {
       const messagePayload: any = {
         notification: {
           title,
-          body: message,
+          body: plainTextMessage,
         },
         tokens: user.fcmTokens,
       };

@@ -53,6 +53,7 @@ export default function CreatePostPage() {
     platformPosts,
     updatePlatformPost,
     refinePlatformPostWithLLM,
+    platformGenerationErrors,
     loadDraft,
     draftId,
   } = useCreatePost();
@@ -190,6 +191,7 @@ export default function CreatePostPage() {
               platformPosts={platformPosts}
               updatePlatformPost={updatePlatformPost}
               refinePlatformPostWithLLM={refinePlatformPostWithLLM}
+              platformGenerationErrors={platformGenerationErrors}
               mediaFiles={mediaFiles}
               isGenerating={isGenerating}
               platformWarnings={platformWarnings}

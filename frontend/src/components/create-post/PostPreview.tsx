@@ -41,7 +41,8 @@ interface PostPreviewProps {
   connectedAccounts: SocialAccount | null;
   platformPosts: Record<string, PlatformPost>;
   updatePlatformPost: (id: string, updates: Partial<PlatformPost>) => void;
-  refinePlatformPostWithLLM: (id: string, prompt: string) => Promise<void>;
+  refinePlatformPostWithLLM: (id: string, prompt: string) => Promise<boolean>;
+  platformGenerationErrors: Record<string, string>;
   isGenerating: boolean;
   platformWarnings: Record<string, string[]>;
 }
@@ -67,6 +68,7 @@ export function PostPreview({
   platformPosts,
   updatePlatformPost,
   refinePlatformPostWithLLM,
+  platformGenerationErrors,
   isGenerating,
   platformWarnings,
 }: PostPreviewProps) {
@@ -220,7 +222,10 @@ export function PostPreview({
             }
           }
           onUpdate={(updates) => updatePlatformPost(editingPlatformId, updates)}
-          onRefine={(prompt) => refinePlatformPostWithLLM(editingPlatformId, prompt)}
+          onRefine={async (prompt: string) =>
+            await refinePlatformPostWithLLM(editingPlatformId!, prompt)
+          }
+          error={platformGenerationErrors[editingPlatformId]}
           isGenerating={isGenerating}
         />
       )}

@@ -9,7 +9,7 @@ import { Types } from "mongoose";
 import { z } from "zod";
 import { getPresignedUploadUrl } from "../services/s3/s3.upload.service";
 import { timezoneSchema, platformSpecificPostSchema } from "@hayon/schemas";
-import { IncreasePostsCreated } from "../repositories/user.repository";
+import { findUserByIdSafe, IncreasePostsCreated } from "../repositories/user.repository";
 import { NotificationService } from "../services/notification.service";
 
 const createPostSchema = z.object({
@@ -41,6 +41,18 @@ export const createPost = async (req: Request, res: Response) => {
       return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
     }
     const userId = req.auth.id;
+    const user = await findUserByIdSafe(userId);
+
+    if (!user) {
+      return new ErrorResponse("User not found", { status: 404 }).send(res);
+    }
+
+    if (user.usage.postsCreated >= user.limits.maxPosts) {
+      return new ErrorResponse(
+        "You have reached your post creation limit. Please upgrade your plan for more.",
+        { status: 429 },
+      ).send(res);
+    }
 
     // Validation
     const validationResult = createPostSchema.safeParse(req.body);
