@@ -13,6 +13,7 @@ import { CreatePostForm } from "@/components/create-post/CreatePostForm";
 import { PostPreview } from "@/components/create-post/PostPreview";
 import { useSearchParams, useRouter } from "next/navigation";
 import { SubmittingOverlay } from "@/components/create-post/SubmittingOverlay";
+import { LimitExceededModal } from "@/components/shared/LimitExceededModal";
 
 export default function CreatePostPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,6 +57,8 @@ export default function CreatePostPage() {
     platformGenerationErrors,
     loadDraft,
     draftId,
+    isLimitModalOpen,
+    setIsLimitModalOpen,
   } = useCreatePost();
 
   // Load draft if draftId query param is present
@@ -138,6 +141,8 @@ export default function CreatePostPage() {
           availablePlatforms={availablePlatforms}
         />
 
+        <LimitExceededModal isOpen={isLimitModalOpen} onClose={() => setIsLimitModalOpen(false)} />
+
         {/* Main Content Area */}
         <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 overflow-y-auto custom-scrollbar relative flex flex-col">
           {viewMode === "create" ? (
@@ -154,6 +159,7 @@ export default function CreatePostPage() {
                 platformWarnings={platformWarnings}
                 selectedPlatforms={selectedPlatforms}
                 availablePlatforms={availablePlatforms}
+                onOpenLimitModal={() => setIsLimitModalOpen(true)}
               />
 
               {/* Right Column: Platform Selection */}

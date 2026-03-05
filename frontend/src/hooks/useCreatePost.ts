@@ -50,6 +50,7 @@ export function useCreatePost() {
   const [platformGenerationErrors, setPlatformGenerationErrors] = useState<Record<string, string>>(
     {},
   );
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
 
   // --- Configurations ---
   const FRONTEND_PLATFORM_CONFIG: Record<
@@ -439,6 +440,7 @@ export function useCreatePost() {
         errorMessage =
           "The images are too large for the AI to process. Try using fewer or smaller images.";
       } else if (error.response?.status === 429) {
+        setIsLimitModalOpen(true);
         errorMessage = error.response.data?.message || "AI limit reached. Please try again later.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -837,5 +839,7 @@ export function useCreatePost() {
     platformGenerationErrors,
     loadDraft,
     draftId,
+    isLimitModalOpen,
+    setIsLimitModalOpen,
   };
 }

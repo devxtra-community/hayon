@@ -21,6 +21,7 @@ interface CreatePostFormProps {
   platformWarnings: Record<string, string[]>;
   selectedPlatforms: string[];
   availablePlatforms: Platform[];
+  onOpenLimitModal: () => void;
 }
 
 const LLM_MODELS = [{ id: "gemini-1.5-flash", name: "gemini-2.5 flash", provider: "Gemini" }];
@@ -36,6 +37,7 @@ export function CreatePostForm({
   platformWarnings,
   selectedPlatforms,
   availablePlatforms,
+  onOpenLimitModal,
 }: CreatePostFormProps) {
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -79,6 +81,17 @@ export function CreatePostForm({
       console.log(response);
       const generatedCaption = response.data.data.candidates[0].content.parts[0].text;
       setPostText(generatedCaption);
+    } catch (error: any) {
+      console.error("Caption generation failed", error);
+      if (error.response?.status === 429) {
+        onOpenLimitModal();
+      } else {
+        showToast(
+          "error",
+          "Generation failed",
+          error.response?.data?.message || "Failed to generate caption. Please try again.",
+        );
+      }
     } finally {
       setIsGenerating(false);
     }
