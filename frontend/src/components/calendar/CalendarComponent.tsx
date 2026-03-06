@@ -171,7 +171,7 @@ export default function CalendarComponent() {
                 key={idx}
                 onClick={() => setSelectedDate(day)}
                 className={cn(
-                  "relative flex flex-col transition-all duration-300",
+                  "relative flex items-center justify-center md:flex-col md:items-stretch md:justify-start transition-all duration-300",
                   "aspect-square md:aspect-[1.3/1]",
                   "rounded-full p-1 sm:p-2 md:rounded-[18px] md:p-4",
                   !isCurrentMonth ? "opacity-30 md:bg-white/40" : "opacity-100",
