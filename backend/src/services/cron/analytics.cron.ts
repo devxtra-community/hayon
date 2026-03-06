@@ -1,4 +1,4 @@
-// import cron from "node-cron";
+import cron from "node-cron";
 import logger from "../../utils/logger";
 import * as SocialAccountRepository from "../../repositories/socialAccount.repository";
 import * as postRepository from "../../repositories/post.repository";
@@ -9,14 +9,14 @@ export class AnalyticsCronService {
     logger.info("📅 Initializing Analytics Cron Service...");
 
     // 1. Post Analytics Job - Run every 2 hours to support smart fetching
-    // cron.schedule("0 */2 * * *", async () => {
-    //   await this.schedulePostAnalyticsTasks();
-    // });
+    cron.schedule("0 */2 * * *", async () => {
+      await this.schedulePostAnalyticsTasks();
+    });
 
     // 2. Account Analytics Job - Run once a day at 12:00 AM
-    // cron.schedule("0 0 * * *", async () => {
-    //   await this.scheduleAccountAnalyticsTasks();
-    // });
+    cron.schedule("0 0 * * *", async () => {
+      await this.scheduleAccountAnalyticsTasks();
+    });
 
     logger.info("✅ Analytics Cron Jobs ready (Automated scheduling disabled in DEV).");
   }
@@ -58,9 +58,6 @@ export class AnalyticsCronService {
     }
   }
 
-  /**
-   * Helper to check if a specific platform status within a post needs an update
-   */
   private static checkSpecificPlatformNeedsUpdate(
     postCreatedAt: Date | undefined,
     lastFetch?: Date,
@@ -75,21 +72,15 @@ export class AnalyticsCronService {
     const ONE_DAY = 24 * 60 * 60 * 1000;
     const SEVEN_DAYS = 7 * ONE_DAY;
 
-    // Fresh (< 24h): 2h interval
     if (ageMs < ONE_DAY) {
       return diffMs >= 2 * 60 * 60 * 1000;
     }
-    // Recent (1-7d): 12h interval
     if (ageMs < SEVEN_DAYS) {
       return diffMs >= 12 * 60 * 60 * 1000;
     }
-    // Old (> 7d): 24h interval
     return diffMs >= ONE_DAY;
   }
 
-  /**
-   * Schedules account-level metrics fetch (followers) for all connected accounts
-   */
   public static async scheduleAccountAnalyticsTasks() {
     logger.info("🔄 Checking for accounts needing follower updates...");
 
@@ -97,7 +88,6 @@ export class AnalyticsCronService {
       const accounts = await SocialAccountRepository.findAll();
 
       for (const account of accounts) {
-        // Collect platforms where at least one sub-platform is connected
         const platforms: string[] = [];
 
         if (account.facebook?.connected) platforms.push("facebook");

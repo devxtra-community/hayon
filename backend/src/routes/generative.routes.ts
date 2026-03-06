@@ -5,7 +5,7 @@ import {
 } from "../controllers/generative.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { checkUserGenerationLimit } from "../middleware/limitChecker.middleware";
-import { rateLimiter } from "../utils/ratelimit";
+import { rateLimiter } from "../middleware/ratelimit.middleware";
 
 const router = Router();
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 
 interface CalendarPostCardProps {
@@ -13,18 +14,29 @@ interface CalendarPostCardProps {
 }
 
 export function CalendarPostCard({
+  id,
   imageUrl,
   description,
   platformStatuses = [],
   onClick,
 }: CalendarPostCardProps) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      router.push(`/history/${id}`);
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
-      className="bg-white rounded-[32px] p-4 flex gap-4 cursor-pointer hover:shadow-md transition-all border border-gray-50 mb-4"
+      onClick={handleClick}
+      className="bg-white rounded-2xl sm:rounded-[32px] p-3 sm:p-4 flex gap-3 sm:gap-4 cursor-pointer hover:shadow-md transition-all border border-gray-50 mb-4"
     >
       {/* Post Image */}
-      <div className="relative w-36 h-36 rounded-[24px] overflow-hidden flex-shrink-0 bg-gray-100">
+      <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-2xl sm:rounded-[24px] overflow-hidden flex-shrink-0 bg-gray-100">
         {imageUrl ? (
           <Image src={imageUrl} alt="Post Content" fill className="object-cover" />
         ) : (
@@ -49,23 +61,23 @@ export function CalendarPostCard({
       </div>
 
       {/* Post Details */}
-      <div className="flex-1 flex flex-col justify-between py-1">
+      <div className="flex-1 flex flex-col justify-between py-1 min-w-0">
         <div className="space-y-2">
-          <p className="text-[#1A1A1A] text-[15px] leading-[1.4] font-medium line-clamp-3">
+          <p className="text-[#1A1A1A] text-[13px] sm:text-[15px] leading-[1.4] font-medium line-clamp-3">
             {description}
           </p>
         </div>
 
-        <div className="flex items-end justify-between mt-auto">
-          <div className="space-y-2">
-            <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="flex items-end justify-between mt-auto gap-2">
+          <div className="space-y-1.5 min-w-0">
+            <span className="text-[11px] sm:text-[12px] font-semibold text-gray-400 uppercase tracking-wider">
               posted
             </span>
-            <div className="flex -space-x-2">
+            <div className="flex -space-x-1.5 sm:-space-x-2 flex-wrap">
               {platformStatuses.map((p, idx) => (
                 <div
                   key={idx}
-                  className="relative w-8 h-8 rounded-full border-2 border-white overflow-hidden bg-white shadow-sm"
+                  className="relative w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white overflow-hidden bg-white shadow-sm"
                   title={p.platform}
                 >
                   <Image
@@ -79,8 +91,8 @@ export function CalendarPostCard({
             </div>
           </div>
 
-          <button className="w-9 h-9 rounded-full border border-gray-100 flex items-center justify-center text-gray-900 bg-white hover:bg-gray-50 transition-colors shadow-sm">
-            <ArrowUpRight size={18} />
+          <button className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-100 flex items-center justify-center text-gray-900 bg-white hover:bg-gray-50 transition-colors shadow-sm shrink-0">
+            <ArrowUpRight size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
         </div>
       </div>
