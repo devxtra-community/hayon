@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 
 interface CalendarPostCardProps {
@@ -13,14 +14,25 @@ interface CalendarPostCardProps {
 }
 
 export function CalendarPostCard({
+  id,
   imageUrl,
   description,
   platformStatuses = [],
   onClick,
 }: CalendarPostCardProps) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      router.push(`/history/${id}`);
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className="bg-white rounded-2xl sm:rounded-[32px] p-3 sm:p-4 flex gap-3 sm:gap-4 cursor-pointer hover:shadow-md transition-all border border-gray-50 mb-4"
     >
       {/* Post Image */}
