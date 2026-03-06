@@ -5,12 +5,24 @@ import logger from "../utils/logger";
 import { Request, Response } from "express";
 import { buildPlatformPrompt } from "../ai/prompts";
 import { buildImageParts } from "../services/image.service";
-import { IncreaseCaptionGenerations } from "../repositories/user.repository";
+import { findUserByIdSafe, IncreaseCaptionGenerations } from "../repositories/user.repository";
 
 export const generateCaptions = async (req: Request, res: Response) => {
   try {
     if (!req.auth) {
       return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+    }
+
+    const user = await findUserByIdSafe(req.auth.id);
+    if (!user) {
+      return new ErrorResponse("User not found", { status: 404 }).send(res);
+    }
+
+    if (user.usage.captionGenerations >= user.limits.maxCaptionGenerations) {
+      return new ErrorResponse(
+        "You have reached your caption generation limit. Please upgrade your plan for more.",
+        { status: 429 },
+      ).send(res);
     }
 
     const { prompt, media } = req.body;
@@ -71,8 +83,21 @@ export const generateCaptions = async (req: Request, res: Response) => {
 
     await IncreaseCaptionGenerations(req.auth.id);
     return new SuccessResponse("Captions generated successfully", { data: result }).send(res);
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Generate captions error", error);
+
+    // Handle Gemini API Quota Exceeded (429)
+    if (
+      error?.status === 429 ||
+      error?.message?.includes("429") ||
+      error?.message?.includes("quota")
+    ) {
+      return new ErrorResponse(
+        "AI service limit reached. Please try again after some time or upgrade your plan.",
+        { status: 429 },
+      ).send(res);
+    }
+
     return new ErrorResponse("Failed to generate captions").send(res);
   }
 };
@@ -81,6 +106,18 @@ export const generateCaptionsForSpecificPlatform = async (req: Request, res: Res
   try {
     if (!req.auth) {
       return new ErrorResponse("Unauthorized", { status: 401 }).send(res);
+    }
+
+    const user = await findUserByIdSafe(req.auth.id);
+    if (!user) {
+      return new ErrorResponse("User not found", { status: 404 }).send(res);
+    }
+
+    if (user.usage.captionGenerations >= user.limits.maxCaptionGenerations) {
+      return new ErrorResponse(
+        "You have reached your caption generation limit. Please upgrade your plan for more.",
+        { status: 429 },
+      ).send(res);
     }
 
     const { media, prompt } = req.body;
@@ -107,8 +144,21 @@ export const generateCaptionsForSpecificPlatform = async (req: Request, res: Res
 
     await IncreaseCaptionGenerations(req.auth.id);
     return new SuccessResponse("Captions are generated", { data: result }).send(res);
-  } catch (error) {
-    logger.error(error);
+  } catch (error: any) {
+    logger.error("Platform specific caption error", error);
+
+    // Handle Gemini API Quota Exceeded (429)
+    if (
+      error?.status === 429 ||
+      error?.message?.includes("429") ||
+      error?.message?.includes("quota")
+    ) {
+      return new ErrorResponse(
+        "AI service limit reached. Please try again after some time or upgrade your plan.",
+        { status: 429 },
+      ).send(res);
+    }
+
     return new ErrorResponse("cannot create caption").send(res);
   }
 };

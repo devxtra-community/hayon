@@ -36,6 +36,7 @@ export default function LoginForm({
   const error = searchParams.get("error");
 
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -55,9 +56,9 @@ export default function LoginForm({
       const message = errorMessages[error] || "An error occurred. Please try again.";
 
       showToast("error", "Login failed", message);
-      window.history.replaceState({}, "", isAdmin ? "/admin-login" : "/admin/login");
+      window.history.replaceState({}, "", isAdmin ? "/admin/login" : "/login");
     }
-  }, [error, isAdmin]);
+  }, [error, isAdmin, showToast]);
 
   const validateForm = (): boolean => {
     const result = loginSchema.safeParse({ email, password });
@@ -74,6 +75,11 @@ export default function LoginForm({
       });
 
       setFormErrors(errors);
+
+      // Show toast for the first validation error
+      if (zodErrors.errors.length > 0) {
+        showToast("error", "Invalid Input", zodErrors.errors[0].message);
+      }
       return false;
     }
 
@@ -91,30 +97,32 @@ export default function LoginForm({
     setIsLoading(true);
 
     try {
-      console.log("Login request");
       const { data } = await api.post(loginEndpoint, { email, password });
 
       // Store access token in memory
       setAccessToken(data.data.accessToken);
 
       async function setupPush(userId: string) {
-        console.log("Setting up push");
-        const permission = await Notification.requestPermission();
+        try {
+          const permission = await Notification.requestPermission();
 
-        if (permission !== "granted") {
-          console.log("Permission denied");
-          return;
+          if (permission !== "granted") {
+            return;
+          }
+
+          const token = await getToken(messaging, {
+            vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY,
+          });
+
+          await api.post("/firebase/save-token", { userId, token });
+        } catch (pushError) {
+          console.error("Push setup failed", pushError);
+          // Don't show toast for push failure to avoid distracting from login success
         }
-
-        const token = await getToken(messaging, {
-          vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY,
-        });
-        console.log("FCM Token:", token);
-
-        await api.post("/firebase/save-token", { userId, token });
       }
 
       await setupPush(data.data.user.id);
+      showToast("success", "Welcome!", "You have logged in successfully.");
       return router.push(redirectPath);
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;

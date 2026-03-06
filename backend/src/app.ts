@@ -79,8 +79,8 @@ const bootstrap = async () => {
 
   expressInstance.use("/api/payments/webhook", express.raw({ type: "application/json" }));
 
-  expressInstance.use(express.json());
-  expressInstance.use(express.urlencoded({ extended: true }));
+  expressInstance.use(express.json({ limit: "50mb" }));
+  expressInstance.use(express.urlencoded({ limit: "50mb", extended: true }));
   expressInstance.use(passport.initialize());
 
   expressInstance.get("/health", (req, res) => {

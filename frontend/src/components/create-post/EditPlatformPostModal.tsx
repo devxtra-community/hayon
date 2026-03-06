@@ -24,7 +24,8 @@ interface EditPlatformPostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updates: Partial<PlatformPost>) => void;
-  onRefine: (prompt: string) => Promise<void>;
+  onRefine: (prompt: string) => Promise<boolean>;
+  error?: string;
   isGenerating: boolean;
 }
 
@@ -35,6 +36,7 @@ export function EditPlatformPostModal({
   onClose,
   onUpdate,
   onRefine,
+  error,
   isGenerating,
 }: EditPlatformPostModalProps) {
   const [localText, setLocalText] = useState(post?.text || "");
@@ -74,9 +76,12 @@ export function EditPlatformPostModal({
 
   const handleRefine = async () => {
     if (!llmPrompt.trim()) return;
-    await onRefine(llmPrompt);
-    setLlmPrompt("");
-    onClose();
+    const success = await onRefine(llmPrompt);
+    if (success) {
+      setLlmPrompt("");
+      // Optionally stay open to let user see refined text
+      // onClose();
+    }
   };
 
   return (
@@ -152,6 +157,7 @@ export function EditPlatformPostModal({
                 <span>Refine</span>
               </Button>
             </div>
+            {error && <p className="text-sm font-medium text-red-500 mt-2 ml-1">{error}</p>}
           </div>
 
           {/* Media Editor */}
