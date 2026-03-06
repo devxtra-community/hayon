@@ -89,16 +89,16 @@ export default function CalendarComponent() {
   };
 
   return (
-    <div className="flex flex-col gap-6 md:gap-8 max-w-7xl mx-auto">
+    <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto min-w-0 overflow-hidden">
       {/* Calendar Header matching mockup */}
-      <div className="flex items-center justify-between px-2 pt-2">
+      <div className="flex items-center justify-between px-1 sm:px-2 pt-2 gap-2">
         {/* Year Label */}
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight shrink-0">
           {format(currentDate, "yyyy")}
         </h2>
 
         {/* Month Navigation Pill */}
-        <div className="flex items-center bg-white rounded-full px-1 py-1 shadow-sm border border-gray-100">
+        <div className="flex items-center bg-white rounded-full px-0.5 sm:px-1 py-1 shadow-sm border border-gray-100 min-w-0">
           <button
             onClick={prevMonth}
             className="p-2 hover:bg-gray-50 rounded-full transition-all group"
@@ -106,7 +106,7 @@ export default function CalendarComponent() {
             <ChevronLeft size={20} className="text-gray-400 group-hover:text-gray-900" />
           </button>
 
-          <span className="px-4 text-lg md:text-xl font-bold text-gray-900 lowercase min-w-[120px] text-center">
+          <span className="px-2 sm:px-4 text-base sm:text-lg md:text-xl font-bold text-gray-900 lowercase min-w-[80px] sm:min-w-[120px] text-center truncate">
             {format(currentDate, "MMMM")}
           </span>
 
@@ -120,7 +120,7 @@ export default function CalendarComponent() {
       </div>
 
       {/* Calendar Grid Container */}
-      <div className="bg-[#F8F9FA] md:bg-[#F9FAFB] rounded-[2.5rem] p-4 md:p-8">
+      <div className="bg-[#F8F9FA] md:bg-[#F9FAFB] rounded-2xl sm:rounded-[2.5rem] p-2 sm:p-4 md:p-8">
         {/* Days Header */}
         <div className="grid grid-cols-7 mb-4">
           {(isMobile
@@ -129,7 +129,7 @@ export default function CalendarComponent() {
           ).map((day) => (
             <div
               key={day}
-              className="text-center text-[11px] md:text-[14px] font-semibold text-gray-900 md:text-gray-700 py-2"
+              className="text-center text-[10px] sm:text-[11px] md:text-[14px] font-semibold text-gray-900 md:text-gray-700 py-1.5 sm:py-2"
             >
               {day}
             </div>
@@ -137,7 +137,7 @@ export default function CalendarComponent() {
         </div>
 
         {/* Days Grid */}
-        <div className="grid grid-cols-7 gap-1 md:gap-3">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 md:gap-3">
           {calendarDays.map((day, idx) => {
             const isSelected = isSameDay(day, selectedDate);
             const isCurrentMonth = isSameMonth(day, monthStart);
@@ -173,7 +173,7 @@ export default function CalendarComponent() {
                 className={cn(
                   "relative flex flex-col transition-all duration-300",
                   "aspect-square md:aspect-[1.3/1]",
-                  "rounded-full p-2 md:rounded-[18px] md:p-4",
+                  "rounded-full p-1 sm:p-2 md:rounded-[18px] md:p-4",
                   !isCurrentMonth ? "opacity-30 md:bg-white/40" : "opacity-100",
                   isSelected
                     ? "bg-[#318D62] text-white shadow-lg md:shadow-none"
@@ -185,7 +185,7 @@ export default function CalendarComponent() {
                 {/* Date Number - Top Left on Desktop, Center on Mobile */}
                 <span
                   className={cn(
-                    "text-[14px] md:text-[15px] font-bold z-20 transition-all duration-300",
+                    "text-[12px] sm:text-[14px] md:text-[15px] font-bold z-20 transition-all duration-300",
                     "md:absolute md:top-3 md:left-4",
                     isSelected
                       ? "text-white drop-shadow-md"
@@ -328,8 +328,8 @@ export default function CalendarComponent() {
 
       {/* Posts Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-2 mb-2">
-          <h3 className="text-xl font-bold text-gray-900">
+        <div className="flex items-center justify-between px-1 sm:px-2 mb-2 gap-2">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate min-w-0">
             {isSameDay(selectedDate, new Date())
               ? "Today's Content"
               : format(selectedDate, "MMMM do")}
@@ -380,7 +380,7 @@ export default function CalendarComponent() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center border border-gray-50 shadow-sm">
+          <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-12 flex flex-col items-center justify-center text-center border border-gray-50 shadow-sm">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
               <FileText size={32} className="text-gray-200" />
             </div>

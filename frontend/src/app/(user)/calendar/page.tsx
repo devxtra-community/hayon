@@ -48,7 +48,7 @@ export default function CalendarPage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full bg-[#F7F7F7] rounded-[2.5rem] overflow-hidden">
         {user && (
-          <div className="px-4 pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7] lg:hidden">
+          <div className="px-3 pt-4 sm:px-4 sm:pt-6 lg:px-8 lg:pt-8 bg-[#F7F7F7] lg:hidden">
             <Header
               userName={user.name}
               userEmail={user.email}
@@ -61,7 +61,7 @@ export default function CalendarPage() {
         )}
 
         {/* Calendar Content */}
-        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 px-3 py-4 sm:px-4 sm:py-6 lg:px-8 lg:py-8 overflow-y-auto custom-scrollbar">
           {!user ? (
             <div className="flex items-center justify-center h-full">
               <LoadingH />
