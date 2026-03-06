@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import redisClient from "../config/redis";
-import { ErrorResponse } from "./responses";
-import logger from "./logger";
+import { ErrorResponse } from "../utils/responses";
+import logger from "../utils/logger";
 
 export const rateLimiter = (
   prefix: string,
@@ -10,15 +10,13 @@ export const rateLimiter = (
   getIdentifier?: (req: Request) => string | undefined,
 ) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const identifier = getIdentifier?.(req) || req.auth?.id || req.ip;
+    const identifier = getIdentifier?.(req) || req.auth?.id;
 
     if (!identifier) {
-      next(); // Should not happen with req.ip fallback
+      next();
       return;
     }
 
-    // Key format: ratelimit:{prefix}:{identifier}:{window_start_timestamp}
-    // We use a fixed-window approach where the window is identified by the floor of the current timestamp
     const now = Math.floor(Date.now() / 1000);
     const windowStart = now - (now % windowSeconds);
     const key = `ratelimit:${prefix}:${identifier}:${windowStart}`;
@@ -27,7 +25,6 @@ export const rateLimiter = (
       const current = await redisClient.incr(key);
 
       if (current === 1) {
-        // First request in this window, set expiration
         await redisClient.expire(key, windowSeconds);
       }
 
@@ -50,7 +47,6 @@ export const rateLimiter = (
       next();
     } catch (error) {
       logger.error(`[RateLimit] Error for ${key}:`, error);
-      // Fail open: allow the request if Redis is down, but log the error
       next();
     }
   };

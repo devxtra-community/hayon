@@ -20,7 +20,7 @@ import {
   logoutDevice,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
-import { rateLimiter } from "../utils/ratelimit";
+import { rateLimiter } from "../middleware/ratelimit.middleware";
 
 import { validate } from "../middleware/validate.middleware";
 import {

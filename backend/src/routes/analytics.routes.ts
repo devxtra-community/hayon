@@ -2,7 +2,7 @@ import express from "express";
 import { authenticate } from "../middleware/auth.middleware";
 import * as analyticsController from "../controllers/analytics.controller";
 
-import { rateLimiter } from "../utils/ratelimit";
+import { rateLimiter } from "../middleware/ratelimit.middleware";
 
 const router = express.Router();
 
