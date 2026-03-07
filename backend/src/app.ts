@@ -84,6 +84,7 @@ const bootstrap = async () => {
   expressInstance.use(passport.initialize());
 
   expressInstance.get("/health", (req, res) => {
+    logger.info("Health check endpoint hit ✅");
     new SuccessResponse("Server is running").send(res);
   });
 
