@@ -125,4 +125,8 @@ export const ENV = {
     PORT: Number(process.env.REDIS_PORT),
     PASSWORD: process.env.REDIS_PASSWORD,
   },
+
+  UPTIME: {
+    BETTER_STACK_TOKEN: required("BETTER_STACK_TOKEN"),
+  },
 } as const;

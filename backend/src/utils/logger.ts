@@ -1,5 +1,8 @@
 import winston from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
+import { Logtail } from "@logtail/node";
+import { LogtailTransport } from "@logtail/winston";
+import { ENV } from "../config/env";
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
@@ -10,9 +13,9 @@ const logFormat = printf(({ level, message, timestamp, stack }) => {
 const dailyRotateTransport = new DailyRotateFile({
   filename: "logs/app-%DATE%.log",
   datePattern: "YYYY-MM-DD",
-  zippedArchive: true, // compress old logs
-  maxSize: "20m", // rotate if file > 20MB
-  maxFiles: "14d", // keep logs for 14 days
+  zippedArchive: true,
+  maxSize: "20m",
+  maxFiles: "14d",
 });
 
 const errorRotateTransport = new DailyRotateFile({
@@ -24,6 +27,9 @@ const errorRotateTransport = new DailyRotateFile({
   maxFiles: "30d",
 });
 
+// Better Stack
+const logtail = new Logtail(ENV.UPTIME.BETTER_STACK_TOKEN);
+
 const logger = winston.createLogger({
   level: "info",
   format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), errors({ stack: true }), logFormat),
@@ -33,6 +39,7 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: combine(colorize(), logFormat),
     }),
+    new LogtailTransport(logtail), // ← Better Stack added here
   ],
 });
 
