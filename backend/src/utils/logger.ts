@@ -7,7 +7,8 @@ import { ENV } from "../config/env";
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 const logFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} [${level}]: ${stack || message}`;
+  const msg = typeof message === "object" ? JSON.stringify(message) : stack || message;
+  return `${timestamp} [${level}]: ${msg}`;
 });
 
 const dailyRotateTransport = new DailyRotateFile({
@@ -27,11 +28,10 @@ const errorRotateTransport = new DailyRotateFile({
   maxFiles: "30d",
 });
 
-// Better Stack
 const logtail = new Logtail(ENV.UPTIME.BETTER_STACK_TOKEN);
 
 const logger = winston.createLogger({
-  level: "info",
+  level: "http", // ← key fix!
   format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), errors({ stack: true }), logFormat),
   transports: [
     dailyRotateTransport,
@@ -39,7 +39,7 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: combine(colorize(), logFormat),
     }),
-    new LogtailTransport(logtail), // ← Better Stack added here
+    new LogtailTransport(logtail),
   ],
 });
 
