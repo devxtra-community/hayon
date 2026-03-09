@@ -72,7 +72,27 @@ const bootstrap = async () => {
     exposedHeaders: ["Retry-After"],
   };
 
-  expressInstance.use(morgan("dev"));
+  expressInstance.use(
+    morgan(
+      (tokens, req, res) => {
+        return JSON.stringify({
+          method: tokens.method(req, res),
+          endpoint: tokens.url(req, res),
+          statusCode: Number(tokens.status(req, res)),
+          responseTime: Number(tokens["response-time"](req, res)),
+          timestamp: new Date().toISOString(),
+        });
+      },
+      {
+        stream: {
+          write: (message) => {
+            const data = JSON.parse(message.trim());
+            logger.http(data); // ← sends to Winston → Better Stack
+          },
+        },
+      },
+    ),
+  );
   expressInstance.use(cors(corsOptions));
   expressInstance.use(helmet());
   expressInstance.use(cookieParser());
