@@ -31,7 +31,7 @@ const errorRotateTransport = new DailyRotateFile({
 const logtail = new Logtail(ENV.UPTIME.BETTER_STACK_TOKEN);
 
 const logger = winston.createLogger({
-  level: "http", // ← key fix!
+  level: "http",
   format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), errors({ stack: true }), logFormat),
   transports: [
     dailyRotateTransport,

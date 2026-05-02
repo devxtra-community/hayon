@@ -1,72 +1,112 @@
-name: Deploy to EC2
+name: Build & Deploy
 
 on:
   push:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+  # e.g. ghcr.io/devxtra-community/hayon
+  IMAGE_BASE: ghcr.io/${{ github.repository_owner }}/hayon
+
 jobs:
-  deploy:
+  # ============================================================
+  # Job 1: Build images on GitHub Actions (7 GB RAM, fast)
+  # ============================================================
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # needed to push to GHCR
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
+      # ---- Login to GitHub Container Registry ----
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          version: 9
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}   # auto-provided, no setup needed
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
+      # ---- Docker Buildx (for better caching) ----
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ---------- SCHEMAS BUILD ----------
-      - name: Build schemas
-        working-directory: schemas
-        run: pnpm run build
-
-      # ---------- BACKEND BUILD ----------
-      - name: Create Service Account Key
-        working-directory: backend
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > src/serviceAccountKey.json
-
-      - name: Build backend
-        working-directory: backend
-        run: pnpm run build
-
-      # ---------- FRONTEND BUILD ----------
-      - name: Build frontend
-        working-directory: frontend
+      # ---- Write Firebase service account (needed in backend image) ----
+      - name: Write Firebase service account
         run: |
-          # Replace placeholders in service worker
-            sed -i "s|NEXT_PUBLIC_FIREBASE_API_KEY_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_API_KEY")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_PROJECT_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_PROJECT_ID")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_APP_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_APP_ID")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID")|g" public/firebase-messaging-sw.js
-            
-          pnpm run build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_URL }}
-          NEXT_PUBLIC_VAPID_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' \
+            > backend/src/serviceAccountKey.json
 
-      # ---------- SSH ----------
+      # ---- Build & push backend image ----
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_BASE }}-backend:latest
+          # Cache layers between runs — speeds up subsequent builds significantly
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ---- Build & push worker image (same Dockerfile as backend) ----
+      # We tag it separately so compose can reference it cleanly
+      - name: Tag worker image (reuses backend)
+        run: |
+          docker pull ${{ env.IMAGE_BASE }}-backend:latest
+          docker tag ${{ env.IMAGE_BASE }}-backend:latest ${{ env.IMAGE_BASE }}-worker:latest
+          docker push ${{ env.IMAGE_BASE }}-worker:latest
+
+      # ---- Build & push frontend image ----
+      # NEXT_PUBLIC_ vars are baked in at build time, so they're passed here
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_BASE }}-frontend:latest
+          # No cache for frontend — NEXT_PUBLIC_ env vars are baked in.
+          # A cached image would have stale values.
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.BACKEND_URL }}
+            NEXT_PUBLIC_VAPID_KEY=${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+            NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+
+      # ---- Build & push custom RabbitMQ image ----
+      - name: Build and push rabbitmq
+        uses: docker/build-push-action@v5
+        with:
+          context: ./rabbitmq
+          file: rabbitmq/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_BASE }}-rabbitmq:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================
+  # Job 2: Deploy on EC2 — just pull images and restart
+  # Runs only after build job succeeds
+  # ============================================================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build   # wait for build job to finish
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -74,85 +114,95 @@ jobs:
           chmod 600 ~/.ssh/ec2.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # ---------- DEPLOY BACKEND ----------
-      - name: Deploy Backend Artifacts
+      # ---- Sync config files (compose, nginx, rabbitmq config) ----
+      # We only need non-built files. Source code is NOT needed on EC2.
+      - name: Sync config files to EC2
         run: |
-          # Copy compiled backend code and package files
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            backend/dist backend/package.json \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/backend/
-
-          # Deploy schemas (needed for workspace)
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            schemas/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/schemas/
-
-          # Copy root config
           rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            pnpm-workspace.yaml package.json pnpm-lock.yaml \
+            docker-compose.prod.yml \
+            nginx/ \
+            rabbitmq/enabled_plugins \
+            scripts/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/
 
-      - name: Restart Backend
+      # ---- Write backend .env ----
+      - name: Write backend .env on EC2
         run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
-
-            cd ${{ secrets.APP_DIR }}/backend
-            
-            # Use CI=true to bypass the TTY/interactive prompt
-            # Also added --force to ensure it actually wipes the bad modules
-            CI=true pnpm install --prod --frozen-lockfile --ignore-scripts --force
-
-            pm2 delete backend || true
-            pm2 start dist/app.js --name "backend"
-            pm2 delete worker || true
-            pm2 start dist/workers/index.js --name "worker"
-            pm2 save
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
+          mkdir -p ${{ secrets.APP_DIR }}/backend
+          cat > ${{ secrets.APP_DIR }}/backend/.env << 'EOF'
+          NODE_ENV=production
+          PORT=5000
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          BACKEND_URL=${{ secrets.BACKEND_URL }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+          JWT_EXPIRES_IN=7d
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_PRO_PRICE_ID=${{ secrets.STRIPE_PRO_PRICE_ID }}
+          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          EMAIL_USER=${{ secrets.EMAIL_USER }}
+          EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+          TUMBLR_CONSUMER_KEY=${{ secrets.TUMBLR_CONSUMER_KEY }}
+          TUMBLR_CONSUMER_SECRET=${{ secrets.TUMBLR_CONSUMER_SECRET }}
+          META_APP_ID=${{ secrets.META_APP_ID }}
+          META_APP_SECRET=${{ secrets.META_APP_SECRET }}
+          META_REDIRECT_URI=${{ secrets.META_REDIRECT_URI }}
+          THREADS_APP_ID=${{ secrets.THREADS_APP_ID }}
+          THREADS_APP_SECRET=${{ secrets.THREADS_APP_SECRET }}
+          THREADS_REDIRECT_URI=${{ secrets.THREADS_REDIRECT_URI }}
+          MASTODON_CALLBACK_URL=${{ secrets.MASTODON_CALLBACK_URL }}
+          MASTODON_CLIENT_KEY=${{ secrets.MASTODON_CLIENT_KEY }}
+          MASTODON_CLIENT_SECRET=${{ secrets.MASTODON_CLIENT_SECRET }}
+          MASTODON_INSTANCE_URL=https://mastodon.social
+          RABBITMQ_URL=amqp://${{ secrets.RABBITMQ_USER }}:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5672
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          BETTER_STACK_TOKEN=${{ secrets.BETTER_STACK_TOKEN }}
           EOF
+          ENDSSH
 
-      # ---------- DEPLOY FRONTEND ----------
-      - name: Deploy Frontend Artifacts
+      # ---- Write root .env (registry + rabbitmq creds for compose) ----
+      - name: Write root .env on EC2
         run: |
-          # 1. Create the NESTED directory structure manually
-          # Note the extra /frontend/ in the path
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "mkdir -p ${{ secrets.APP_DIR }}/frontend-deploy/frontend/.next/static ${{ secrets.APP_DIR }}/frontend-deploy/frontend/public"
-
-          # 2. Copy standalone build
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/standalone/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
-
-          # 3. Copy static files (public) INTO the nested frontend folder
-          rsync -avz \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/public/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/frontend/public/
-
-          # 4. Copy static files (.next/static) INTO the nested frontend folder
-          rsync -avz \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/static/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/frontend/.next/static/
-
-      - name: Restart Frontend
-        run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
-
-            # Go to the nested folder where server.js lives
-            cd ${{ secrets.APP_DIR }}/frontend-deploy/frontend
-            
-            # Clean restart to pick up new files
-            pm2 delete frontend || true
-            PORT=3000 pm2 start server.js --name "frontend"
-            pm2 save
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
+          cat > ${{ secrets.APP_DIR }}/.env << 'EOF'
+          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}
+          IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/hayon
           EOF
+          ENDSSH
+
+      # ---- Pull pre-built images and restart ----
+      - name: Pull images and restart containers
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
+          set -e
+          cd ${{ secrets.APP_DIR }}
+
+          # Login to GHCR on EC2 (uses a personal access token)
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          # Pull the freshly built images
+          docker compose -f docker-compose.prod.yml pull
+
+          # Restart with new images
+          docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+          # Clean up old images
+          docker image prune -f
+
+          echo "=== Deploy complete ==="
+          docker compose -f docker-compose.prod.yml ps
+          ENDSSH
