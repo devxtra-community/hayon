@@ -7,8 +7,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # e.g. ghcr.io/devxtra-community/hayon
   IMAGE_BASE: ghcr.io/${{ github.repository_owner }}/hayon
+  # Opt into Node.js 24 to suppress deprecation warnings from actions
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ============================================================
@@ -114,16 +115,20 @@ jobs:
           chmod 600 ~/.ssh/ec2.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # ---- Sync config files (compose, nginx, rabbitmq config) ----
-      # We only need non-built files. Source code is NOT needed on EC2.
+      # ---- Sync config files to EC2 ----
+      # --relative preserves full directory structure:
+      #   nginx/nginx.conf  → $APP_DIR/nginx/nginx.conf  ✅
+      #   rabbitmq/enabled_plugins → $APP_DIR/rabbitmq/enabled_plugins ✅
+      # Without --relative, a trailing slash on nginx/ strips the folder name
+      # and dumps nginx.conf directly into $APP_DIR/ — that's what caused the error.
       - name: Sync config files to EC2
         run: |
-          rsync -avz \
+          rsync -avz --relative \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            docker-compose.prod.yml \
-            nginx/ \
-            rabbitmq/enabled_plugins \
-            scripts/ \
+            ./docker-compose.prod.yml \
+            ./nginx/nginx.conf \
+            ./rabbitmq/enabled_plugins \
+            ./scripts/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/
 
       # ---- Write backend .env ----
