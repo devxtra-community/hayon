@@ -1,0 +1,32 @@
+# Node
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+**/.next
+
+# Development files
+**/.env
+**/.env.local
+**/*.pem
+
+# Git
+.git
+.gitignore
+.github
+
+# Docs & misc
+docs
+images
+README.md
+*.log
+
+# Editor
+.vscode
+.idea
+
+# Test files
+**/__tests__
+**/*.test.ts
+**/*.spec.ts

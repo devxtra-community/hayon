@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to EC2 (Docker)
 
 on:
   push:
@@ -13,60 +13,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ---------- SCHEMAS BUILD ----------
-      - name: Build schemas
-        working-directory: schemas
-        run: pnpm run build
-
-      # ---------- BACKEND BUILD ----------
-      - name: Create Service Account Key
-        working-directory: backend
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > src/serviceAccountKey.json
-
-      - name: Build backend
-        working-directory: backend
-        run: pnpm run build
-
-      # ---------- FRONTEND BUILD ----------
-      - name: Build frontend
-        working-directory: frontend
-        run: |
-          # Replace placeholders in service worker
-            sed -i "s|NEXT_PUBLIC_FIREBASE_API_KEY_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_API_KEY")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_PROJECT_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_PROJECT_ID")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_APP_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_APP_ID")|g" public/firebase-messaging-sw.js
-            sed -i "s|NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID_PLACEHOLDER|$(echo -n "$NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID")|g" public/firebase-messaging-sw.js
-            
-          pnpm run build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_URL }}
-          NEXT_PUBLIC_VAPID_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
-
-      # ---------- SSH ----------
+      # --------------------------------------------------------
+      # SSH Setup
+      # --------------------------------------------------------
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -74,85 +23,113 @@ jobs:
           chmod 600 ~/.ssh/ec2.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # ---------- DEPLOY BACKEND ----------
-      - name: Deploy Backend Artifacts
+      # --------------------------------------------------------
+      # Sync project files to EC2
+      # Excludes: node_modules, .next, dist, .git, local env files
+      # --------------------------------------------------------
+      - name: Sync project to EC2
         run: |
-          # Copy compiled backend code and package files
           rsync -avz --delete \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='dist' \
+            --exclude='.git' \
+            --exclude='backend/.env' \
+            --exclude='frontend/.env.local' \
+            --exclude='certbot' \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            backend/dist backend/package.json \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/backend/
-
-          # Deploy schemas (needed for workspace)
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            schemas/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/schemas/
-
-          # Copy root config
-          rsync -avz \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            pnpm-workspace.yaml package.json pnpm-lock.yaml \
+            ./ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/
 
-      - name: Restart Backend
+      # --------------------------------------------------------
+      # Inject secrets on the remote server
+      # --------------------------------------------------------
+      - name: Write backend .env on EC2
         run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
-
-            cd ${{ secrets.APP_DIR }}/backend
-            
-            # Use CI=true to bypass the TTY/interactive prompt
-            # Also added --force to ensure it actually wipes the bad modules
-            CI=true pnpm install --prod --frozen-lockfile --ignore-scripts --force
-
-            pm2 delete backend || true
-            pm2 start dist/app.js --name "backend"
-            pm2 delete worker || true
-            pm2 start dist/workers/index.js --name "worker"
-            pm2 save
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            cat > ${{ secrets.APP_DIR }}/backend/.env << 'EOF'
+          NODE_ENV=production
+          PORT=5000
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          BACKEND_URL=${{ secrets.BACKEND_URL }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+          JWT_EXPIRES_IN=7d
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_PRO_PRICE_ID=${{ secrets.STRIPE_PRO_PRICE_ID }}
+          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          EMAIL_USER=${{ secrets.EMAIL_USER }}
+          EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+          TUMBLR_CONSUMER_KEY=${{ secrets.TUMBLR_CONSUMER_KEY }}
+          TUMBLR_CONSUMER_SECRET=${{ secrets.TUMBLR_CONSUMER_SECRET }}
+          META_APP_ID=${{ secrets.META_APP_ID }}
+          META_APP_SECRET=${{ secrets.META_APP_SECRET }}
+          META_REDIRECT_URI=${{ secrets.META_REDIRECT_URI }}
+          THREADS_APP_ID=${{ secrets.THREADS_APP_ID }}
+          THREADS_APP_SECRET=${{ secrets.THREADS_APP_SECRET }}
+          THREADS_REDIRECT_URI=${{ secrets.THREADS_REDIRECT_URI }}
+          MASTODON_CALLBACK_URL=${{ secrets.MASTODON_CALLBACK_URL }}
+          MASTODON_CLIENT_KEY=${{ secrets.MASTODON_CLIENT_KEY }}
+          MASTODON_CLIENT_SECRET=${{ secrets.MASTODON_CLIENT_SECRET }}
+          MASTODON_INSTANCE_URL=https://mastodon.social
+          RABBITMQ_URL=amqp://${{ secrets.RABBITMQ_USER }}:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5672
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          BETTER_STACK_TOKEN=${{ secrets.BETTER_STACK_TOKEN }}
           EOF
+          ENDSSH
 
-      # ---------- DEPLOY FRONTEND ----------
-      - name: Deploy Frontend Artifacts
+      - name: Write Firebase service account on EC2
         run: |
-          # 1. Create the NESTED directory structure manually
-          # Note the extra /frontend/ in the path
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "mkdir -p ${{ secrets.APP_DIR }}/frontend-deploy/frontend/.next/static ${{ secrets.APP_DIR }}/frontend-deploy/frontend/public"
+            "echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > ${{ secrets.APP_DIR }}/backend/src/serviceAccountKey.json"
 
-          # 2. Copy standalone build
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/standalone/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/
-
-          # 3. Copy static files (public) INTO the nested frontend folder
-          rsync -avz \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/public/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/frontend/public/
-
-          # 4. Copy static files (.next/static) INTO the nested frontend folder
-          rsync -avz \
-            -e "ssh -i ~/.ssh/ec2.pem" \
-            frontend/.next/static/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/frontend-deploy/frontend/.next/static/
-
-      - name: Restart Frontend
+      - name: Write root .env (for docker-compose build args) on EC2
         run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
-
-            # Go to the nested folder where server.js lives
-            cd ${{ secrets.APP_DIR }}/frontend-deploy/frontend
-            
-            # Clean restart to pick up new files
-            pm2 delete frontend || true
-            PORT=3000 pm2 start server.js --name "frontend"
-            pm2 save
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            cat > ${{ secrets.APP_DIR }}/.env << 'EOF'
+          NEXT_PUBLIC_API_URL=${{ secrets.BACKEND_URL }}
+          NEXT_PUBLIC_VAPID_KEY=${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}
           EOF
+          ENDSSH
+
+      # --------------------------------------------------------
+      # Build & restart containers on EC2
+      # --------------------------------------------------------
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            set -e
+            cd ${{ secrets.APP_DIR }}
+
+            # Pull latest images (redis, rabbitmq, nginx)
+            docker compose pull redis rabbitmq nginx certbot
+
+            # Build app images (frontend + backend/worker)
+            docker compose build --no-cache frontend backend
+
+            # Restart everything with zero manual intervention
+            docker compose up -d --remove-orphans
+
+            # Remove dangling images to save disk space
+            docker image prune -f
+          ENDSSH
