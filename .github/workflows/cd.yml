@@ -84,6 +84,8 @@ jobs:
             NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
             NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
             NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+            NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+            NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
 
       # ---- Build & push custom RabbitMQ image ----
       - name: Build and push rabbitmq
@@ -132,61 +134,66 @@ jobs:
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/
 
       # ---- Write backend .env ----
+      # Using printf per line instead of heredoc to avoid YAML-indentation
+      # leaking as leading spaces into the .env file.
       - name: Write backend .env on EC2
         run: |
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
           mkdir -p ${{ secrets.APP_DIR }}/backend
-          cat > ${{ secrets.APP_DIR }}/backend/.env << 'EOF'
-          NODE_ENV=production
-          PORT=5000
-          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-          BACKEND_URL=${{ secrets.BACKEND_URL }}
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
-          MONGODB_URI=${{ secrets.MONGODB_URI }}
-          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
-          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
-          JWT_EXPIRES_IN=7d
-          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_PRO_PRICE_ID=${{ secrets.STRIPE_PRO_PRICE_ID }}
-          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          EMAIL_USER=${{ secrets.EMAIL_USER }}
-          EMAIL_PASS=${{ secrets.EMAIL_PASS }}
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION=${{ secrets.AWS_REGION }}
-          AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
-          TUMBLR_CONSUMER_KEY=${{ secrets.TUMBLR_CONSUMER_KEY }}
-          TUMBLR_CONSUMER_SECRET=${{ secrets.TUMBLR_CONSUMER_SECRET }}
-          META_APP_ID=${{ secrets.META_APP_ID }}
-          META_APP_SECRET=${{ secrets.META_APP_SECRET }}
-          META_REDIRECT_URI=${{ secrets.META_REDIRECT_URI }}
-          THREADS_APP_ID=${{ secrets.THREADS_APP_ID }}
-          THREADS_APP_SECRET=${{ secrets.THREADS_APP_SECRET }}
-          THREADS_REDIRECT_URI=${{ secrets.THREADS_REDIRECT_URI }}
-          MASTODON_CALLBACK_URL=${{ secrets.MASTODON_CALLBACK_URL }}
-          MASTODON_CLIENT_KEY=${{ secrets.MASTODON_CLIENT_KEY }}
-          MASTODON_CLIENT_SECRET=${{ secrets.MASTODON_CLIENT_SECRET }}
-          MASTODON_INSTANCE_URL=https://mastodon.social
-          RABBITMQ_URL=amqp://${{ secrets.RABBITMQ_USER }}:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5672
-          REDIS_HOST=redis
-          REDIS_PORT=6379
-          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          BETTER_STACK_TOKEN=${{ secrets.BETTER_STACK_TOKEN }}
-          EOF
+          ENV_FILE="${{ secrets.APP_DIR }}/backend/.env"
+          printf '%s\n' \
+            'NODE_ENV=production' \
+            'PORT=5000' \
+            'FRONTEND_URL=${{ secrets.FRONTEND_URL }}' \
+            'BACKEND_URL=${{ secrets.BACKEND_URL }}' \
+            'GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}' \
+            'GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}' \
+            'GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}' \
+            'MONGODB_URI=${{ secrets.MONGODB_URI }}' \
+            'ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}' \
+            'REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}' \
+            'JWT_EXPIRES_IN=7d' \
+            'STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}' \
+            'STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}' \
+            'STRIPE_PRO_PRICE_ID=${{ secrets.STRIPE_PRO_PRICE_ID }}' \
+            'STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}' \
+            'EMAIL_USER=${{ secrets.EMAIL_USER }}' \
+            'EMAIL_PASS=${{ secrets.EMAIL_PASS }}' \
+            'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' \
+            'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
+            'AWS_REGION=${{ secrets.AWS_REGION }}' \
+            'AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}' \
+            'TUMBLR_CONSUMER_KEY=${{ secrets.TUMBLR_CONSUMER_KEY }}' \
+            'TUMBLR_CONSUMER_SECRET=${{ secrets.TUMBLR_CONSUMER_SECRET }}' \
+            'META_APP_ID=${{ secrets.META_APP_ID }}' \
+            'META_APP_SECRET=${{ secrets.META_APP_SECRET }}' \
+            'META_REDIRECT_URI=${{ secrets.META_REDIRECT_URI }}' \
+            'THREADS_APP_ID=${{ secrets.THREADS_APP_ID }}' \
+            'THREADS_APP_SECRET=${{ secrets.THREADS_APP_SECRET }}' \
+            'THREADS_REDIRECT_URI=${{ secrets.THREADS_REDIRECT_URI }}' \
+            'MASTODON_CALLBACK_URL=${{ secrets.MASTODON_CALLBACK_URL }}' \
+            'MASTODON_CLIENT_KEY=${{ secrets.MASTODON_CLIENT_KEY }}' \
+            'MASTODON_CLIENT_SECRET=${{ secrets.MASTODON_CLIENT_SECRET }}' \
+            'MASTODON_INSTANCE_URL=https://mastodon.social' \
+            'RABBITMQ_URL=amqp://${{ secrets.RABBITMQ_USER }}:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5672' \
+            'REDIS_HOST=redis' \
+            'REDIS_PORT=6379' \
+            'GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}' \
+            'BETTER_STACK_TOKEN=${{ secrets.BETTER_STACK_TOKEN }}' \
+            > "$ENV_FILE"
+          echo "backend .env written:"
+          cat "$ENV_FILE"
           ENDSSH
 
-      # ---- Write root .env (registry + rabbitmq creds for compose) ----
+      # ---- Write root .env (IMAGE_BASE + rabbitmq creds for compose) ----
       - name: Write root .env on EC2
         run: |
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
-          cat > ${{ secrets.APP_DIR }}/.env << 'EOF'
-          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
-          RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}
-          IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/hayon
-          EOF
+          printf '%s\n' \
+            'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' \
+            'RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}' \
+            'IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/hayon' \
+            > "${{ secrets.APP_DIR }}/.env"
           ENDSSH
 
       # ---- Pull pre-built images and restart ----

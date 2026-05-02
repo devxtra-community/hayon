@@ -20,6 +20,15 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "hayon-app-images.s3.ap-south-1.amazonaws.com",
       },
+      // hayon-app-images-2 is the actual production bucket
+      {
+        protocol: "https",
+        hostname: "hayon-app-images-2.s3.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "hayon-app-images-2.s3.ap-south-1.amazonaws.com",
+      },
       {
         protocol: "https",
         hostname: "github.com",
