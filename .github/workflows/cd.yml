@@ -1,21 +1,112 @@
-name: Deploy to EC2 (Docker)
+name: Build & Deploy
 
 on:
   push:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+  # e.g. ghcr.io/devxtra-community/hayon
+  IMAGE_BASE: ghcr.io/${{ github.repository_owner }}/hayon
+
 jobs:
-  deploy:
+  # ============================================================
+  # Job 1: Build images on GitHub Actions (7 GB RAM, fast)
+  # ============================================================
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # needed to push to GHCR
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # --------------------------------------------------------
-      # SSH Setup
-      # --------------------------------------------------------
+      # ---- Login to GitHub Container Registry ----
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}   # auto-provided, no setup needed
+
+      # ---- Docker Buildx (for better caching) ----
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ---- Write Firebase service account (needed in backend image) ----
+      - name: Write Firebase service account
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' \
+            > backend/src/serviceAccountKey.json
+
+      # ---- Build & push backend image ----
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_BASE }}-backend:latest
+          # Cache layers between runs — speeds up subsequent builds significantly
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ---- Build & push worker image (same Dockerfile as backend) ----
+      # We tag it separately so compose can reference it cleanly
+      - name: Tag worker image (reuses backend)
+        run: |
+          docker pull ${{ env.IMAGE_BASE }}-backend:latest
+          docker tag ${{ env.IMAGE_BASE }}-backend:latest ${{ env.IMAGE_BASE }}-worker:latest
+          docker push ${{ env.IMAGE_BASE }}-worker:latest
+
+      # ---- Build & push frontend image ----
+      # NEXT_PUBLIC_ vars are baked in at build time, so they're passed here
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_BASE }}-frontend:latest
+          # No cache for frontend — NEXT_PUBLIC_ env vars are baked in.
+          # A cached image would have stale values.
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.BACKEND_URL }}
+            NEXT_PUBLIC_VAPID_KEY=${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+            NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+
+      # ---- Build & push custom RabbitMQ image ----
+      - name: Build and push rabbitmq
+        uses: docker/build-push-action@v5
+        with:
+          context: ./rabbitmq
+          file: rabbitmq/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_BASE }}-rabbitmq:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================
+  # Job 2: Deploy on EC2 — just pull images and restart
+  # Runs only after build job succeeds
+  # ============================================================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build   # wait for build job to finish
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -23,31 +114,24 @@ jobs:
           chmod 600 ~/.ssh/ec2.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # --------------------------------------------------------
-      # Sync project files to EC2
-      # Excludes: node_modules, .next, dist, .git, local env files
-      # --------------------------------------------------------
-      - name: Sync project to EC2
+      # ---- Sync config files (compose, nginx, rabbitmq config) ----
+      # We only need non-built files. Source code is NOT needed on EC2.
+      - name: Sync config files to EC2
         run: |
-          rsync -avz --delete \
-            --exclude='node_modules' \
-            --exclude='.next' \
-            --exclude='dist' \
-            --exclude='.git' \
-            --exclude='backend/.env' \
-            --exclude='frontend/.env.local' \
-            --exclude='certbot' \
+          rsync -avz \
             -e "ssh -i ~/.ssh/ec2.pem" \
-            ./ \
+            docker-compose.prod.yml \
+            nginx/ \
+            rabbitmq/enabled_plugins \
+            scripts/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/
 
-      # --------------------------------------------------------
-      # Inject secrets on the remote server
-      # --------------------------------------------------------
+      # ---- Write backend .env ----
       - name: Write backend .env on EC2
         run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
-            cat > ${{ secrets.APP_DIR }}/backend/.env << 'EOF'
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
+          mkdir -p ${{ secrets.APP_DIR }}/backend
+          cat > ${{ secrets.APP_DIR }}/backend/.env << 'EOF'
           NODE_ENV=production
           PORT=5000
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
@@ -89,47 +173,36 @@ jobs:
           EOF
           ENDSSH
 
-      - name: Write Firebase service account on EC2
+      # ---- Write root .env (registry + rabbitmq creds for compose) ----
+      - name: Write root .env on EC2
         run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > ${{ secrets.APP_DIR }}/backend/src/serviceAccountKey.json"
-
-      - name: Write root .env (for docker-compose build args) on EC2
-        run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
-            cat > ${{ secrets.APP_DIR }}/.env << 'EOF'
-          NEXT_PUBLIC_API_URL=${{ secrets.BACKEND_URL }}
-          NEXT_PUBLIC_VAPID_KEY=${{ secrets.NEXT_PUBLIC_VAPID_KEY }}
-          NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
+          cat > ${{ secrets.APP_DIR }}/.env << 'EOF'
           RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
           RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}
+          IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/hayon
           EOF
           ENDSSH
 
-      # --------------------------------------------------------
-      # Build & restart containers on EC2
-      # --------------------------------------------------------
-      - name: Deploy with Docker Compose
+      # ---- Pull pre-built images and restart ----
+      - name: Pull images and restart containers
         run: |
-          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
-            set -e
-            cd ${{ secrets.APP_DIR }}
+          ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash << 'ENDSSH'
+          set -e
+          cd ${{ secrets.APP_DIR }}
 
-            # Pull latest images (redis, rabbitmq, nginx)
-            docker compose pull redis rabbitmq nginx certbot
+          # Login to GHCR on EC2 (uses a personal access token)
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Build app images (frontend + backend/worker)
-            docker compose build --no-cache frontend backend
+          # Pull the freshly built images
+          docker compose -f docker-compose.prod.yml pull
 
-            # Restart everything with zero manual intervention
-            docker compose up -d --remove-orphans
+          # Restart with new images
+          docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Remove dangling images to save disk space
-            docker image prune -f
+          # Clean up old images
+          docker image prune -f
+
+          echo "=== Deploy complete ==="
+          docker compose -f docker-compose.prod.yml ps
           ENDSSH
