@@ -212,6 +212,13 @@ jobs:
           # Restart with new images
           docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
+          # Always restart nginx after a deploy.
+          # When backend/frontend containers are recreated they get new internal IPs.
+          # Nginx caches upstream IPs, so it must restart to re-resolve them.
+          # Without this the site shows a blank nginx page after every deploy.
+          sleep 5
+          docker compose -f docker-compose.prod.yml restart nginx
+
           # Clean up old images
           docker image prune -f
 
