@@ -55,11 +55,14 @@ export default function DashboardMetrics({ data }: DashboardMetricsProps) {
         isPrimary={true}
       />
 
-      <MetricCard title="Total Drafts" value={data ? formatNumber(data.scheduled) : "—"} />
+      <MetricCard title="Total Scheduled" value={data ? formatNumber(data.scheduled) : "—"} />
 
-      <MetricCard title="Total Drafts" value={data ? formatNumber(data.totalAudience) : "—"} />
+      <MetricCard title="Total Audience" value={data ? formatNumber(data.totalAudience) : "—"} />
 
-      <MetricCard title="Total Drafts" value={data ? formatNumber(data.totalEngagement) : "—"} />
+      <MetricCard
+        title="Total Engagement"
+        value={data ? formatNumber(data.totalEngagement) : "—"}
+      />
     </div>
   );
 }
