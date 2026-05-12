@@ -6,7 +6,9 @@ import { ENV } from "../../config/env";
 
 export class TumblrService {
   async getRequestToken(userId: string) {
-    const callbackUrl = `${ENV.APP.BACKEND_URL}/api/platform/tumblr/callback?state=${userId}`;
+    const baseUrl = ENV.APP.BACKEND_URL;
+    const apiPath = baseUrl.endsWith("/api") ? "" : "/api";
+    const callbackUrl = `${baseUrl}${apiPath}/platform/tumblr/callback?state=${userId}`;
     const requestData = {
       url: `https://www.tumblr.com/oauth/request_token?oauth_callback=${encodeURIComponent(callbackUrl)}`,
       method: "POST",
