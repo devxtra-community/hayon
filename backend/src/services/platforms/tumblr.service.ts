@@ -82,12 +82,28 @@ export class TumblrService {
     const blogs = userRes.data.response.user.blogs;
     const primaryBlog = blogs.find((b: any) => b.primary === true) || blogs[0];
 
-    // Extract hostname from URL (e.g., "https://myblog.tumblr.com/" -> "myblog.tumblr.com")
-    let blogHostname = primaryBlog.name;
+    // Tumblr's API returns blog.url as either:
+    //   a) "https://www.tumblr.com/blogname"  (standard blogs) ← most common
+    //   b) "https://myblog.tumblr.com/"        (older subdomain blogs)
+    //   c) "https://custom-domain.com/"        (custom domain blogs)
+    //
+    // For case (a): extracting hostname gives "www.tumblr.com" → WRONG.
+    // We must detect this and build "blogname.tumblr.com" from the URL path instead.
+    // The blog's `name` field always holds the short blog name (e.g. "testerarungosh").
+    let blogHostname: string;
     if (primaryBlog.url) {
       try {
         const url = new URL(primaryBlog.url);
-        blogHostname = url.hostname;
+        if (url.hostname === "www.tumblr.com") {
+          // Standard blog: URL is https://www.tumblr.com/blogname
+          // Use the blog name to build the proper subdomain
+          blogHostname = `${primaryBlog.name}.tumblr.com`;
+        } else if (url.hostname.endsWith("tumblr.com") || url.hostname !== "tumblr.com") {
+          // Already a proper subdomain (myblog.tumblr.com) or custom domain
+          blogHostname = url.hostname;
+        } else {
+          blogHostname = `${primaryBlog.name}.tumblr.com`;
+        }
       } catch {
         blogHostname = `${primaryBlog.name}.tumblr.com`;
       }
