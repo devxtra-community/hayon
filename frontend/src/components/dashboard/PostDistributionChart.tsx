@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const platformColors: Record<string, string> = {
   mastodon: "#6364FF",
@@ -51,14 +51,15 @@ export default function PostDistributionChart({ data }: PostDistributionChartPro
         <p className="text-sm text-slate-500">Total posts by platform</p>
       </div>
 
-      <div className="flex-1 min-h-[220px] relative mt-2">
+      {/* Chart area — no Legend inside so SVG fills 100% and centering math works */}
+      <div className="flex-1 min-h-[160px] relative mt-2">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
-              cy="45%"
-              innerRadius="60%"
+              cy="50%"
+              innerRadius="55%"
               outerRadius="80%"
               paddingAngle={5}
               dataKey="value"
@@ -75,25 +76,12 @@ export default function PostDistributionChart({ data }: PostDistributionChartPro
               }}
               itemStyle={{ color: "#1e293b", fontWeight: 600 }}
             />
-            <Legend
-              layout="horizontal"
-              verticalAlign="bottom"
-              align="center"
-              iconType="circle"
-              iconSize={8}
-              wrapperStyle={{ paddingTop: "20px" }}
-              formatter={(value) => (
-                <span className="text-slate-600 font-medium ml-1 text-[11px] sm:text-sm">
-                  {value}
-                </span>
-              )}
-            />
           </PieChart>
         </ResponsiveContainer>
 
-        {/* Total Count in Center */}
+        {/* Total Count in Center — cy="50%" and top-[50%] now match exactly */}
         <div
-          className="absolute top-[45%] left-[50%] flex flex-col items-center justify-center pointer-events-none"
+          className="absolute top-[50%] left-[50%] flex flex-col items-center justify-center pointer-events-none"
           style={{ transform: "translate(-50%, -50%)" }}
         >
           <span className="text-2xl font-bold text-slate-800 leading-none">{totalPosts}</span>
@@ -101,6 +89,19 @@ export default function PostDistributionChart({ data }: PostDistributionChartPro
             Posts
           </span>
         </div>
+      </div>
+
+      {/* Manual legend rendered outside the SVG */}
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3">
+        {chartData.map((entry) => (
+          <div key={entry.name} className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-[11px] sm:text-xs text-slate-600 font-medium">{entry.name}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
